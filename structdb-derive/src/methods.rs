@@ -23,7 +23,6 @@ pub fn generate(field: &Field) -> TokenStream {
     let field_ident = field.ident.as_ref().unwrap();
     let key = &field_ident.to_string();
 
-    dbg!(&field_type);
     if !is_option(field_type) {
         let span = field_type.span();
         return quote_spanned!(span=> compile_error!("[structdb] Every type must be contained in an Option"););
@@ -35,9 +34,9 @@ pub fn generate(field: &Field) -> TokenStream {
     let compare_and_swap = basic::compare_and_swap(field_ident, field_type, key);
 
     quote!(
-        #setter;
-        #getter;
-        #update;
-        #compare_and_swap;
+        #setter
+        #getter
+        #update
+        #compare_and_swap
     )
 }
