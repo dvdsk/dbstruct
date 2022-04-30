@@ -88,16 +88,14 @@ pub(super) fn compare_and_swap(field_ident: &Ident, field_type: &Type, key: &str
         #[allow(dead_code)]
         pub fn #compare_and_swap(&self, old: #field_type, new: #field_type)
             -> std::result::Result<
-                std::result::Result<(), structdb::CompareAndSwapError<#field_type>>, 
+                std::result::Result<(), structdb::CompareAndSwapError<#field_type>>,
             structdb::Error> {
             let old = bincode::serialize(&old).map_err(structdb::Error::Serializing)?;
             let new = bincode::serialize(&new).map_err(structdb::Error::Serializing)?;
-            match self.tree.compare_and_swap(#key, Some(old), Some(new))? {
-                Ok(()) => Ok(Ok(())),
-                Err(compare_and_swap_err) => {
-                    Ok(Err(compare_and_swap_err.try_into()?))
-                },
-            }
+            Ok(match self.tree.compare_and_swap(#key, Some(old), Some(new))? {
+                Ok(()) => Ok(()),
+                Err(e) => Err(e.try_into()?),
+            })
         }
     }
 }
