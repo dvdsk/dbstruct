@@ -29,7 +29,7 @@ pub fn structdb(
 fn basic_methods(field_ident: &Ident, field_type: &Type, key: String) -> TokenStream {
     let getter = field_ident.clone();
     let setter = Ident::new(&format!("set_{}", field_ident), field_ident.span());
-    let map = Ident::new(&format!("map_{}", field_ident), field_ident.span());
+    let update = Ident::new(&format!("update_{}", field_ident), field_ident.span());
     let span = field_type.span();
 
     quote_spanned! {span=>
@@ -57,7 +57,7 @@ fn basic_methods(field_ident: &Ident, field_type: &Type, key: String) -> TokenSt
         /// returns an error incase de or re-serializing failed, in which case the
         /// value of the member in the array will not have changed.
         #[allow(dead_code)]
-        pub fn #map(&self, op: impl FnMut(#field_type) -> #field_type + Clone) -> Result<(), structdb::Error> {
+        pub fn #update(&self, op: impl FnMut(#field_type) -> #field_type + Clone) -> Result<(), structdb::Error> {
             let mut res = Ok(());
             let update = |old: Option<&[u8]>| {
                 let old = old.expect("db values should always be set");
