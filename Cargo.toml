@@ -9,6 +9,7 @@ description = "Build a database by defining a struct"
 
 [dependencies]
 structdb-derive = { path = "structdb-derive" }
-
-serde = "1"
+thiserror = "1"
 sled = "0.34"
+serde = { version = "1", features = ["derive"] }
+bincode = "1.3"
