@@ -45,7 +45,6 @@ fn impl_structdb(
     _attrs: &[Attribute],
     _generics: &Generics,
 ) -> TokenStream {
-    // dbg!(&fields);
     let field_methods: Vec<_> = fields.into_iter().map(methods::generate).collect();
     let tree_name = tree_name(name, fields);
 

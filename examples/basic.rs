@@ -14,8 +14,8 @@ mod some {
 
 #[structdb]
 struct State {
-    #[structdb(test)] // YAY this is possible
     position: Option<ExampleType>,
+    #[structdb(test)] // YAY this is possible
     feed: Option<String>,
 }
 

@@ -12,8 +12,7 @@ pub(super) fn setter(field_ident: &Ident, field_type: &Type, key: &str) -> Token
         pub fn #setter(&self, position: &#field_type) -> std::result::Result<(), structdb::Error> {
             let bytes = bincode::serialize(position)
                 .map_err(structdb::Error::Serializing)?;
-            self.tree.insert(#key, bytes)?
-                .expect("db values should always be set");
+            self.tree.insert(#key, bytes)?;
             Ok(())
         }
     }
@@ -29,10 +28,10 @@ pub(super) fn getter(field_ident: &Ident, field_type: &Type, key: &str) -> Token
         /// TODO
         #[allow(dead_code)]
         pub fn #getter(&self) -> std::result::Result<#field_type, structdb::Error> {
-            let bytes = self.tree.get(#key)?
-                .expect("db values should always be set");
-            Ok(bincode::deserialize(&bytes)
-                .map_err(structdb::Error::DeSerializing)?)
+            match self.tree.get(#key)? {
+                Some(bytes) => Ok(bincode::deserialize(&bytes).map_err(structdb::Error::DeSerializing)?),
+                None => Ok(None),
+            }
         }
     }
 }
@@ -51,7 +50,7 @@ pub(super) fn update(field_ident: &Ident, field_type: &Type, key: &str) -> Token
 
             let mut res = Ok(());
             let update = |old: Option<&[u8]>| {
-                let old = old.expect("db values should always be set");
+                let old = old.unwrap_or(None);
                 match bincode::deserialize(old) {
                     Err(e) => {
                         res = Err(structdb::Error::DeSerializing(e));
@@ -69,9 +68,7 @@ pub(super) fn update(field_ident: &Ident, field_type: &Type, key: &str) -> Token
                     }
                 }
             };
-            let _bytes = self.tree.update_and_fetch(#key, update)?
-                .expect("db values should always be set");
-            // res
+            self.tree.update_and_fetch(#key, update)?;
             Ok(())
         }
     }
