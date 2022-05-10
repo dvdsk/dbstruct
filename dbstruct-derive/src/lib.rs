@@ -10,7 +10,7 @@ mod methods;
 
 #[proc_macro_attribute]
 #[proc_macro_error]
-pub fn structdb(
+pub fn dbstruct(
     _attr: proc_macro::TokenStream,
     item: proc_macro::TokenStream,
 ) -> proc_macro::TokenStream {
@@ -20,8 +20,8 @@ pub fn structdb(
         Struct(DataStruct {
             fields: syn::Fields::Named(ref fields),
             ..
-        }) => impl_structdb(struct_name, &fields.named, &input.attrs, &input.generics),
-        _ => abort_call_site!("structdb only supports non-tuple structs"),
+        }) => generate_struct(struct_name, &fields.named, &input.attrs, &input.generics),
+        _ => abort_call_site!("dbstruct only supports non-tuple structs"),
     };
 
     gen.into()
@@ -39,7 +39,7 @@ fn tree_name(struct_name: &Ident, fields: &Punctuated<Field, Comma>) -> String {
     res
 }
 
-fn impl_structdb(
+fn generate_struct(
     name: &Ident,
     fields: &Punctuated<Field, Comma>,
     _attrs: &[Attribute],
@@ -55,12 +55,12 @@ fn impl_structdb(
 
         impl std::fmt::Debug for #name {
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
-                write!(f, "structdb")
+                write!(f, "dbstruct")
             }
         }
 
         impl #name {
-            pub fn test() -> Result<Self, structdb::Error> {
+            pub fn test() -> Result<Self, dbstruct::Error> {
                 let db = sled::Config::default()
                     .temporary(true)
                     .open()
@@ -68,14 +68,14 @@ fn impl_structdb(
                 Self::open_tree(db)
             }
 
-            pub fn open_db(path: impl std::convert::AsRef<std::path::Path>) -> Result<Self, structdb::Error> {
+            pub fn open_db(path: impl std::convert::AsRef<std::path::Path>) -> Result<Self, dbstruct::Error> {
                 let db = sled::Config::default()
                     .path(path)
                     .open()
                     .unwrap();
                 Self::open_tree(db)
             }
-            pub fn open_tree(db: sled::Db) -> Result<Self, structdb::Error> {
+            pub fn open_tree(db: sled::Db) -> Result<Self, dbstruct::Error> {
                 let tree = db.open_tree(#tree_name).unwrap();
                 Ok(Self { tree })
             }

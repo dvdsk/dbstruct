@@ -9,9 +9,9 @@ pub(super) fn setter(field_ident: &Ident, field_type: &Type, key: &str) -> Token
 
     quote_spanned! {span=>
         #[allow(dead_code)]
-        pub fn #setter(&self, position: &#field_type) -> std::result::Result<(), structdb::Error> {
+        pub fn #setter(&self, position: &#field_type) -> std::result::Result<(), dbstruct::Error> {
             let bytes = bincode::serialize(position)
-                .map_err(structdb::Error::Serializing)?;
+                .map_err(dbstruct::Error::Serializing)?;
             self.tree.insert(#key, bytes)?;
             Ok(())
         }
@@ -27,10 +27,11 @@ pub(super) fn getter(field_ident: &Ident, field_type: &Type, key: &str) -> Token
         /// # Errors
         /// TODO
         #[allow(dead_code)]
-        pub fn #getter(&self) -> std::result::Result<#field_type, structdb::Error> {
+        pub fn #getter(&self) -> std::result::Result<#field_type, dbstruct::Error> {
+            let default_val = None;
             match self.tree.get(#key)? {
-                Some(bytes) => Ok(bincode::deserialize(&bytes).map_err(structdb::Error::DeSerializing)?),
-                None => Ok(None),
+                Some(bytes) => Ok(bincode::deserialize(&bytes).map_err(dbstruct::Error::DeSerializing)?),
+                None => Ok(default_val),
             }
         }
     }
@@ -46,14 +47,15 @@ pub(super) fn update(field_ident: &Ident, field_type: &Type, key: &str) -> Token
         /// value of the member in the array will not have changed.
         #[allow(dead_code)]
         pub fn #update(&self, op: impl FnMut(#field_type) -> #field_type + Clone)
-            -> std::result::Result<(), structdb::Error> {
+            -> std::result::Result<(), dbstruct::Error> {
+            let default_val = None;
 
             let mut res = Ok(());
             let update = |old: Option<&[u8]>| {
                 let old = old.unwrap_or(None);
                 match bincode::deserialize(old) {
                     Err(e) => {
-                        res = Err(structdb::Error::DeSerializing(e));
+                        res = Err(dbstruct::Error::DeSerializing(e));
                         Some(old.to_vec())
                     }
                     Ok(v) => {
@@ -61,7 +63,7 @@ pub(super) fn update(field_ident: &Ident, field_type: &Type, key: &str) -> Token
                         match bincode::serialize(&new) {
                             Ok(new_bytes) => Some(new_bytes),
                             Err(e) => {
-                                res = Err(structdb::Error::Serializing(e));
+                                res = Err(dbstruct::Error::Serializing(e));
                                 Some(old.to_vec())
                             }
                         }
@@ -85,10 +87,10 @@ pub(super) fn compare_and_swap(field_ident: &Ident, field_type: &Type, key: &str
         #[allow(dead_code)]
         pub fn #compare_and_swap(&self, old: #field_type, new: #field_type)
             -> std::result::Result<
-                std::result::Result<(), structdb::CompareAndSwapError<#field_type>>,
-            structdb::Error> {
-            let old = bincode::serialize(&old).map_err(structdb::Error::Serializing)?;
-            let new = bincode::serialize(&new).map_err(structdb::Error::Serializing)?;
+                std::result::Result<(), dbstruct::CompareAndSwapError<#field_type>>,
+            dbstruct::Error> {
+            let old = bincode::serialize(&old).map_err(dbstruct::Error::Serializing)?;
+            let new = bincode::serialize(&new).map_err(dbstruct::Error::Serializing)?;
             Ok(match self.tree.compare_and_swap(#key, Some(old), Some(new))? {
                 Ok(()) => Ok(()),
                 Err(e) => Err(e.try_into()?),

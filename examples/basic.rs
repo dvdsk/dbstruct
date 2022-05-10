@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use structdb::structdb;
+use dbstruct::dbstruct;
 
 use self::some::lib::ExampleType;
 
@@ -12,11 +12,11 @@ mod some {
     }
 }
 
-#[structdb]
+#[dbstruct]
 struct State {
     position: Option<ExampleType>,
-    #[structdb(test)] // YAY this is possible
-    feed: Option<String>,
+    #[dbstruct(default("test"))] // YAY this is possible
+    feed: String,
 }
 
 fn main() {

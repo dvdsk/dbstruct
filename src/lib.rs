@@ -1,7 +1,7 @@
 use serde::{de::DeserializeOwned, Serialize};
 pub use sled;
 #[doc(hidden)]
-pub use structdb_derive::*;
+pub use dbstruct_derive::*;
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
