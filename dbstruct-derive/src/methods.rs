@@ -1,10 +1,10 @@
 use proc_macro2::TokenStream;
-use quote::{quote, quote_spanned};
+use quote::quote_spanned;
 use syn::spanned::Spanned;
 use syn::{AttrStyle, Attribute, Field, Type, TypePath};
 
-mod option;
-mod vec;
+mod default;
+mod vec_by_idx;
 
 fn outer_type(type_path: &Type) -> Result<String, ()> {
     match type_path {
@@ -32,7 +32,7 @@ fn attribute<'a>(attrs: &'a [Attribute]) -> Result<(Option<String>, Option<Strin
     }
 
     let token = (!attr.tokens.is_empty()).then(|| attr.tokens.to_string());
-    Ok((, )) // TODO split token into Some(default) and Some(default_value_string)
+    Ok((Some(path), token)) // TODO split token into Some(default) and Some(default_value_string)
 }
 
 enum Interface {
@@ -79,32 +79,31 @@ pub fn generate(field: &Field) -> TokenStream {
 
     match outer_type {
         Interface::Option => {
-            let setter = option::setter(ident, full_type, &key);
-            let getter = option::getter(ident, full_type, &key);
-            let update = option::update(ident, full_type, &key);
-            let compare_and_swap = option::compare_and_swap(ident, full_type, &key);
-
-            quote!(
-                #setter
-                #getter
-                #update
-                #compare_and_swap
-            )
+            let span = full_type.span();
+            let default_val = quote_spanned!(span=> Option::None);
+            default::methods(ident, full_type, &key, &default_val)
         }
         Interface::Vec => {
-            // todo use the option functions with a default val?
-            let setter = vec::setter(ident, full_type, &key);
-            let getter = vec::getter(ident, full_type, &key);
-            let update = vec::update(ident, full_type, &key);
-            let compare_and_swap = vec::compare_and_swap(ident, full_type, &key);
-
-            quote!(
-                #setter
-                #getter
-                #update
-                #compare_and_swap
-            )
+            let span = full_type.span();
+            let default_val = quote_spanned!(span=> Vec::new());
+            default::methods(ident, full_type, &key, &default_val)
         }
-        _ => todo!("implement other interfaces"),
+        Interface::DefaultTrait => {
+            let span = full_type.span();
+            let default_val = quote_spanned!(span=> Default::default());
+            default::methods(ident, full_type, &key, &default_val)
+        }
+        Interface::DefaultValue(unpared_value) => {
+            // TODO error handling
+            let default_val = unpared_value.parse().expect("could not parse default value to rust expression");
+            default::methods(ident, full_type, &key, &default_val)
+        }
+
+        Interface::VecByIdx => {
+            todo!()
+        }
+        Interface::PrefixTree => {
+            todo!()
+        }
     }
 }
