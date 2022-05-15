@@ -4,8 +4,11 @@ use quote::quote;
 use syn::punctuated::Punctuated;
 use syn::token::Comma;
 use syn::Data::Struct;
-use syn::{Attribute, DataStruct, DeriveInput, Field, Generics, *};
+use syn::{Attribute, DataStruct, DeriveInput, Field, Generics, Ident};
 
+use self::key::DbKey;
+
+mod key;
 mod methods;
 
 #[proc_macro_attribute]
@@ -45,7 +48,12 @@ fn generate_struct(
     _attrs: &[Attribute],
     _generics: &Generics,
 ) -> TokenStream {
-    let field_methods: Vec<_> = fields.into_iter().map(methods::generate).collect();
+    let keys = DbKey::new(fields);
+    let field_methods: Vec<_> = fields
+        .into_iter()
+        .map(|f| (f, &keys))
+        .map(methods::generate)
+        .collect();
     let tree_name = tree_name(name, fields);
 
     quote! {
