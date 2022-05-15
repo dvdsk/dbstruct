@@ -28,8 +28,8 @@ fn setter(ident: &proc_macro2::Ident, full_type: &Type, key: &str) -> TokenStrea
 
     quote_spanned! {span=>
         #[allow(dead_code)]
-        pub fn #setter(&self, position: &#full_type) -> std::result::Result<(), dbstruct::Error> {
-            let bytes = bincode::serialize(position)
+        pub fn #setter(&self, value: &#full_type) -> std::result::Result<(), dbstruct::Error> {
+            let bytes = bincode::serialize(value)
                 .map_err(dbstruct::Error::Serializing)?;
             self.tree.insert(#key, bytes)?;
             Ok(())
@@ -77,13 +77,12 @@ fn update(
         #[allow(dead_code)]
         pub fn #update(&self, op: impl FnMut(#full_type) -> #full_type + Clone)
             -> std::result::Result<(), dbstruct::Error> {
-            let default_val = #default_val;
 
             let mut res = Ok(());
             let update = |old: Option<&[u8]>| {
                 match old {
                     None => {
-                        let new = op.clone()(default);
+                        let new = op.clone()(#default_val);
                         match bincode::serialize(&new) {
                             Ok(new_bytes) => Some(new_bytes),
                             Err(e) => {
