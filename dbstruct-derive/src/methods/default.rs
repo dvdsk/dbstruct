@@ -137,17 +137,18 @@ fn compare_and_swap(
             let old = if old == #default_val {
                 None
             } else {
-                bincode::serialize(&old).map_err(dbstruct::Error::Serializing)?
+                let bytes = bincode::serialize(&old).map_err(dbstruct::Error::Serializing)?;
+                Some(bytes)
             };
 
             // I save the default as None not to save space but keep initialization
             // fast, otherwise the default value would need to be written for each
-            // dbstruct member. Therefore we do not need to encode the new as None if
-            // it is the default
+            // dbstruct member. Therefore we do not take the time to encode the new 
+            // as None even if new is the default value
             let new = bincode::serialize(&new).map_err(dbstruct::Error::Serializing)?;
             let res = self
                 .tree
-                .compare_and_swap(#key, Some(old), Some(new))?;
+                .compare_and_swap(#key, old, Some(new))?;
             Ok(match res {
                 Ok(()) => Ok(()),
                 Err(e) => Err(e.try_into()?),
