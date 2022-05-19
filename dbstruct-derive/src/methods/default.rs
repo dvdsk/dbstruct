@@ -129,23 +129,26 @@ fn compare_and_swap(
         #[allow(dead_code)]
         pub fn #compare_and_swap(&self, old: #full_type, new: #full_type)
             -> std::result::Result<
-                std::result::Result<(), dbstruct::CompareAndSwapError<#full_type>>,
-            dbstruct::Error> {
-
+            std::result::Result<(), dbstruct::CompareAndSwapError<#full_type>>, 
+            dbstruct::Error
+        > {
             // The default value is encoded as no value in the db. If the user is
             // comparing agains the old vale change the call in the array
             let old = if old == #default_val {
-                None,
+                None
             } else {
-                let old = bincode::serialize(&old).map_err(dbstruct::Error::Serializing)?;
-            }
+                bincode::serialize(&old).map_err(dbstruct::Error::Serializing)?
+            };
 
             // I save the default as None not to save space but keep initialization
             // fast, otherwise the default value would need to be written for each
             // dbstruct member. Therefore we do not need to encode the new as None if
             // it is the default
             let new = bincode::serialize(&new).map_err(dbstruct::Error::Serializing)?;
-            Ok(match self.tree.compare_and_swap(#key, Some(old), Some(new))? {
+            let res = self
+                .tree
+                .compare_and_swap(#key, Some(old), Some(new))?;
+            Ok(match res {
                 Ok(()) => Ok(()),
                 Err(e) => Err(e.try_into()?),
             })
