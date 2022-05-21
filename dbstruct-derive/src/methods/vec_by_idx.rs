@@ -40,15 +40,15 @@ fn setter(ident: &proc_macro2::Ident, full_type: &Type, idx_key_method: &TokenSt
     }
 }
 
-pub(crate) fn getter(ident: &proc_macro2::Ident, full_type: &Type, idx_key_method: &TokenStream) -> TokenStream {
+pub(crate) fn getter(_ident: &proc_macro2::Ident, _full_type: &Type, _idx_key_method: &TokenStream) -> TokenStream {
     todo!()
 }
 
-pub(crate) fn update(ident: &proc_macro2::Ident, full_type: &Type, idx_key_method: &TokenStream) -> TokenStream {
+pub(crate) fn update(_ident: &proc_macro2::Ident, _full_type: &Type, _idx_key_method: &TokenStream) -> TokenStream {
     todo!()
 }
 
-pub(crate) fn compare_and_swap(ident: &proc_macro2::Ident, full_type: &Type, idx_key_method: &TokenStream) -> TokenStream {
+pub(crate) fn compare_and_swap(_ident: &proc_macro2::Ident, _full_type: &Type, _idx_key_method: &TokenStream) -> TokenStream {
     todo!()
 }
 

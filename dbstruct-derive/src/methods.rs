@@ -43,6 +43,7 @@ fn attribute<'a>(attrs: &'a [Attribute]) -> Result<(Option<String>, Option<Strin
     match token {
         None => Ok((None, None)),
         Some(path) => {
+            // FIXME attribute goes wrong somewhere here, write unit test for problem case
             let clean = path.trim_matches(['(', ')'].as_slice());
             let mut split = clean.split('(');
             let attr = split
@@ -133,3 +134,4 @@ pub fn generate((field, keys): (&Field, &DbKey)) -> TokenStream {
         }
     }
 }
+

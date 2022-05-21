@@ -24,9 +24,9 @@ impl DbKey {
         Self(map)
     }
 
-    pub(crate) fn get(&self, ident: &Ident) -> [u8; 1] {
-        [self.prefix(ident)]
-    }
+    // pub(crate) fn get(&self, ident: &Ident) -> [u8; 1] {
+    //     [self.prefix(ident)]
+    // }
 
     fn prefix(&self, ident: &Ident) -> Prefix {
         *self
