@@ -1,4 +1,5 @@
 use proc_macro2::TokenStream;
+
 use quote::quote_spanned;
 use syn::spanned::Spanned;
 use syn::{AttrStyle, Attribute, Field, Type, TypePath};
@@ -39,24 +40,33 @@ fn attribute<'a>(attrs: &'a [Attribute]) -> Result<(Option<String>, Option<Strin
         todo!("unknown attribute do not handle")
     }
 
-    let token = (!attr.tokens.is_empty()).then(|| attr.tokens.to_string());
-    match token {
-        None => Ok((None, None)),
-        Some(path) => {
-            // FIXME attribute goes wrong somewhere here, write unit test for problem case
-            let clean = path.trim_matches(['(', ')'].as_slice());
-            let mut split = clean.split('(');
-            let attr = split
-                .next()
-                .expect("split iter should at least yield one element")
-                .to_owned();
-            let value = split
-                .next()
-                .map(|s| s.trim_matches('\"'))
-                .map(ToOwned::to_owned);
-            Ok((Some(attr), value))
-        }
+    let mut attr_option = None;
+    let mut attr_value = None;
+    if attr.tokens.is_empty() {
+        return Ok((attr_option, attr_value));
     }
+
+    use proc_macro2::TokenTree::{Ident, Group};
+    use proc_macro2::Delimiter::Parenthesis; 
+
+    let mut trees = attr.tokens.clone().into_iter();
+    let mut group = match trees.next() {
+        Some(Group(g)) => g.stream().into_iter(),
+        _ => panic!(),
+    };
+
+    if let Some(Ident(ident)) = group.next() {
+        attr_option = Some(ident.to_string());
+    }
+
+    if let Some(Group(g)) = group.next() {
+        assert_eq!(g.delimiter(), Parenthesis);
+
+        let test: syn::LitStr = syn::parse2(g.stream()).unwrap();
+        attr_value = Some(test.value());
+    }
+
+    return Ok((attr_option, attr_value));
 }
 
 enum Interface {
@@ -134,4 +144,3 @@ pub fn generate((field, keys): (&Field, &DbKey)) -> TokenStream {
         }
     }
 }
-
