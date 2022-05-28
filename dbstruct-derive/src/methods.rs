@@ -1,8 +1,9 @@
 use proc_macro2::TokenStream;
 
 use quote::quote_spanned;
+use syn::parse::Parse;
 use syn::spanned::Spanned;
-use syn::{AttrStyle, Attribute, Field, Type, TypePath};
+use syn::{AttrStyle, Attribute, Field, Type, TypePath, Expr};
 
 use crate::key::DbKey;
 
@@ -18,7 +19,7 @@ fn outer_type(type_path: &Type) -> Result<String, ()> {
     }
 }
 
-fn attribute<'a>(attrs: &'a [Attribute]) -> Result<(Option<String>, Option<String>), ()> {
+fn attribute<'a>(attrs: &'a [Attribute]) -> Result<(Option<String>, Option<Expr>), ()> {
     if attrs.len() > 1 {
         todo!("for now we can only have one attribute, handle this as error")
     }
@@ -46,8 +47,8 @@ fn attribute<'a>(attrs: &'a [Attribute]) -> Result<(Option<String>, Option<Strin
         return Ok((attr_option, attr_value));
     }
 
-    use proc_macro2::TokenTree::{Ident, Group};
-    use proc_macro2::Delimiter::Parenthesis; 
+    use proc_macro2::Delimiter::Parenthesis;
+    use proc_macro2::TokenTree::{Group, Ident};
 
     let mut trees = attr.tokens.clone().into_iter();
     let mut group = match trees.next() {
@@ -62,15 +63,18 @@ fn attribute<'a>(attrs: &'a [Attribute]) -> Result<(Option<String>, Option<Strin
     if let Some(Group(g)) = group.next() {
         assert_eq!(g.delimiter(), Parenthesis);
 
-        let test: syn::LitStr = syn::parse2(g.stream()).unwrap();
-        attr_value = Some(test.value());
+        let test: syn::LitStr =
+            syn::parse2(g.stream()).expect("todo error handling: not a string literal");
+        let expr: syn::Expr = syn::parse_str(&test.value()).unwrap();
+        // attr_value = Some(test.value());
+        attr_value = Some(expr);
     }
 
     return Ok((attr_option, attr_value));
 }
 
 enum Interface {
-    DefaultValue(String),
+    DefaultValue(Expr),
     DefaultTrait,
     Option,
     Vec,
@@ -113,25 +117,19 @@ pub fn generate((field, keys): (&Field, &DbKey)) -> TokenStream {
 
     match outer_type {
         Interface::Option => {
-            let span = full_type.span();
-            let default_val = quote_spanned!(span=> Option::None);
+            let default_val: Expr = syn::parse_str("Option::None").unwrap();
             default::methods(ident, full_type, &key, &default_val)
         }
         Interface::Vec => {
-            let span = full_type.span();
-            let default_val = quote_spanned!(span=> Vec::new());
+            let default_val: Expr = syn::parse_str("Vec::new()").unwrap();
             default::methods(ident, full_type, &key, &default_val)
         }
         Interface::DefaultTrait => {
-            let span = full_type.span();
-            let default_val = quote_spanned!(span=> Default::default());
+            let default_val: Expr = syn::parse_str("Default::default()").unwrap();
             default::methods(ident, full_type, &key, &default_val)
         }
-        Interface::DefaultValue(unpared_value) => {
-            // TODO error handling
-            let default_val = unpared_value
-                .parse()
-                .expect("could not parse default value to rust expression");
+        Interface::DefaultValue(default_val) => {
+            // TODO add span which points to attribute code to default_val 
             default::methods(ident, full_type, &key, &default_val)
         }
 

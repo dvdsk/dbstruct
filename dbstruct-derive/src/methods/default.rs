@@ -1,13 +1,13 @@
 use proc_macro2::TokenStream;
 use quote::{quote, quote_spanned};
 use syn::spanned::Spanned;
-use syn::{Ident, Type};
+use syn::{Ident, Type, Expr};
 
 pub fn methods(
     ident: &proc_macro2::Ident,
     full_type: &Type,
     key: &str,
-    default_expr: &TokenStream,
+    default_expr: &Expr,
 ) -> TokenStream {
     let setter = setter(ident, full_type, &key);
     let getter = getter(ident, full_type, &key, &default_expr);
@@ -41,7 +41,7 @@ fn getter(
     ident: &proc_macro2::Ident,
     full_type: &Type,
     key: &str,
-    default_expr: &TokenStream,
+    default_expr: &Expr,
 ) -> TokenStream {
     let getter = ident.clone();
     let span = ident.span();
@@ -65,7 +65,7 @@ fn update(
     ident: &proc_macro2::Ident,
     full_type: &Type,
     key: &str,
-    default_expr: &TokenStream,
+    default_expr: &Expr,
 ) -> TokenStream {
     let update = Ident::new(&format!("update_{}", ident), ident.span());
     let span = full_type.span();
@@ -121,7 +121,7 @@ fn compare_and_swap(
     ident: &proc_macro2::Ident,
     full_type: &Type,
     key: &str,
-    default_expr: &TokenStream,
+    default_expr: &Expr,
 ) -> TokenStream {
     let compare_and_swap = Ident::new(&format!("compare_and_swap_{}", ident), ident.span());
     let span = full_type.span();
