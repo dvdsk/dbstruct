@@ -5,50 +5,87 @@ use syn::{Ident, Type};
 pub fn methods(
     ident: &proc_macro2::Ident,
     full_type: &Type,
-    idx_key_method: TokenStream,
+    fn_key_method: TokenStream,
+    expr_prefix: TokenStream,
 ) -> TokenStream {
-    let setter = setter(ident, full_type, &idx_key_method);
-    let getter = getter(ident, full_type, &idx_key_method);
-    let update = update(ident, full_type, &idx_key_method);
-    let compare_and_swap = compare_and_swap(ident, full_type, &idx_key_method);
+    let setter = push(ident, full_type, &fn_key_method, &expr_prefix);
+    let getter = pop(ident, full_type, &fn_key_method, &expr_prefix);
 
     quote!(
         #setter
         #getter
-        #update
-        #compare_and_swap
     )
 }
 
-fn setter(ident: &proc_macro2::Ident, full_type: &Type, idx_key_method: &TokenStream) -> TokenStream {
-    let setter = Ident::new(&format!("set_{}", ident), ident.span());
+fn push(
+    ident: &proc_macro2::Ident,
+    full_type: &Type,
+    fn_key_method: &TokenStream,
+    expr_prefix: &TokenStream,
+) -> TokenStream {
+    let fn_name = Ident::new(&format!("push_{}", ident), ident.span());
     let span = ident.span();
 
-    // TODO figure out key, maybe a hash?
-    // TODO get previous idx (maybe cache it (starts at 0 anyway))
-    // TODO not setter but pusher
     quote_spanned! {span=>
+        /// atomically push a new value into the db.
         #[allow(dead_code)]
-        pub fn #setter(&self, idx: usize, value: &#full_type) -> std::result::Result<(), dbstruct::Error> {
-            #idx_key_method
-            let key: [u8; 5] = idx_key(idx);
-            let bytes = bincode::serialize(value)
-                .map_err(dbstruct::Error::Serializing)?;
-            self.tree.insert(key, bytes)?;
+        pub fn #fn_name(&self, value: &#full_type) -> std::result::Result<(), dbstruct::Error> {
+            #fn_key_method
+            let prefix = #expr_prefix;
+
+            fn increment(old: Option<&[u8]>) -> Option<Vec<u8>> {
+                let number = match old {
+                    Some(bytes) => {
+                        let err = "db should contain 8 long byte slice representing the vec idx at key #prefix";
+                        let array: [u8; 8] = bytes.try_into().expect(err);
+                        let curr = u64::from_be_bytes(bytes);
+                        curr + 1
+                    }
+                    None => 0,
+                };
+                Some(number.to_be_bytes().to_vec())
+            }
+
+            let idx = self.tree.fetch_and_update([prefix], increment)?;
+            let key: [u8; 9] = idx_key(idx);
+            let bytes = bincode::serialize(value).map_err(dbstruct::Error::Serializing)?;
+            let res = self.tree.insert(key, bytes)?;
             Ok(())
         }
     }
 }
 
-pub(crate) fn getter(_ident: &proc_macro2::Ident, _full_type: &Type, _idx_key_method: &TokenStream) -> TokenStream {
-    todo!()
-}
+pub(crate) fn pop(
+    ident: &proc_macro2::Ident,
+    full_type: &Type,
+    fn_key_method: &TokenStream,
+    expr_prefix: &TokenStream,
+) -> TokenStream {
+    let fn_name = Ident::new(&format!("pop_{}", ident), ident.span());
+    let span = ident.span();
 
-pub(crate) fn update(_ident: &proc_macro2::Ident, _full_type: &Type, _idx_key_method: &TokenStream) -> TokenStream {
-    todo!()
-}
+    quote_spanned! {span=>
+        /// atomically pop a new value from the db
+        #[allow(dead_code)]
+        pub fn #fn_name(&self) -> std::result::Result<Option<#full_type>, dbstruct::Error> {
+            #fn_key_method
+            let prefix = #expr_prefix;
+            let bytes = match self.get([prefix])? {
+                Some(bytes) => bytes,
+                None => return None, // no len is zero len
+            };
 
-pub(crate) fn compare_and_swap(_ident: &proc_macro2::Ident, _full_type: &Type, _idx_key_method: &TokenStream) -> TokenStream {
-    todo!()
-}
+            let err = "db should contain 8 long byte slice representing the vec idx at key #prefix";
+            let array: [u8; 8] = bytes.try_into().expect(err);
+            let idx = u64::from_be_bytes(bytes);
 
+            let key: [u8; 9] = idx_key(len - 1);
+            let bytes = match self.tree.remove(key)? {
+                Some(bytes) => bytes,
+                None => return None, // value must been deleted between fetching len and this
+            };
+            let value = bincode::deserialize(bytes).map_err(dbstruct::Error::DeSerializing)?;
+            Ok(Some(value))
+        }
+    }
+}
