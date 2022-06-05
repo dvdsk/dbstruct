@@ -3,6 +3,9 @@ pub use sled;
 #[doc(hidden)]
 pub use dbstruct_derive::*;
 
+mod wrappers;
+pub use wrappers::{Vec, Option};
+
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
     #[error("database operation failed")]
