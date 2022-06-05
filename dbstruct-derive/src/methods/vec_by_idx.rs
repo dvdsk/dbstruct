@@ -38,7 +38,7 @@ fn push(
                     Some(bytes) => {
                         let err = "db should contain 8 long byte slice representing the vec idx at key #prefix";
                         let array: [u8; 8] = bytes.try_into().expect(err);
-                        let curr = u64::from_be_bytes(bytes);
+                        let curr = u64::from_be_bytes(array);
                         curr + 1
                     }
                     None => 0,
@@ -46,10 +46,17 @@ fn push(
                 Some(number.to_be_bytes().to_vec())
             }
 
-            let idx = self.tree.fetch_and_update([prefix], increment)?;
-            let key: [u8; 9] = idx_key(idx);
+            let last_idx = self.tree.get_lt([prefix+1])?
+                .map(|(key, _)| u64::from_be_bytes(
+                        key[1..]
+                            .try_into()
+                            .expect("vector keys need to be prefix + valid u64 as be bytes")
+                        )
+                    )
+                .unwrap_or(0);
+            let key: [u8; 9] = idx_key(last_idx + 1);
             let bytes = bincode::serialize(value).map_err(dbstruct::Error::Serializing)?;
-            let res = self.tree.insert(key, bytes)?;
+            self.tree.insert(key, bytes)?;
             Ok(())
         }
     }
@@ -69,22 +76,18 @@ pub(crate) fn pop(
         #[allow(dead_code)]
         pub fn #fn_name(&self) -> std::result::Result<Option<#full_type>, dbstruct::Error> {
             #fn_key_method
+
             let prefix = #expr_prefix;
-            let bytes = match self.get([prefix])? {
-                Some(bytes) => bytes,
-                None => return None, // no len is zero len
+            let last_element = match self.tree.get_lt([prefix+1])?.map(|(key, _)| key) {
+                Some(key) => key,
+                None => return Ok(None),
             };
 
-            let err = "db should contain 8 long byte slice representing the vec idx at key #prefix";
-            let array: [u8; 8] = bytes.try_into().expect(err);
-            let idx = u64::from_be_bytes(bytes);
-
-            let key: [u8; 9] = idx_key(len - 1);
-            let bytes = match self.tree.remove(key)? {
+            let bytes = match self.tree.remove(last_element)? {
                 Some(bytes) => bytes,
-                None => return None, // value must been deleted between fetching len and this
+                None => return Ok(None), // value must been deleted between fetching len and this
             };
-            let value = bincode::deserialize(bytes).map_err(dbstruct::Error::DeSerializing)?;
+            let value = bincode::deserialize(&bytes).map_err(dbstruct::Error::DeSerializing)?;
             Ok(Some(value))
         }
     }

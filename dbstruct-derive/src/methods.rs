@@ -1,13 +1,15 @@
+use proc_macro2::Delimiter::Parenthesis;
 use proc_macro2::TokenStream;
+use proc_macro2::TokenTree::{Group, Ident};
 
-use quote::quote_spanned;
-use syn::parse::Parse;
+use quote::{quote_spanned, ToTokens};
 use syn::spanned::Spanned;
-use syn::{AttrStyle, Attribute, Field, Type, TypePath, Expr};
+use syn::{AttrStyle, Attribute, Expr, Field, Type, TypePath};
 
 use crate::key::DbKey;
 
 mod default;
+mod hashmap;
 mod vec_by_idx;
 
 fn outer_type(type_path: &Type) -> Result<String, ()> {
@@ -47,9 +49,6 @@ fn attribute<'a>(attrs: &'a [Attribute]) -> Result<(Option<String>, Option<Expr>
         return Ok((attr_option, attr_value));
     }
 
-    use proc_macro2::Delimiter::Parenthesis;
-    use proc_macro2::TokenTree::{Group, Ident};
-
     let mut trees = attr.tokens.clone().into_iter();
     let mut group = match trees.next() {
         Some(Group(g)) => g.stream().into_iter(),
@@ -66,7 +65,6 @@ fn attribute<'a>(attrs: &'a [Attribute]) -> Result<(Option<String>, Option<Expr>
         let test: syn::LitStr =
             syn::parse2(g.stream()).expect("todo error handling: not a string literal");
         let expr: syn::Expr = syn::parse_str(&test.value()).unwrap();
-        // attr_value = Some(test.value());
         attr_value = Some(expr);
     }
 
@@ -78,8 +76,62 @@ enum Interface {
     DefaultTrait,
     Option,
     Vec,
-    VecByIdx,
-    PrefixTree,
+    IndexTree { value_type: Type },
+    HashMap,
+    PrefixTree { key_type: Type, value_type: Type },
+}
+
+fn unwrap_type_path(path: &Type) -> Option<&syn::Path> {
+    match path {
+        Type::Path(TypePath { path, .. }) => Some(path),
+        _ => return None,
+    }
+}
+
+fn vec_by_idx(field: &Field) -> Result<Interface, ()> {
+    use syn::GenericArgument;
+    use syn::PathArguments;
+
+    let type_path = unwrap_type_path(&field.ty).unwrap();
+    let generic = match &type_path.segments.first().ok_or(())?.arguments {
+        PathArguments::AngleBracketed(args) => args,
+        _ => return Err(()),
+    };
+
+    let r#type = match generic.args.first().ok_or(())? {
+        GenericArgument::Type(r#type) => r#type,
+        _ => return Err(()),
+    };
+    Ok(Interface::IndexTree {
+        value_type: r#type.clone(),
+    })
+}
+
+fn prefix_tree(field: &Field) -> Result<Interface, ()> {
+    use syn::GenericArgument;
+    use syn::PathArguments;
+
+    let type_path = unwrap_type_path(&field.ty).unwrap();
+    let generic = match &type_path.segments.first().ok_or(())?.arguments {
+        PathArguments::AngleBracketed(args) => args,
+        _ => return Err(()),
+    };
+
+    let mut types = generic.args.iter();
+    let key_type = match types.next().ok_or(())? {
+        GenericArgument::Type(r#type) => r#type,
+        _ => return Err(()),
+    }
+    .clone();
+    let value_type = match types.next().ok_or(())? {
+        GenericArgument::Type(r#type) => r#type,
+        _ => return Err(()),
+    }
+    .clone();
+    Ok(Interface::PrefixTree {
+        key_type,
+        value_type,
+    })
 }
 
 impl TryFrom<&Field> for Interface {
@@ -92,12 +144,16 @@ impl TryFrom<&Field> for Interface {
 
         match (outer, attr, &value) {
             ("Option", None, None) => Ok(Self::Option),
-            ("Vec", None, None) => Ok(Self::VecByIdx),
+            ("Vec", None, None) => Ok(vec_by_idx(field).unwrap()),
             ("Vec", Some("no_idx"), None) => Ok(Self::Vec),
-            ("HashMap", None, None) => Ok(Self::PrefixTree),
+            ("HashMap", None, None) => Ok(prefix_tree(field).unwrap()),
+            ("HashMap", Some("no_prefix"), None) => Ok(Self::HashMap),
             (_, Some("default"), None) => Ok(Self::DefaultTrait),
             (_, Some("default"), Some(val)) => Ok(Self::DefaultValue(val.clone())),
-            _ => todo!("Did not match any case: \"{outer}, {attr:?}, {value:?}\""),
+            // TODO error handling w a proper span
+            _ => todo!(
+                "Did not match any case: \"{outer}, {attr:?}, {value:?}\", probably not supported"
+            ),
         }
     }
 }
@@ -117,28 +173,41 @@ pub fn generate((field, keys): (&Field, &DbKey)) -> TokenStream {
 
     match outer_type {
         Interface::Option => {
-            let default_val: Expr = syn::parse_str("Option::None").unwrap();
+            let span = full_type.span();
+            let default_val = quote_spanned!(span=> Option::None);
             default::methods(ident, full_type, &key, &default_val)
         }
         Interface::Vec => {
-            let default_val: Expr = syn::parse_str("Vec::new()").unwrap();
+            let span = full_type.span();
+            let default_val = quote_spanned!(span=> Vec::new);
             default::methods(ident, full_type, &key, &default_val)
         }
+        Interface::IndexTree { value_type } => {
+            let fn_idx_key = keys.fn_idx_key(ident);
+            let expr_prefix = keys.expr_prefix(ident);
+            vec_by_idx::methods(ident, &value_type, fn_idx_key, expr_prefix)
+        }
         Interface::DefaultTrait => {
-            let default_val: Expr = syn::parse_str("Default::default()").unwrap();
+            let span = full_type.span();
+            let default_val = quote_spanned!(span=> Default::default());
             default::methods(ident, full_type, &key, &default_val)
         }
         Interface::DefaultValue(default_val) => {
-            // TODO add span which points to attribute code to default_val 
+            let default_val = default_val.to_token_stream();
             default::methods(ident, full_type, &key, &default_val)
         }
 
-        Interface::VecByIdx => {
-            let key_gen = keys.idx_key_method(ident);
-            vec_by_idx::methods(ident, full_type, key_gen)
+        Interface::HashMap => {
+            let span = full_type.span();
+            let default_val = quote_spanned!(span=> std::collections::HashMap::new);
+            default::methods(ident, full_type, &key, &default_val)
         }
-        Interface::PrefixTree => {
-            todo!()
+        Interface::PrefixTree {
+            key_type,
+            value_type,
+        } => {
+            let expr_prefix = keys.expr_prefix(ident);
+            hashmap::methods(ident, &key_type, &value_type, expr_prefix)
         }
     }
 }

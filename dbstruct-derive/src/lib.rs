@@ -48,7 +48,7 @@ fn generate_struct(
     _attrs: &[Attribute],
     _generics: &Generics,
 ) -> TokenStream {
-    let keys = DbKey::new(fields);
+    let keys = DbKey::new(fields).unwrap();
     let field_methods: Vec<_> = fields
         .into_iter()
         .map(|f| (f, &keys))
