@@ -3,8 +3,14 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct Song;
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct Playing;
+
 struct Db {
     queue: dbstruct::Vec<Song>,
+    // playing: dbstruct::DefaultValue<Playing, Option<Playing>>,
+    length: dbstruct::DefaultValue<u8, >
+
 }
 
 impl Db {
@@ -14,7 +20,9 @@ impl Db {
         let tree = db.open_tree("test").unwrap();
 
         Self {
-            queue: dbstruct::Vec::new(tree, 0),
+            queue: dbstruct::Vec::new(tree.clone(), 0),
+            // playing: dbstruct::DefaultValue::new(tree, 1, || { opt = None; opt }),
+            length: dbstruct::DefaultValue::new(tree.clone(), 1, 0u8),
         }
     }
 }

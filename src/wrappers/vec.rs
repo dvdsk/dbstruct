@@ -5,12 +5,6 @@ use serde::Serialize;
 
 use crate::Error;
 
-pub struct Vec<T> {
-    phantom: PhantomData<T>,
-    tree: sled::Tree,
-    prefix: u8,
-}
-
 fn idx_key(idx: u64, prefix: u8) -> [u8; 9] {
     let mut res = [0u8; 9];
     res[0] = prefix;
@@ -18,7 +12,13 @@ fn idx_key(idx: u64, prefix: u8) -> [u8; 9] {
     res
 }
 
-impl<T: Serialize+ DeserializeOwned> Vec<T> {
+pub struct Vec<T> {
+    phantom: PhantomData<T>,
+    tree: sled::Tree,
+    prefix: u8,
+}
+
+impl<T: Serialize + DeserializeOwned> Vec<T> {
     pub fn new(tree: sled::Tree, prefix: u8) -> Self {
         Self {
             phantom: PhantomData,
@@ -45,17 +45,17 @@ impl<T: Serialize+ DeserializeOwned> Vec<T> {
         Ok(())
     }
 
-            pub fn pop(&self) -> Result<Option<T>, Error> {
-                let last_element = match self.tree.get_lt([self.prefix+1])?.map(|(key, _)| key) {
-                    Some(key) => key,
-                    None => return Ok(None),
-                };
+    pub fn pop(&self) -> Result<Option<T>, Error> {
+        let last_element = match self.tree.get_lt([self.prefix + 1])?.map(|(key, _)| key) {
+            Some(key) => key,
+            None => return Ok(None),
+        };
 
-                let bytes = match self.tree.remove(last_element)? {
-                    Some(bytes) => bytes,
-                    None => return Ok(None), // value must been deleted between fetching len and this
-                };
-                let value = bincode::deserialize(&bytes).map_err(Error::DeSerializing)?;
-                Ok(Some(value))
-            }
+        let bytes = match self.tree.remove(last_element)? {
+            Some(bytes) => bytes,
+            None => return Ok(None), // value must been deleted between fetching len and this
+        };
+        let value = bincode::deserialize(&bytes).map_err(Error::DeSerializing)?;
+        Ok(Some(value))
+    }
 }

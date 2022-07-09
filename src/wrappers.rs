@@ -1,44 +1,11 @@
-use std::marker::PhantomData;
-
+mod option;
+mod default_val;
+mod default_trait;
 mod vec;
+mod map;
+
+pub use map::Map;
+pub use option::OptionValue;
+pub use default_val::DefaultValue;
+pub use default_trait::DefaultTrait;
 pub use vec::Vec;
-
-pub struct DefaultValue<T> {
-    phantom: PhantomData<T>,
-}
-
-impl<T> DefaultValue<T> {
-    pub fn new() -> Self {
-        Self {
-            phantom: PhantomData,
-        }
-    }
-}
-
-pub struct DefaultTrait<T> {
-    phantom: PhantomData<T>,
-}
-
-impl<T: Default> DefaultTrait<T> {
-    pub fn new() -> Self {
-        Self {
-            phantom: PhantomData,
-        }
-    }
-
-    pub fn get(&self) -> T {
-        T::default()
-    }
-}
-
-pub struct Option<T> {
-    phantom: PhantomData<T>,
-}
-
-impl<T> Option<T> {
-    pub fn new() -> Self {
-        Self {
-            phantom: PhantomData,
-        }
-    }
-}

@@ -28,6 +28,7 @@ struct State {
 
 fn main() {
     let state = State::test().unwrap();
+    state.set_mappy(&1, &4201).unwrap();
 
     // let position = Some(ExampleType(5));
     // state.set_position(&position).unwrap();

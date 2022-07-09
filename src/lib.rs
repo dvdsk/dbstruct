@@ -4,7 +4,8 @@ pub use sled;
 pub use dbstruct_derive::*;
 
 mod wrappers;
-pub use wrappers::{Vec, Option};
+mod traits;
+pub use wrappers::{Vec, DefaultValue, DefaultTrait, OptionValue, Map};
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
