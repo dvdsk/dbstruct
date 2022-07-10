@@ -8,6 +8,7 @@ where
 {
     type Error: fmt::Debug;
     fn get(&self, key: &K) -> Result<Option<V>, Self::Error>;
+    fn remove<'a>(&self, key: &'a K) -> Result<Option<V>, Self::Error>;
     fn insert<'a>(&self, key: &'a K, val: &'a V) -> Result<Option<V>, Self::Error>;
     fn atomic_update(&self, key: &K, op: impl FnMut(V) -> V + Clone) -> Result<(), Self::Error>;
     fn conditional_update(&self, key: &K, new: &V, expected: &V) -> Result<(), Self::Error>;
@@ -16,6 +17,7 @@ where
 trait BytesStore {
     type Error: fmt::Debug;
     fn get(&self, key: &[u8]) -> Result<Option<Vec<u8>>, Self::Error>;
+    fn remove(&self, key: &[u8]) -> Result<Option<Vec<u8>>, Self::Error>;
     fn insert(&self, key: &[u8], val: &[u8]) -> Result<Option<Vec<u8>>, Self::Error>;
     fn atomic_update(
         &self,
@@ -42,6 +44,15 @@ where
     fn get(&self, key: &K) -> Result<Option<V>, Self::Error> {
         let key = bincode::serialize(key).unwrap();
         let val = BS::get(&self, &key).unwrap();
+        Ok(match val {
+            Some(bytes) => bincode::deserialize(&bytes).unwrap(),
+            None => None,
+        })
+    }
+
+    fn remove(&self, key: &K) -> Result<Option<V>, Self::Error> {
+        let key = bincode::serialize(key).unwrap();
+        let val = BS::remove(&self, &key).unwrap();
         Ok(match val {
             Some(bytes) => bincode::deserialize(&bytes).unwrap(),
             None => None,

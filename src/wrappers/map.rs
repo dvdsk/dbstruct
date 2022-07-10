@@ -45,11 +45,6 @@ where
         }
     }
 
-    // TODO! Figure out a way to use DataStore trait with prefixes
-    // probably gonna need to add a method to keep the index for the Vec wrapper
-    // might need to scan on creation (::new), could also specialize that to use less then
-    // when supported (sled etc). TODO figure out a way to represent that in a trait
-    //
     /// returns existing value if any was set
     pub fn set(&self, key: &'a Key, value: &'a Value) -> Result<Option<Value>, Error> {
         let key = Prefixed {

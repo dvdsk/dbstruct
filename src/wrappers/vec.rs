@@ -1,61 +1,67 @@
+use core::fmt;
 use std::marker::PhantomData;
+use std::sync::Arc;
+use std::sync::atomic::{AtomicUsize, Ordering};
 
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 
+use crate::traits::DataStore;
 use crate::Error;
 
-fn idx_key(idx: u64, prefix: u8) -> [u8; 9] {
-    let mut res = [0u8; 9];
-    res[0] = prefix;
-    res[1..].copy_from_slice(&idx.to_be_bytes());
-    res
-}
-
-pub struct Vec<T> {
+pub struct Vec<T, DS>
+where
+    T: Serialize + DeserializeOwned,
+    DS: DataStore<Prefixed, T>,
+{
     phantom: PhantomData<T>,
-    tree: sled::Tree,
+    ds: DS,
     prefix: u8,
+    len: Arc<AtomicUsize>,
 }
 
-impl<T: Serialize + DeserializeOwned> Vec<T> {
-    pub fn new(tree: sled::Tree, prefix: u8) -> Self {
+#[derive(Serialize)]
+pub struct Prefixed {
+    prefix: u8,
+    index: usize,
+}
+
+// probably gonna need to add a method to keep the index for the Vec wrapper
+// might need to scan on creation (::new), could also specialize that to use less then
+// when supported (sled etc). TODO figure out a way to represent that in a trait
+impl<T, E, DS> Vec<T, DS>
+where
+    E: fmt::Debug,
+    Error: From<E>,
+    T: Serialize + DeserializeOwned,
+    DS: DataStore<Prefixed, T, Error = E>,
+{
+    pub fn new(ds: DS, prefix: u8, len: Arc<AtomicUsize>) -> Self {
         Self {
             phantom: PhantomData,
-            tree,
+            ds,
             prefix,
+            len,
         }
     }
 
-    pub fn push(&self, value: T) -> Result<(), Error> {
-        let last_idx = self
-            .tree
-            .get_lt([self.prefix + 1])?
-            .map(|(key, _)| {
-                u64::from_be_bytes(
-                    key[1..]
-                        .try_into()
-                        .expect("vector keys need to be prefix + valid u64 as be bytes"),
-                )
-            })
-            .unwrap_or(0);
-        let key: [u8; 9] = idx_key(last_idx + 1, self.prefix);
-        let bytes = bincode::serialize(&value).map_err(Error::Serializing)?;
-        self.tree.insert(key, bytes)?;
+    pub fn push(&mut self, value: T) -> Result<(), Error> {
+        let new_len = self.len.fetch_add(1, Ordering::SeqCst);
+        let key = Prefixed {
+            prefix: self.prefix,
+            index: new_len - 1,
+        };
+        self.ds.insert(&key, &value)?;
         Ok(())
     }
 
     pub fn pop(&self) -> Result<Option<T>, Error> {
-        let last_element = match self.tree.get_lt([self.prefix + 1])?.map(|(key, _)| key) {
-            Some(key) => key,
-            None => return Ok(None),
+        let new_len = self.len.fetch_sub(1, Ordering::SeqCst);
+        let key = Prefixed {
+            prefix: self.prefix,
+            index: new_len,
         };
 
-        let bytes = match self.tree.remove(last_element)? {
-            Some(bytes) => bytes,
-            None => return Ok(None), // value must been deleted between fetching len and this
-        };
-        let value = bincode::deserialize(&bytes).map_err(Error::DeSerializing)?;
-        Ok(Some(value))
+        Ok(self.ds.remove(&key)?)
     }
 }
