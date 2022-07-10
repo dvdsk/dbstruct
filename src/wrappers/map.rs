@@ -1,32 +1,42 @@
+use core::fmt;
 use std::marker::PhantomData;
 
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 
+use crate::traits::DataStore;
 use crate::Error;
 
-pub struct Map<K, V> {
-    phantom_key: PhantomData<K>,
-    phantom_val: PhantomData<V>,
-    tree: sled::Tree,
+pub struct Map<'a, Key, Value, DS>
+where
+    Key: Serialize,
+    Value: Serialize + DeserializeOwned,
+    DS: DataStore<Prefixed<'a, Key>, Value>,
+{
+    phantom_key: PhantomData<&'a Key>,
+    phantom_val: PhantomData<Value>,
+    tree: DS,
     prefix: u8,
 }
 
-// Perf reuse buffer by storing it in Map (saves allocation)?
-fn prefixed_key(prefix: u8, key: impl Serialize) -> Vec<u8> {
-    let mut key_buffer = Vec::new();
-    key_buffer.push(prefix);
-    {
-        let mut key_buffer = std::io::Cursor::new(&mut key_buffer[1..]);
-        bincode::serialize_into(&mut key_buffer, &key)
-            .map_err(Error::Serializing)
-            .unwrap();
-    }
-    key_buffer
+#[derive(Serialize)]
+pub struct Prefixed<'a, K>
+where
+    K: Serialize,
+{
+    prefix: u8,
+    key: &'a K,
 }
 
-impl<K: Serialize + DeserializeOwned, V: Serialize + DeserializeOwned> Map<K, V> {
-    pub fn new(tree: sled::Tree, prefix: u8) -> Self {
+impl<'a, Key, Value, E, DS> Map<'a, Key, Value, DS>
+where
+    E: fmt::Debug,
+    Error: From<E>,
+    Key: Serialize,
+    Value: Serialize + DeserializeOwned,
+    DS: DataStore<Prefixed<'a, Key>, Value, Error = E>,
+{
+    pub fn new(tree: DS, prefix: u8) -> Self {
         Self {
             phantom_key: PhantomData,
             phantom_val: PhantomData,
@@ -35,34 +45,27 @@ impl<K: Serialize + DeserializeOwned, V: Serialize + DeserializeOwned> Map<K, V>
         }
     }
 
+    // TODO! Figure out a way to use DataStore trait with prefixes
+    // probably gonna need to add a method to keep the index for the Vec wrapper
+    // might need to scan on creation (::new), could also specialize that to use less then
+    // when supported (sled etc). TODO figure out a way to represent that in a trait
+    //
     /// returns existing value if any was set
-    pub fn set(&self, key: &K, value: &V) -> Result<Option<V>, Error> {
-        let mut key_buffer = Vec::new();
-        key_buffer.push(self.prefix);
-        let mut key_buffer = std::io::Cursor::new(&mut key_buffer[1..]);
-        bincode::serialize_into(&mut key_buffer, key).map_err(Error::Serializing)?;
-
-        let key_bytes = key_buffer.into_inner();
-        let value_bytes = bincode::serialize(value).map_err(Error::Serializing)?;
-
-        let existing = match self.tree.insert(key_bytes, value_bytes)? {
-            Some(bytes) => bincode::deserialize(&bytes).map_err(Error::DeSerializing)?,
-            None => None,
+    pub fn set(&self, key: &'a Key, value: &'a Value) -> Result<Option<Value>, Error> {
+        let key = Prefixed {
+            prefix: self.prefix,
+            key,
         };
+        let existing = self.tree.insert(&key, value).unwrap();
         Ok(existing)
     }
 
-    pub fn get(&self, key: &K) -> Result<Option<V>, Error> {
-        let mut key_buffer = Vec::new();
-        key_buffer.push(self.prefix);
-        let mut key_buffer = std::io::Cursor::new(&mut key_buffer[1..]);
-        bincode::serialize_into(&mut key_buffer, key).map_err(Error::Serializing)?;
-        let key_bytes = key_buffer.into_inner();
-
-        let value = match self.tree.get(key_bytes)? {
-            Some(bytes) => bincode::deserialize(&bytes).map_err(Error::DeSerializing)?,
-            None => None,
+    pub fn get(&self, key: &'a Key) -> Result<Option<Value>, Error> {
+        let key = Prefixed {
+            prefix: self.prefix,
+            key,
         };
+        let value = self.tree.get(&key).unwrap();
         Ok(value)
     }
 }
