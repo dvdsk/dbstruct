@@ -3,8 +3,10 @@ pub use sled;
 #[doc(hidden)]
 pub use dbstruct_derive::*;
 
-mod wrappers;
 mod traits;
+mod stores;
+
+mod wrappers;
 pub use wrappers::{Vec, DefaultValue, DefaultTrait, OptionValue, Map};
 
 #[derive(thiserror::Error, Debug)]

@@ -1,38 +1,44 @@
+use core::fmt;
 use std::marker::PhantomData;
 
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 
 use crate::Error;
+use crate::traits::DataStore;
 
-pub struct DefaultTrait<T> {
+pub struct DefaultTrait<T, DS> 
+where 
+    T: Serialize + DeserializeOwned,
+    DS: DataStore<u8, T>
+{
     phantom: PhantomData<T>,
-    tree: sled::Tree,
+    ds: DS,
     key: u8,
 }
 
-impl<T> DefaultTrait<T>
+impl<T, E, DS> DefaultTrait<T, DS>
 where
+    E: fmt::Debug,
+    Error: From<E>,
     T: Serialize + DeserializeOwned + Default,
+    DS: DataStore<u8, T, Error = E>,
+
 {
-    pub fn new(tree: sled::Tree, key: u8) -> Self {
+    pub fn new(ds: DS, key: u8) -> Self {
         Self {
             phantom: PhantomData::default(),
-            tree,
+            ds,
             key,
         }
     }
 
     pub fn set(&mut self, value: &T) -> Result<(), Error> {
-        let bytes = bincode::serialize(value).map_err(Error::Serializing)?;
-        self.tree.insert([self.key], bytes)?;
+        self.ds.insert(&self.key, value)?;
         Ok(())
     }
 
-    pub fn get(&self) -> Result<Option<T>, Error> {
-        match self.tree.get([self.key])? {
-            Some(bytes) => Ok(bincode::deserialize(&bytes).map_err(Error::DeSerializing)?),
-            None => Ok(Default::default()),
-        }
+    pub fn get(&self) -> Result<T, Error> {
+        Ok(self.ds.get(&self.key)?.unwrap_or_default())
     }
 }
