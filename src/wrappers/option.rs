@@ -1,99 +1,54 @@
+use core::fmt;
 use std::marker::PhantomData;
 
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 
-use crate::{CompareAndSwapError, Error};
+use crate::{traits::DataStore, Error};
 
 // while defaultvalue requires T: Clone, this does not
-pub struct OptionValue<T> {
+pub struct OptionValue<T, DS>
+where
+    T: Serialize + DeserializeOwned,
+    DS: DataStore<u8, T>,
+{
     phantom: PhantomData<T>,
-    tree: sled::Tree,
+    ds: DS,
     key: u8,
 }
 
-impl<T: Serialize + DeserializeOwned> OptionValue<T> {
-    pub fn new(tree: sled::Tree, key: u8) -> Self {
+impl<T, E, DS> OptionValue<T, DS>
+where
+    E: fmt::Debug,
+    Error: From<E>,
+    T: Serialize + DeserializeOwned + Default,
+    DS: DataStore<u8, T, Error = E>,
+{
+    pub fn new(ds: DS, key: u8) -> Self {
         Self {
             phantom: PhantomData::default(),
-            tree,
+            ds,
             key,
         }
     }
 
     pub fn set(&mut self, value: &T) -> Result<(), Error> {
-        let bytes = bincode::serialize(value).map_err(Error::Serializing)?;
-        self.tree.insert([self.key], bytes)?;
+        self.ds.insert(&self.key, value)?;
         Ok(())
     }
 
     pub fn get(&self) -> Result<Option<T>, Error> {
-        match self.tree.get([self.key])? {
-            Some(bytes) => Ok(bincode::deserialize(&bytes).map_err(Error::DeSerializing)?),
-            None => Ok(None),
-        }
+        Ok(self.ds.get(&self.key)?)
     }
 
-    pub fn update(&self, op: impl FnMut(Option<T>) -> Option<T> + Clone) -> Result<(), Error> {
-        let mut res = Ok(());
-        let update = |old: Option<&[u8]>| match old {
-            None => {
-                let new = op.clone()(None);
-                match bincode::serialize(&new) {
-                    Ok(new_bytes) => Some(new_bytes),
-                    Err(e) => {
-                        res = Err(Error::Serializing(e));
-                        None
-                    }
-                }
-            }
-            Some(old) => match bincode::deserialize(old) {
-                Err(e) => {
-                    res = Err(Error::DeSerializing(e));
-                    Some(old.to_vec())
-                }
-                Ok(v) => {
-                    let new = op.clone()(v);
-                    match bincode::serialize(&new) {
-                        Ok(new_bytes) => Some(new_bytes),
-                        Err(e) => {
-                            res = Err(Error::Serializing(e));
-                            Some(old.to_vec())
-                        }
-                    }
-                }
-            },
-        };
-
-        self.tree.update_and_fetch([self.key], update)?;
+    /// if the value is None then no update is performed
+    pub fn update(&self, op: impl FnMut(T) -> T + Clone) -> Result<(), Error> {
+        self.ds.atomic_update(&self.key, op)?;
         Ok(())
     }
-}
 
-impl<T: Serialize + DeserializeOwned + PartialEq> OptionValue<T> {
-    pub fn compare_and_swap(
-        &self,
-        old: Option<T>,
-        new: Option<T>,
-    ) -> Result<Result<(), CompareAndSwapError<T>>, Error> {
-        // The default value is encoded as no value in the db. If the user is
-        // comparing agains the old vale change the call in the array
-        let old = if old.is_none() {
-            None
-        } else {
-            let bytes = bincode::serialize(&old).map_err(Error::Serializing)?;
-            Some(bytes)
-        };
-
-        // I save the default as None not to save space but keep initialization
-        // fast, otherwise the default value would need to be written for each
-        // dbstruct member. Therefore we do not take the time to encode the new
-        // as None even if new is the default value
-        let new = bincode::serialize(&new).map_err(Error::Serializing)?;
-        let res = self.tree.compare_and_swap([self.key], old, Some(new))?;
-        Ok(match res {
-            Ok(()) => Ok(()),
-            Err(e) => Err(e.try_into()?),
-        })
+    /// if the value is None then no update is performed
+    pub fn conditional_update(&self, old: T, new: T) -> Result<(), Error> {
+        Ok(self.ds.conditional_update(&self.key, &new, &old)?)
     }
 }

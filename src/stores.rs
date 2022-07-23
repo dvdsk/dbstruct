@@ -1,3 +1,3 @@
 mod sled;
 
-pub use sled::Sled;
+pub use self::sled::Sled;
