@@ -1,12 +1,10 @@
-use serde::{de::DeserializeOwned, Serialize};
-
-use crate::traits::BytesStore;
+use crate::traits::{ByteStore, byte_store};
 
 pub struct Sled {
     tree: sled::Tree,
 }
 
-impl BytesStore for Sled {
+impl ByteStore for Sled {
     type Error = sled::Error;
     type Bytes = sled::IVec;
 
@@ -22,18 +20,6 @@ impl BytesStore for Sled {
         self.tree.insert(key, val)
     }
 
-    // fn atomic_update<BArg, BRet>(
-    //     &self,
-    //     key: &[u8],
-    //     op: impl FnMut(Option<BArg>) -> BRet,
-    // ) -> Result<(), Self::Error>
-    // where
-    //     BArg: AsRef<[u8]>,
-    //     BRet: AsRef<[u8]> {
-
-    //     self.tree.fetch_and_update(key, op).map(|_| ())
-    // }
-
     fn conditional_update(
         &self,
         key: &[u8],
@@ -42,5 +28,14 @@ impl BytesStore for Sled {
     ) -> Result<(), Self::Error> {
         todo!()
     }
+}
 
+impl byte_store::Atomic for Sled {
+    fn atomic_update(
+        &self,
+        key: &[u8],
+        op: impl FnMut(Option<&[u8]>) -> Option<Vec<u8>>,
+    ) -> Result<(), Self::Error> {
+        self.tree.fetch_and_update(key, op).map(|_| ())
+    }
 }
