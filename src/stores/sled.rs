@@ -1,4 +1,4 @@
-use crate::traits::{ByteStore, byte_store};
+use crate::traits::{byte_store, ByteStore};
 
 pub struct Sled {
     tree: sled::Tree,
@@ -19,15 +19,6 @@ impl ByteStore for Sled {
     fn insert(&self, key: &[u8], val: &[u8]) -> Result<Option<Self::Bytes>, Self::Error> {
         self.tree.insert(key, val)
     }
-
-    fn conditional_update(
-        &self,
-        key: &[u8],
-        new: &[u8],
-        expected: &[u8],
-    ) -> Result<(), Self::Error> {
-        todo!()
-    }
 }
 
 impl byte_store::Atomic for Sled {
@@ -37,5 +28,16 @@ impl byte_store::Atomic for Sled {
         op: impl FnMut(Option<&[u8]>) -> Option<Vec<u8>>,
     ) -> Result<(), Self::Error> {
         self.tree.fetch_and_update(key, op).map(|_| ())
+    }
+
+    fn conditional_update(
+        &self,
+        key: &[u8],
+        new: &[u8],
+        expected: &[u8],
+    ) -> Result<(), Self::Error> {
+        let _ignore_compare_and_swap_res =
+            self.tree.compare_and_swap(key, Some(expected), Some(new))?;
+        Ok(())
     }
 }

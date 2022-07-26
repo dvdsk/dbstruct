@@ -4,7 +4,7 @@ use std::marker::PhantomData;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 
-use crate::traits::{data_store, DataStore}; 
+use crate::traits::{data_store, DataStore};
 use crate::Error;
 
 // while defaultvalue requires T: Clone, this does not
@@ -41,11 +41,6 @@ where
     pub fn get(&self) -> Result<Option<T>, Error> {
         Ok(self.ds.get(&self.key)?)
     }
-
-    /// if the value is None then no update is performed
-    pub fn conditional_update(&self, old: T, new: T) -> Result<(), Error> {
-        Ok(self.ds.conditional_update(&self.key, &new, &old)?)
-    }
 }
 
 impl<T, E, DS> OptionValue<T, DS>
@@ -55,8 +50,12 @@ where
     T: Serialize + DeserializeOwned + Default,
     DS: data_store::Atomic<u8, T, Error = E>,
 {
-    fn update(&self, op: impl FnMut(T) -> T + Clone) -> Result<(), Error> {
+    pub fn update(&self, op: impl FnMut(T) -> T + Clone) -> Result<(), Error> {
         self.ds.atomic_update(&self.key, op)?;
         Ok(())
+    }
+    /// if the value is None then no update is performed
+    pub fn conditional_update(&self, old: T, new: T) -> Result<(), Error> {
+        Ok(self.ds.conditional_update(&self.key, &new, &old)?)
     }
 }

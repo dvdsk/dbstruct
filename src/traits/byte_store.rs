@@ -1,8 +1,8 @@
-use serde::{de::DeserializeOwned, Serialize};
 use core::fmt;
+use serde::{de::DeserializeOwned, Serialize};
 
-use super::{Error, data_store};
 use super::data_store::DataStore;
+use super::{data_store, Error};
 
 pub trait ByteStore {
     type Error: fmt::Debug;
@@ -10,12 +10,6 @@ pub trait ByteStore {
     fn get(&self, key: &[u8]) -> Result<Option<Self::Bytes>, Self::Error>;
     fn remove(&self, key: &[u8]) -> Result<Option<Self::Bytes>, Self::Error>;
     fn insert(&self, key: &[u8], val: &[u8]) -> Result<Option<Self::Bytes>, Self::Error>;
-    fn conditional_update(
-        &self,
-        key: &[u8],
-        new: &[u8],
-        expected: &[u8],
-    ) -> Result<(), Self::Error>;
 }
 
 pub trait Atomic: ByteStore {
@@ -23,6 +17,12 @@ pub trait Atomic: ByteStore {
         &self,
         key: &[u8],
         op: impl FnMut(Option<&[u8]>) -> Option<Vec<u8>>,
+    ) -> Result<(), Self::Error>;
+    fn conditional_update(
+        &self,
+        key: &[u8],
+        new: &[u8],
+        expected: &[u8],
     ) -> Result<(), Self::Error>;
 }
 
@@ -62,14 +62,6 @@ where
             Some(bytes) => bincode::deserialize(bytes.as_ref()).map_err(Error::DeSerializing)?,
             None => None,
         })
-    }
-
-    fn conditional_update(&self, key: &K, new: &V, expected: &V) -> Result<(), Self::Error> {
-        let key = bincode::serialize(key).map_err(Error::SerializingKey)?;
-        let new = bincode::serialize(new).map_err(Error::SerializingValue)?;
-        let expected = bincode::serialize(expected).map_err(Error::SerializingValue)?;
-        BS::conditional_update(&self, &key, &new, &expected)?;
-        Ok(())
     }
 }
 
@@ -113,5 +105,12 @@ where
         };
         BS::atomic_update(&self, &key, bytes_op)?;
         res
+    }
+    fn conditional_update(&self, key: &K, new: &V, expected: &V) -> Result<(), Self::Error> {
+        let key = bincode::serialize(key).map_err(Error::SerializingKey)?;
+        let new = bincode::serialize(new).map_err(Error::SerializingValue)?;
+        let expected = bincode::serialize(expected).map_err(Error::SerializingValue)?;
+        BS::conditional_update(&self, &key, &new, &expected)?;
+        Ok(())
     }
 }
