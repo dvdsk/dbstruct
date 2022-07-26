@@ -20,7 +20,6 @@ where
 impl<T, E, DS> DefaultTrait<T, DS>
 where
     E: fmt::Debug,
-    Error: From<E>,
     T: Serialize + DeserializeOwned + Default,
     DS: DataStore<u8, T, Error = E>,
 
@@ -33,12 +32,12 @@ where
         }
     }
 
-    pub fn set(&mut self, value: &T) -> Result<(), Error> {
+    pub fn set(&mut self, value: &T) -> Result<(), Error<E>> {
         self.ds.insert(&self.key, value)?;
         Ok(())
     }
 
-    pub fn get(&self) -> Result<T, Error> {
+    pub fn get(&self) -> Result<T, Error<E>> {
         Ok(self.ds.get(&self.key)?.unwrap_or_default())
     }
 }

@@ -1,40 +1,61 @@
-use std::collections::HashMap;
-
-use dbstruct::dbstruct;
+use dbstruct::wrappers;
 use serde::{Deserialize, Serialize};
 
-use self::some::lib::ExampleType;
+#[derive(Serialize, Deserialize)]
+struct Song;
+#[derive(Serialize, Deserialize, Default)]
+pub struct Preferences;
+#[derive(Serialize, Deserialize)]
+pub struct Account;
 
-mod some {
-    use super::*;
-    pub mod lib {
-        use super::*;
-        #[derive(Debug, Serialize, Deserialize, PartialEq)]
-        pub struct ExampleType(pub u32);
+// macro input:
+#[allow(dead_code)]
+struct MacroInput {
+    // lets say the actual name is Db
+    pub queue: Vec<Song>,
+    //#[dbstruct(Default("true")]
+    pub playing: bool,
+    //#[dbstruct(Default)]
+    pub preferences: Preferences,
+    pub account: Option<Account>,
+}
+
+// note only make fields pub if they are in the
+// original struct
+// start macro output
+// note the macro would use absolute paths for everything
+pub struct MacroOutput {
+    ds: sled::Tree,
+}
+
+impl MacroOutput {
+    pub fn new() -> Result<Self, dbstruct::Error<sled::Error>> {
+        Ok(Self {
+            ds: sled::Config::default()
+                .temporary(true)
+                .open()?
+                .open_tree("MacroInput")?,
+        })
+    }
+
+    // pub fn queue(&self) -> wrappers::Vec<Song, sled::Tree> {
+    //     wrappers::Vec::new(self.ds, 0)
+    // }
+    pub fn playing(&self) -> wrappers::DefaultValue<bool, sled::Tree> {
+        wrappers::DefaultValue::new(self.ds.clone(), 1, false)
+    }
+    pub fn preferences(&self) -> wrappers::DefaultTrait<Preferences, sled::Tree> {
+        wrappers::DefaultTrait::new(self.ds.clone(), 2)
+    }
+    pub fn account(&self) -> wrappers::OptionValue<Account, sled::Tree> {
+        wrappers::OptionValue::new(self.ds.clone(), 3)
     }
 }
+// end macro output
 
-#[dbstruct]
-struct State {
-    // position: Option<ExampleType>,
-    // #[dbstruct(default(r#"String::from("test")"#))] // YAY this is possible
-    // #[dbstruct(no_idx)] // YAY this is possible
-    // feed: String,
+pub fn main() {
+    let db = MacroOutput::new().unwrap();
 
-    // #[dbstruct] // YAY this is possible
-    // numbers: Vec<u8>,
-    mappy: HashMap<u8,u16>,
-}
-
-fn main() {
-    let state = State::test().unwrap();
-    state.set_mappy(&1, &4201).unwrap();
-
-    // let position = Some(ExampleType(5));
-    // state.set_position(&position).unwrap();
-    // let feed = Some("Hello".to_owned());
-    // state.set_feed(&feed).unwrap();
-
-    // assert_eq!(position, state.position().unwrap());
-    // assert_eq!(feed, state.feed().unwrap());
+    let _preferences = db.preferences().get().unwrap();
+    println!("Hello, world!");
 }

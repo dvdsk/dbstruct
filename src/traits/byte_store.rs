@@ -2,7 +2,8 @@ use core::fmt;
 use serde::{de::DeserializeOwned, Serialize};
 
 use super::data_store::DataStore;
-use super::{data_store, Error};
+use super::data_store;
+use crate::Error;
 
 pub trait ByteStore {
     type Error: fmt::Debug;

@@ -21,8 +21,7 @@ where
 impl<T, E, DS> OptionValue<T, DS>
 where
     E: fmt::Debug,
-    Error: From<E>,
-    T: Serialize + DeserializeOwned + Default,
+    T: Serialize + DeserializeOwned,
     DS: DataStore<u8, T, Error = E>,
 {
     pub fn new(ds: DS, key: u8) -> Self {
@@ -33,12 +32,12 @@ where
         }
     }
 
-    pub fn set(&mut self, value: &T) -> Result<(), Error> {
+    pub fn set(&mut self, value: &T) -> Result<(), Error<E>> {
         self.ds.insert(&self.key, value)?;
         Ok(())
     }
 
-    pub fn get(&self) -> Result<Option<T>, Error> {
+    pub fn get(&self) -> Result<Option<T>, Error<E>> {
         Ok(self.ds.get(&self.key)?)
     }
 }
@@ -46,16 +45,15 @@ where
 impl<T, E, DS> OptionValue<T, DS>
 where
     E: fmt::Debug,
-    Error: From<E>,
     T: Serialize + DeserializeOwned + Default,
     DS: data_store::Atomic<u8, T, Error = E>,
 {
-    pub fn update(&self, op: impl FnMut(T) -> T + Clone) -> Result<(), Error> {
+    pub fn update(&self, op: impl FnMut(T) -> T + Clone) -> Result<(), Error<E>> {
         self.ds.atomic_update(&self.key, op)?;
         Ok(())
     }
     /// if the value is None then no update is performed
-    pub fn conditional_update(&self, old: T, new: T) -> Result<(), Error> {
+    pub fn conditional_update(&self, old: T, new: T) -> Result<(), Error<E>> {
         Ok(self.ds.conditional_update(&self.key, &new, &old)?)
     }
 }

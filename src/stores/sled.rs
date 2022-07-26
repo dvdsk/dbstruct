@@ -1,33 +1,29 @@
 use crate::traits::{byte_store, ByteStore};
 
-pub struct Sled {
-    tree: sled::Tree,
-}
-
-impl ByteStore for Sled {
+impl ByteStore for sled::Tree {
     type Error = sled::Error;
     type Bytes = sled::IVec;
 
     fn get(&self, key: &[u8]) -> Result<Option<Self::Bytes>, Self::Error> {
-        self.tree.get(key)
+        self.get(key)
     }
 
     fn remove(&self, key: &[u8]) -> Result<Option<Self::Bytes>, Self::Error> {
-        self.tree.remove(key)
+        self.remove(key)
     }
 
     fn insert(&self, key: &[u8], val: &[u8]) -> Result<Option<Self::Bytes>, Self::Error> {
-        self.tree.insert(key, val)
+        self.insert(key, val)
     }
 }
 
-impl byte_store::Atomic for Sled {
+impl byte_store::Atomic for sled::Tree {
     fn atomic_update(
         &self,
         key: &[u8],
         op: impl FnMut(Option<&[u8]>) -> Option<Vec<u8>>,
     ) -> Result<(), Self::Error> {
-        self.tree.fetch_and_update(key, op).map(|_| ())
+        self.fetch_and_update(key, op).map(|_| ())
     }
 
     fn conditional_update(
@@ -37,7 +33,7 @@ impl byte_store::Atomic for Sled {
         expected: &[u8],
     ) -> Result<(), Self::Error> {
         let _ignore_compare_and_swap_res =
-            self.tree.compare_and_swap(key, Some(expected), Some(new))?;
+            self.compare_and_swap(key, Some(expected), Some(new))?;
         Ok(())
     }
 }

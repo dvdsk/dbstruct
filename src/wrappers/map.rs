@@ -31,7 +31,6 @@ where
 impl<'a, Key, Value, E, DS> Map<'a, Key, Value, DS>
 where
     E: fmt::Debug,
-    Error: From<E>,
     Key: Serialize,
     Value: Serialize + DeserializeOwned,
     DS: DataStore<Prefixed<'a, Key>, Value, Error = E>,
@@ -46,7 +45,7 @@ where
     }
 
     /// returns existing value if any was set
-    pub fn set(&self, key: &'a Key, value: &'a Value) -> Result<Option<Value>, Error> {
+    pub fn set(&self, key: &'a Key, value: &'a Value) -> Result<Option<Value>, Error<E>> {
         let key = Prefixed {
             prefix: self.prefix,
             key,
@@ -55,7 +54,7 @@ where
         Ok(existing)
     }
 
-    pub fn get(&self, key: &'a Key) -> Result<Option<Value>, Error> {
+    pub fn get(&self, key: &'a Key) -> Result<Option<Value>, Error<E>> {
         let key = Prefixed {
             prefix: self.prefix,
             key,

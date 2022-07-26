@@ -32,7 +32,6 @@ pub struct Prefixed {
 impl<T, E, DS> Vec<T, DS>
 where
     E: fmt::Debug,
-    Error: From<E>,
     T: Serialize + DeserializeOwned,
     DS: DataStore<Prefixed, T, Error = E>,
 {
@@ -45,7 +44,7 @@ where
         }
     }
 
-    pub fn push(&mut self, value: T) -> Result<(), Error> {
+    pub fn push(&mut self, value: T) -> Result<(), Error<E>> {
         let new_len = self.len.fetch_add(1, Ordering::SeqCst);
         let key = Prefixed {
             prefix: self.prefix,
@@ -55,7 +54,7 @@ where
         Ok(())
     }
 
-    pub fn pop(&self) -> Result<Option<T>, Error> {
+    pub fn pop(&self) -> Result<Option<T>, Error<E>> {
         let new_len = self.len.fetch_sub(1, Ordering::SeqCst);
         let key = Prefixed {
             prefix: self.prefix,
