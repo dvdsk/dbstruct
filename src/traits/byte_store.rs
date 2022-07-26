@@ -38,7 +38,7 @@ where
 
     fn get(&self, key: &K) -> Result<Option<V>, Self::Error> {
         let key = bincode::serialize(key).map_err(Error::SerializingKey)?;
-        let val = BS::get(&self, &key)?;
+        let val = BS::get(self, &key)?;
         Ok(match val {
             Some(bytes) => bincode::deserialize(bytes.as_ref()).map_err(Error::DeSerializing)?,
             None => None,
@@ -47,7 +47,7 @@ where
 
     fn remove(&self, key: &K) -> Result<Option<V>, Self::Error> {
         let key = bincode::serialize(key).map_err(Error::SerializingKey)?;
-        let val = BS::remove(&self, &key)?;
+        let val = BS::remove(self, &key)?;
         Ok(match val {
             Some(bytes) => bincode::deserialize(bytes.as_ref()).map_err(Error::DeSerializing)?,
             None => None,
@@ -57,7 +57,7 @@ where
     fn insert(&self, key: &K, val: &V) -> Result<Option<V>, Self::Error> {
         let key = bincode::serialize(key).map_err(Error::SerializingKey)?;
         let val = bincode::serialize(val).map_err(Error::SerializingValue)?;
-        let existing = BS::insert(&self, &key, &val)?;
+        let existing = BS::insert(self, &key, &val)?;
         Ok(match existing {
             Some(bytes) => bincode::deserialize(bytes.as_ref()).map_err(Error::DeSerializing)?,
             None => None,
@@ -82,7 +82,6 @@ where
         let mut res = Ok(());
         let bytes_op = |old: Option<&[u8]>| -> Option<Vec<u8>> {
             if let Some(old) = old {
-                let old = old.as_ref();
                 match bincode::deserialize(old) {
                     Err(e) => {
                         res = Err(Error::DeSerializing(e));
@@ -103,14 +102,14 @@ where
                 None
             }
         };
-        BS::atomic_update(&self, &key, bytes_op)?;
+        BS::atomic_update(self, &key, bytes_op)?;
         res
     }
     fn conditional_update(&self, key: &K, new: &V, expected: &V) -> Result<(), Self::Error> {
         let key = bincode::serialize(key).map_err(Error::SerializingKey)?;
         let new = bincode::serialize(new).map_err(Error::SerializingValue)?;
         let expected = bincode::serialize(expected).map_err(Error::SerializingValue)?;
-        BS::conditional_update(&self, &key, &new, &expected)?;
+        BS::conditional_update(self, &key, &new, &expected)?;
         Ok(())
     }
 }

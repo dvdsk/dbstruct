@@ -10,7 +10,7 @@ where
 {
     type Error: fmt::Debug;
     fn get(&self, key: &K) -> Result<Option<V>, Self::Error>;
-    fn remove<'a>(&self, key: &'a K) -> Result<Option<V>, Self::Error>;
+    fn remove(&self, key: &K) -> Result<Option<V>, Self::Error>;
     fn insert<'a>(&self, key: &'a K, val: &'a V) -> Result<Option<V>, Self::Error>;
 }
 
