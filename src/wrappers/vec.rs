@@ -4,7 +4,7 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
 use serde::de::DeserializeOwned;
-use serde::Serialize;
+use serde::{Serialize, Deserialize};
 
 use crate::traits::DataStore;
 use crate::Error;
@@ -20,7 +20,7 @@ where
     len: Arc<AtomicUsize>,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize)]
 pub struct Prefixed {
     prefix: u8,
     index: usize,
