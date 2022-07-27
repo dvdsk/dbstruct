@@ -1,15 +1,18 @@
+use std::error::Error;
 use std::sync::atomic::AtomicUsize;
 use std::sync::Arc;
 
 use dbstruct::wrappers;
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq)]
 pub struct Song;
-#[derive(Serialize, Deserialize, Default)]
+#[derive(Serialize, Deserialize, Default, Debug, PartialEq, Eq)]
 pub struct Preferences;
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq)]
 pub struct Account;
+
+const PLAYING_DEFAULT: bool = true;
 
 // macro input:
 #[allow(dead_code)]
@@ -49,7 +52,7 @@ impl MacroOutput {
         wrappers::Vec::new(self.ds.clone(), 1, self.queue_len.clone())
     }
     pub fn playing(&self) -> wrappers::DefaultValue<bool, sled::Tree> {
-        wrappers::DefaultValue::new(self.ds.clone(), 2, false)
+        wrappers::DefaultValue::new(self.ds.clone(), 2, PLAYING_DEFAULT)
     }
     pub fn preferences(&self) -> wrappers::DefaultTrait<Preferences, sled::Tree> {
         wrappers::DefaultTrait::new(self.ds.clone(), 3)
@@ -60,9 +63,26 @@ impl MacroOutput {
 }
 // end macro output
 
-pub fn main() {
-    let db = MacroOutput::new().unwrap();
+pub fn main() -> Result<(), Box<dyn Error>>{
+    let db = MacroOutput::new()?;
 
-    let _preferences = db.preferences().get().unwrap();
+    let last = db.queue().pop()?;
+    assert_eq!(last, None);
+    db.queue().push(Song{})?;
+    let last = db.queue().pop()?;
+    assert_eq!(last, Some(Song{}));
+
+    let playing = db.playing().get()?;
+    assert_eq!(playing, PLAYING_DEFAULT);
+
+    let preferences = db.preferences().get()?;
+    assert_eq!(preferences, Default::default());
+
+    db.account().set(&Account{})?;
+    let account = db.account().get()?;
+    assert_eq!(account, Some(Account{}));
+
     println!("Hello, world!");
+
+    Ok(())
 }
