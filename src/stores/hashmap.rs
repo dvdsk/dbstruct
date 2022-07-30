@@ -2,9 +2,6 @@ use std::collections::HashMap;
 use std::hash;
 use std::sync::RwLock;
 
-use serde::de::DeserializeOwned;
-use serde::Serialize;
-
 use crate::traits::DataStore;
 
 #[derive(thiserror::Error, Debug)]
@@ -15,8 +12,8 @@ pub enum Error {
 
 impl<K, V> DataStore<K, V> for RwLock<HashMap<K, V>>
 where
-    K: Serialize + Eq + hash::Hash + Clone,
-    V: Serialize + DeserializeOwned + Clone,
+    K: Eq + hash::Hash + Clone,
+    V: Clone,
 {
     type Error = Error;
 
