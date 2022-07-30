@@ -1,10 +1,7 @@
 use proc_macro2::TokenStream;
-use proc_macro_error::{abort_call_site, proc_macro_error};
+use proc_macro_error::proc_macro_error;
 use quote::quote;
-use syn::punctuated::Punctuated;
-use syn::token::Comma;
-use syn::Data::Struct;
-use syn::{Attribute, DataStruct, DeriveInput, Field, Generics, Ident};
+use syn::{Ident, parse_macro_input, ItemStruct, Fields};
 
 use self::key::DbKey;
 
@@ -17,21 +14,12 @@ pub fn dbstruct(
     _attr: proc_macro::TokenStream,
     item: proc_macro::TokenStream,
 ) -> proc_macro::TokenStream {
-    let input: DeriveInput = syn::parse(item).unwrap();
-    let struct_name = &input.ident;
-    let gen = match input.data {
-        Struct(DataStruct {
-            fields: syn::Fields::Named(ref fields),
-            ..
-        }) => generate_struct(struct_name, &fields.named, &input.attrs, &input.generics),
-        _ => abort_call_site!("dbstruct only supports non-tuple structs"),
-    };
-
+    let input_struct = parse_macro_input!(item as syn::ItemStruct);
+    let gen = generate_struct(input_struct);
     gen.into()
 }
 
-fn tree_name(struct_name: &Ident, fields: &Punctuated<Field, Comma>) -> String {
-    // use syn::{Type, TypePath};
+fn tree_name(struct_name: &Ident, fields: &Fields) -> String {
     let mut res = String::new();
     res.push_str(&struct_name.to_string());
     for field in fields {
@@ -43,31 +31,28 @@ fn tree_name(struct_name: &Ident, fields: &Punctuated<Field, Comma>) -> String {
 }
 
 fn generate_struct(
-    name: &Ident,
-    fields: &Punctuated<Field, Comma>,
-    _attrs: &[Attribute],
-    _generics: &Generics,
+    input: ItemStruct,
 ) -> TokenStream {
-    let keys = DbKey::new(fields).unwrap();
-    let field_methods: Vec<_> = fields
-        .into_iter()
+    let keys = DbKey::new(&input.fields).unwrap();
+    let field_methods: Vec<_> = input.fields
+        .iter()
         .map(|f| (f, &keys))
         .map(methods::generate)
         .collect();
-    let tree_name = tree_name(name, fields);
+    let tree_name = tree_name(&input.ident, &input.fields);
 
     quote! {
-        struct #name {
+        struct #input.ident {
             tree: sled::Tree,
         }
 
-        impl std::fmt::Debug for #name {
+        impl std::fmt::Debug for #input.ident {
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
                 write!(f, "dbstruct")
             }
         }
 
-        impl #name {
+        impl #input.ident {
             pub fn test() -> Result<Self, dbstruct::Error> {
                 let db = sled::Config::default()
                     .temporary(true)

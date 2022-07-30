@@ -1,15 +1,13 @@
 use proc_macro2::TokenStream;
 use quote::quote;
 use std::collections::HashMap;
-use syn::punctuated::Punctuated;
-use syn::token::Comma;
-use syn::{Field, Ident};
+use syn::{Ident, Fields};
 
 type Prefix = u8;
 pub struct DbKey(HashMap<Ident, Prefix>);
 
 impl DbKey {
-    pub(crate) fn new(fields: &Punctuated<Field, Comma>) -> Result<Self, &'static str> {
+    pub(crate) fn new(fields: &Fields) -> Result<Self, &'static str> {
         let mut idents: Vec<_> = fields
             .iter()
             .map(|f| f.ident.clone())

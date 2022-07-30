@@ -1,0 +1,5 @@
+error: expected `struct`
+ --> tests/ui/item_is_not_a_struct.rs:4:1
+  |
+4 | fn F() {}
+  | ^^
