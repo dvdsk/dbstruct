@@ -1,8 +1,8 @@
 use core::fmt;
 use std::marker::PhantomData;
 
-use serde::de::DeserializeOwned;
 use serde::Serialize;
+use serde::de::DeserializeOwned;
 
 use crate::traits::{data_store, DataStore};
 use crate::Error;
@@ -10,8 +10,7 @@ use crate::Error;
 // while defaultvalue requires T: Clone, this does not
 pub struct OptionValue<T, DS>
 where
-    T: Serialize + DeserializeOwned,
-    DS: DataStore<u8, T>,
+    DS: DataStore,
 {
     phantom: PhantomData<T>,
     ds: DS,
@@ -22,7 +21,7 @@ impl<T, E, DS> OptionValue<T, DS>
 where
     E: fmt::Debug,
     T: Serialize + DeserializeOwned,
-    DS: DataStore<u8, T, Error = E>,
+    DS: DataStore<Error = E>,
 {
     pub fn new(ds: DS, key: u8) -> Self {
         Self {
@@ -45,8 +44,8 @@ where
 impl<T, E, DS> OptionValue<T, DS>
 where
     E: fmt::Debug,
-    T: Serialize + DeserializeOwned + Default,
-    DS: data_store::Atomic<u8, T, Error = E>,
+    T: Serialize + DeserializeOwned,
+    DS: data_store::Atomic<Error = E>,
 {
     pub fn update(&self, op: impl FnMut(T) -> T + Clone) -> Result<(), Error<E>> {
         self.ds.atomic_update(&self.key, op)?;

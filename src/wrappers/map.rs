@@ -11,7 +11,7 @@ pub struct Map<'a, Key, Value, DS>
 where
     Key: Serialize,
     Value: Serialize + DeserializeOwned,
-    DS: DataStore<Prefixed<'a, Key>, Value>,
+    DS: DataStore,
 {
     phantom_key: PhantomData<&'a Key>,
     phantom_val: PhantomData<Value>,
@@ -33,7 +33,7 @@ where
     E: fmt::Debug,
     Key: Serialize,
     Value: Serialize + DeserializeOwned,
-    DS: DataStore<Prefixed<'a, Key>, Value, Error = E>,
+    DS: DataStore<Error = E>,
 {
     pub fn new(tree: DS, prefix: u8) -> Self {
         Self {

@@ -11,8 +11,7 @@ use crate::Error;
 
 pub struct Vec<T, DS>
 where
-    T: Serialize + DeserializeOwned,
-    DS: DataStore<Prefixed, T>,
+    DS: DataStore,
 {
     phantom: PhantomData<T>,
     ds: DS,
@@ -33,7 +32,7 @@ impl<T, E, DS> Vec<T, DS>
 where
     E: fmt::Debug,
     T: Serialize + DeserializeOwned,
-    DS: DataStore<Prefixed, T, Error = E>,
+    DS: DataStore<Error = E>,
 {
     pub fn new(ds: DS, prefix: u8, len: Arc<AtomicUsize>) -> Self {
         Self {
@@ -75,15 +74,12 @@ where
 
 #[cfg(test)]
 mod tests {
-    use std::collections::HashMap;
-    use std::hash;
-    use std::sync::RwLock;
-
+    use crate::stores;
     use super::*;
 
-    type TestVec<T> = Vec<T, RwLock<HashMap<Prefixed, T>>>;
-    fn empty<T: Serialize + DeserializeOwned + hash::Hash + Clone>() -> TestVec<T> {
-        let ds: RwLock<HashMap<Prefixed, T>> = RwLock::new(HashMap::new());
+    type TestVec<T> = Vec<T, stores::HashMap>;
+    fn empty<T: Clone + Serialize + DeserializeOwned>() -> TestVec<T> {
+        let ds = stores::HashMap::new();
         let len = Arc::new(AtomicUsize::new(0));
         let vec = Vec::new(ds, 1, len);
         vec

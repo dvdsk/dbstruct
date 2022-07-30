@@ -1,16 +1,16 @@
 use core::fmt;
 use std::marker::PhantomData;
 
-use serde::de::DeserializeOwned;
 use serde::Serialize;
+use serde::de::DeserializeOwned;
 
 use crate::Error;
 use crate::traits::DataStore;
 
 pub struct DefaultTrait<T, DS> 
 where 
-    T: Serialize + DeserializeOwned,
-    DS: DataStore<u8, T>
+    T: Serialize + DeserializeOwned + Default,
+    DS: DataStore
 {
     phantom: PhantomData<T>,
     ds: DS,
@@ -21,7 +21,7 @@ impl<T, E, DS> DefaultTrait<T, DS>
 where
     E: fmt::Debug,
     T: Serialize + DeserializeOwned + Default,
-    DS: DataStore<u8, T, Error = E>,
+    DS: DataStore<Error = E>,
 
 {
     pub fn new(ds: DS, key: u8) -> Self {

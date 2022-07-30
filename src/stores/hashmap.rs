@@ -1,8 +1,7 @@
-use std::collections::HashMap;
-use std::hash;
+use std::collections;
 use std::sync::RwLock;
 
-use crate::traits::DataStore;
+use crate::traits::ByteStore;
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
@@ -10,39 +9,45 @@ pub enum Error {
     Poisoned,
 }
 
-impl<K, V> DataStore<K, V> for RwLock<HashMap<K, V>>
-where
-    K: Eq + hash::Hash + Clone,
-    V: Clone,
-{
-    type Error = Error;
+pub struct HashMap(RwLock<collections::HashMap<Vec<u8>, Vec<u8>>>); 
 
-    fn get(&self, key: &K) -> Result<Option<V>, Self::Error> {
-        let map = self.read().map_err(|_| Self::Error::Poisoned)?;
+impl HashMap {
+    pub fn new() -> Self {
+        Self(RwLock::new(collections::HashMap::new()))
+    }
+}
+
+impl ByteStore for HashMap {
+    type Error = Error;
+    type Bytes = Vec<u8>;
+
+    fn get(&self, key: &[u8]) -> Result<Option<Self::Bytes>, Self::Error> {
+        let map = self.0.read().map_err(|_| Self::Error::Poisoned)?;
         Ok(map.get(key).cloned())
     }
 
-    fn remove(&self, key: &K) -> Result<Option<V>, Self::Error> {
-        let mut map = self.write().map_err(|_| Self::Error::Poisoned)?;
+    fn remove(&self, key: &[u8]) -> Result<Option<Self::Bytes>, Self::Error> {
+        let mut map = self.0.write().map_err(|_| Self::Error::Poisoned)?;
         Ok(map.remove(key))
     }
 
-    fn insert<'a>(&self, key: &'a K, val: &'a V) -> Result<Option<V>, Self::Error> {
-        let mut map = self.write().map_err(|_| Self::Error::Poisoned)?;
-        Ok(map.insert(key.clone(), val.clone()))
+    fn insert(&self, key: &[u8], val: &[u8]) -> Result<Option<Self::Bytes>, Self::Error> {
+        let mut map = self.0.write().map_err(|_| Self::Error::Poisoned)?;
+        Ok(map.insert(key.to_vec(), val.to_vec()))
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::HashMap;
+    use crate::traits::DataStore;
 
     #[test]
     fn get_then_insert() {
-        let ds = RwLock::new(HashMap::new());
+        let ds = HashMap::new();
         let existing = ds.insert(&1, &2).unwrap();
         assert_eq!(existing, None);
-        let val = ds.remove(&1).unwrap().unwrap();
+        let val: u8 = ds.remove(&1).unwrap().unwrap();
         assert_eq!(val, 2);
     }
 }
