@@ -75,12 +75,17 @@ fn parse(
                 tokens.next();
                 return Ok(WrapperAttributes::DefaultTrait);
             }
-            Some(TokenTree::Punct(punct)) if punct.as_char() == '=' => {
-                let expr = tokens.nth(1).ok_or(Error::MissingDefaultValue)?;
-                let expr: syn::Expr =
-                    syn::parse2(expr.to_token_stream()).map_err(Error::ValueNotExpression)?;
-                return Ok(WrapperAttributes::DefaultValue { expr });
-            }
+            Some(TokenTree::Punct(punct)) if punct.as_char() == '=' => match tokens.nth(1) {
+                None => return Err(Error::MissingDefaultValue),
+                Some(TokenTree::Literal(lit)) => {
+                    let expr = lit.to_string();
+                    let expr = dbg!(expr.trim_matches('"'));
+                    let expr: syn::Expr = syn::parse_str(expr)
+                        .map_err(Error::ValueNotExpression)?;
+                    return Ok(WrapperAttributes::DefaultValue { expr });
+                }
+                Some(_) => return Err(Error::InvalidDefaultArg),
+            },
             _ => return Err(Error::InvalidDefaultArg),
         },
         _ => return Err(Error::InvalidSyntax(first_token)),
@@ -185,7 +190,7 @@ mod tests {
         #[test]
         fn literal_expression() {
             let attributes: &[syn::Attribute] = &[
-                syn::parse_quote!(#[dbstruct(Default=5u8)]),
+                syn::parse_quote!(#[dbstruct(Default="5u8")]),
                 syn::parse_quote!(#[b]),
             ];
             let ty_u8: syn::Type = syn::parse_quote!(u8);
@@ -197,7 +202,7 @@ mod tests {
         #[test]
         fn function_call() {
             let attributes: &[syn::Attribute] = &[
-                syn::parse_quote!(#[dbstruct(Default=format!("hello, {}", 5u8))]),
+                syn::parse_quote!(#[dbstruct(Default="format!(\"hello, {}\", 5u8)")]),
                 syn::parse_quote!(#[b]),
             ];
             let ty_u8: syn::Type = syn::parse_quote!(u8);
@@ -206,5 +211,4 @@ mod tests {
             assert_eq!(wrapper, Wrapper::DefaultValue { ty: ty_u8, value })
         }
     }
-
 }
