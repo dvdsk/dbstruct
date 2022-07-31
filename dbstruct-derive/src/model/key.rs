@@ -4,6 +4,7 @@ use std::collections::HashMap;
 use syn::{Ident, Fields};
 
 type Prefix = u8;
+#[derive(Debug)]
 pub struct DbKey(HashMap<Ident, Prefix>);
 
 impl DbKey {

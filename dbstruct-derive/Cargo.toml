@@ -11,6 +11,7 @@ quote = "1"
 heck = "0.4.0"
 proc-macro2 = "1"
 proc-macro-error = "1"
+thiserror = "1"
 
 [lib]
 proc-macro = true
