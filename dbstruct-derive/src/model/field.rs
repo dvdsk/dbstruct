@@ -1,5 +1,6 @@
 mod wrapper;
 use wrapper::Wrapper;
+pub use wrapper::Error;
 
 #[derive(Debug)]
 pub struct Field {
@@ -8,16 +9,17 @@ pub struct Field {
     wrapper: Wrapper,
 }
 
-impl From<syn::Field> for Field {
-    fn from(mut field: syn::Field) -> Self {
-        let wrapper = Wrapper::try_from(&mut field.attrs, field.ty);
-        todo!("error handling for wrapper")
-        // Self {
-        //     ident: field
-        //         .ident
-        //         .expect("every struct field should have an Ident"),
-        //     vis: field.vis,
-        //     wrapper, 
-        // }
+impl TryFrom<syn::Field> for Field {
+    type Error = Error;
+    fn try_from(mut field: syn::Field) -> Result<Self, Error> {
+        let wrapper = Wrapper::try_from(&mut field.attrs, field.ty)?;
+
+        Ok(Self {
+            ident: field
+                .ident
+                .expect("every struct field should have an Ident"),
+            vis: field.vis,
+            wrapper, 
+        })
     }
 }
