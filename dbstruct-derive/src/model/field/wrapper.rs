@@ -1,8 +1,7 @@
 use std::iter::Peekable;
 use std::mem;
 
-use proc_macro2::{Span, TokenTree};
-use syn::spanned::Spanned;
+use proc_macro2::TokenTree;
 
 mod errors;
 use errors::GetSpan;
@@ -18,7 +17,7 @@ pub enum Wrapper {
 }
 
 pub enum WrapperAttributes {
-    DefaultTrait,
+    DefaultTrait { span: proc_macro2::Span },
     DefaultValue { expr: syn::Expr },
 }
 
@@ -51,26 +50,29 @@ fn parse(
         TokenTree::Ident(ident) if ident.to_string() == "Default" => match tokens.peek() {
             None => {
                 tokens.next();
-                return Ok(WrapperAttributes::DefaultTrait);
+                return Ok(WrapperAttributes::DefaultTrait { span: ident.span() });
             }
             Some(TokenTree::Punct(punct)) if punct.as_char() == ',' => {
                 tokens.next();
-                return Ok(WrapperAttributes::DefaultTrait);
+                return Ok(WrapperAttributes::DefaultTrait { span: ident.span() });
             }
-            Some(TokenTree::Punct(punct)) if punct.as_char() == '=' => match tokens.nth(1) {
+            Some(TokenTree::Punct(punct)) if punct.as_char() == '=' => {
+                let punct = punct.span();
+                match tokens.nth(1) {
                 None => return Err(MissingDefaultValue.with_span(punct)),
-                Some(tree @ TokenTree::Literal(lit)) => {
-                    let expr = dbg!(lit.to_string());
-                    let expr = dbg!(unescape_literal(&expr));
-                    let expr: syn::Expr =
-                        syn::parse_str(&expr).map_err(ValueNotExpression.with_span(tree))?;
+                Some(TokenTree::Literal(lit)) => {
+                    let expr = lit.to_string();
+                    let expr = unescape_literal(&expr);
+                    let expr: syn::Expr = syn::parse_str(&expr)
+                        .map_err(|err| ValueNotExpression(err).with_span(lit))?;
                     return Ok(WrapperAttributes::DefaultValue { expr });
                 }
                 Some(other) => return Err(InvalidDefaultArg.with_span(other)),
-            },
-            _ => return Err(InvalidDefaultArg.with_span(tokens)),
+            }},
+            Some(_other) => return Err(InvalidDefaultArg.with_span(_other)),
         },
-        _ => return Err(InvalidSyntax(first_token)),
+        TokenTree::Ident(ident) => return Err(NotAWrapper(ident).has_span()),
+        _ => return Err(InvalidSyntax(first_token).has_span()),
     }
 }
 
@@ -110,31 +112,34 @@ impl Wrapper {
 
         let attribute = relevant.pop().map(as_wrapper).transpose()?.flatten();
         if let Some(other) = relevant.pop() {
-            return Err(MultipleAttributes.with_span(other));
+            return Err(MultipleAttributes.with_span(&other));
         }
 
         Ok(match (outer_type(&ty)?.as_str(), attribute) {
             ("Vec", None) => Self::Vec { ty },
             ("Vec", Some(_)) => todo!("Vec with an attribute"),
             ("Option", None) => Self::Option { ty },
-            ("Option", Some(DefaultTrait)) => return Err(OptionNotAllowed.with_span(attribute)),
+            // in the future use proc_macro2::span::join() to give an
+            // error at the type and the default trait attribute
+            ("Option", Some(DefaultTrait { span })) => return Err(OptionNotAllowed.with_span(span)),
             ("Option", Some(_)) => todo!("Option with default value"),
             ("HashMap", None) => Self::Map { ty },
             ("HashMap", Some(_)) => todo!("Hashmap with an attribute"),
             (_, None) => return Err(NoDefaultType.with_span(ty)),
-            (_, Some(DefaultTrait)) => Self::DefaultTrait { ty },
+            (_, Some(DefaultTrait { .. })) => Self::DefaultTrait { ty },
             (_, Some(DefaultValue { expr })) => Self::DefaultValue { ty, value: expr },
         })
     }
 }
 
 fn outer_type(type_path: &syn::Type) -> Result<String, Error> {
+    use ErrorVariant::EmptyTypeForbidden;
     match type_path {
         syn::Type::Path(syn::TypePath { path, .. }) => Ok(path
             .segments
             .iter()
             .next()
-            .ok_or(Error::EmptyTypeForbidden)?
+            .ok_or(EmptyTypeForbidden.with_span(type_path))?
             .ident
             .to_string()),
         _ => unreachable!("None path types probably do not occur in structs"),

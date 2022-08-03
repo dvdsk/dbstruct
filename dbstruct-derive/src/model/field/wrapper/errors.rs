@@ -2,7 +2,6 @@ use core::fmt;
 
 use proc_macro2::Span;
 
-
 #[derive(thiserror::Error, Debug)]
 pub enum ErrorVariant {
     #[error("Can only have a single dbstruct attribute on a struct field")]
@@ -36,9 +35,56 @@ pub trait GetSpan {
     fn span(&self) -> Span;
 }
 
-impl GetSpan for proc_macro2::Punct {
+impl GetSpan for proc_macro2::Span {
     fn span(&self) -> Span {
-        proc_macro2::Punct::span(self)
+        *self
+    }
+}
+
+macro_rules! impl_getspan {
+    ($type:ty) => {
+        impl GetSpan for $type {
+            fn span(&self) -> Span {
+                self.span()
+            }
+        }
+        impl GetSpan for &$type {
+            fn span(&self) -> Span {
+                (*self).span()
+            }
+        }
+    };
+}
+
+impl_getspan!(proc_macro2::Punct);
+impl_getspan!(proc_macro2::Literal);
+impl_getspan!(proc_macro2::TokenTree);
+
+macro_rules! impl_getspan_syn {
+    ($type:ty) => {
+        impl GetSpan for $type {
+            fn span(&self) -> Span {
+                syn::spanned::Spanned::span(self)
+            }
+        }
+        impl GetSpan for &$type {
+            fn span(&self) -> Span {
+                syn::spanned::Spanned::span(*self)
+            }
+        }
+    }
+}
+
+impl_getspan_syn!(syn::Type);
+impl_getspan_syn!(syn::Attribute);
+
+impl GetSpan for super::WrapperAttributes {
+    fn span(&self) -> Span {
+        use super::WrapperAttributes::*;
+        match self {
+            DefaultTrait { span } => *span,
+            DefaultValue { expr } => syn::spanned::Spanned::span(expr),
+        }
     }
 }
 
@@ -47,6 +93,13 @@ impl ErrorVariant {
         Error {
             variant: self,
             span: Some(item.span()),
+        }
+    }
+
+    pub(super) fn has_span(self) -> Error {
+        Error {
+            variant: self,
+            span: None,
         }
     }
 }
@@ -64,8 +117,8 @@ impl fmt::Display for Error {
 }
 
 impl Error {
-    fn span(&self) -> Span {
-        match (self.variant, self.span) {
+    pub fn span(&self) -> Span {
+        match (&self.variant, self.span) {
             (ErrorVariant::NotAWrapper(item), None) => item.span(),
             (ErrorVariant::InvalidSyntax(item), None) => item.span(),
             (ErrorVariant::ValueNotExpression(item), None) => item.span(),

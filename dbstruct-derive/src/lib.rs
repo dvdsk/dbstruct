@@ -14,7 +14,7 @@ pub fn dbstruct(
     item: proc_macro::TokenStream,
 ) -> proc_macro::TokenStream {
     let input = parse_macro_input!(item as syn::ItemStruct);
-    let model = Model::from(input);
+    let model = Model::try_from(input).unwrap();
     let ir = Ir::from(model);
     let code = ir.codegen();
     code.into()

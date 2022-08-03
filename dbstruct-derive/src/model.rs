@@ -3,7 +3,6 @@ use field::Field;
 
 mod key;
 use key::DbKey;
-use proc_macro2::TokenStream;
 use proc_macro_error::emit_error;
 
 #[derive(Debug, thiserror::Error)]
@@ -21,6 +20,8 @@ pub struct Model {
 impl TryFrom<syn::ItemStruct> for Model {
     type Error = Error;
     fn try_from(input: syn::ItemStruct) -> Result<Self, Self::Error> {
+        let keys = DbKey::new(&input.fields).unwrap();
+
         let mut fields = Vec::new();
         for field in input.fields.into_iter().map(Field::try_from) {
             let err = match field {
@@ -31,18 +32,11 @@ impl TryFrom<syn::ItemStruct> for Model {
                 Err(err) => err,
             };
 
-            // emit_error!()
-            todo!("emit error")
+            emit_error!(err.span(), err);
         }
         Ok(Self {
-            keys: DbKey::new(&input.fields).unwrap(),
+            keys,
             fields,
         })
-    }
-}
-
-impl Model {
-    pub fn into_token_stream(self) -> TokenStream {
-        todo!()
     }
 }
