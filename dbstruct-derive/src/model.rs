@@ -1,9 +1,12 @@
 mod field;
-use field::Field;
+pub use field::Field;
+pub use field::Wrapper;
 
 mod key;
-use key::DbKey;
+pub use key::DbKey;
+use proc_macro2::Ident;
 use proc_macro_error::emit_error;
+use syn::Visibility;
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
@@ -13,8 +16,10 @@ pub enum Error {
 
 #[derive(Debug)]
 pub struct Model {
-    fields: Vec<Field>,
-    keys: DbKey,
+    pub ident: Ident,
+    pub vis: Visibility,
+    pub fields: Vec<Field>,
+    pub keys: DbKey,
 }
 
 impl TryFrom<syn::ItemStruct> for Model {
@@ -35,6 +40,8 @@ impl TryFrom<syn::ItemStruct> for Model {
             emit_error!(err.span(), err);
         }
         Ok(Self {
+            vis: input.vis,
+            ident: input.ident,
             keys,
             fields,
         })

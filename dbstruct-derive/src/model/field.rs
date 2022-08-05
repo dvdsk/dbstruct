@@ -1,12 +1,18 @@
 mod wrapper;
-use wrapper::Wrapper;
+pub use wrapper::Wrapper;
 pub use wrapper::Error;
 
 #[derive(Debug)]
 pub struct Field {
-    ident: syn::Ident,
-    vis: syn::Visibility,
-    wrapper: Wrapper,
+    pub ident: syn::Ident,
+    pub vis: syn::Visibility,
+    pub wrapper: Wrapper,
+}
+
+impl Field {
+    pub fn is_vec(&self) -> bool {
+        matches!(&self.wrapper, Wrapper::Vec { ty })
+    }
 }
 
 impl TryFrom<syn::Field> for Field {

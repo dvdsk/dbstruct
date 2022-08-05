@@ -2,9 +2,11 @@ use proc_macro_error::proc_macro_error;
 use syn::parse_macro_input;
 
 mod model;
-use model::Model;
+use model::{Model, DbKey};
 mod ir;
 use ir::Ir;
+mod codegen;
+use codegen::codegen;
 // mod methods;
 
 #[proc_macro_attribute]
@@ -14,9 +16,10 @@ pub fn dbstruct(
     item: proc_macro::TokenStream,
 ) -> proc_macro::TokenStream {
     let input = parse_macro_input!(item as syn::ItemStruct);
+    let keys = DbKey::new(&input.fields).unwrap();
     let model = Model::try_from(input).unwrap();
-    let ir = Ir::from(model);
-    let code = ir.codegen();
+    let ir = Ir::from(model, &keys);
+    let code = codegen(ir);
     code.into()
 }
 

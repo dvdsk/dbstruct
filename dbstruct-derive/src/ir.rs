@@ -1,40 +1,38 @@
 use proc_macro2::TokenStream;
 
-use crate::model::Model;
+mod accessor;
+mod new_method;
+mod struct_def;
 
-pub struct Accessor {
-    pub vis: syn::Visibility,
-    pub ident: syn::Ident,
-    pub returns: syn::Type,
-    pub body: syn::Stmt,
-}
+use accessor::Accessor;
+use new_method::NewMethod;
+pub use struct_def::Struct;
+use syn::parse_quote;
 
-pub struct Struct {
-    pub ident: syn::Ident,
-    pub vis: syn::Visibility,
-    pub vars: Vec<syn::Field>,
-}
-
-pub struct NewMethod {
-    pub init_vars: Vec<syn::Local>,
-    pub vars: Vec<syn::FieldValue>,
-}
+use crate::model::{DbKey, Model};
 
 pub struct Ir {
-    definition: Struct,
+    pub definition: Struct,
     new: NewMethod,
     accessors: Vec<Accessor>,
     bounds: syn::WhereClause,
 }
 
-impl From<Model> for Ir {
-    fn from(model: Model) -> Self {
-        todo!()
-    }
-}
-
 impl Ir {
-    pub fn codegen(self) -> TokenStream {
-        todo!()
+    pub fn from(model: Model, keys: &DbKey) -> Self {
+        let definition = Struct::from(&model);
+        let new = NewMethod::from(&model, &definition);
+        let accessors = model
+            .fields
+            .into_iter()
+            .map(|f| Accessor::from(f, keys))
+            .collect();
+        let bounds: syn::WhereClause = parse_quote!(DS: DataStore + Clone);
+        Self {
+            definition,
+            new,
+            accessors,
+            bounds,
+        }
     }
 }

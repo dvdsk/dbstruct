@@ -1,14 +1,14 @@
 use proc_macro2::TokenStream;
 use quote::quote;
 use std::collections::HashMap;
-use syn::{Ident, Fields};
+use syn::Ident;
 
 type Prefix = u8;
 #[derive(Debug)]
 pub struct DbKey(HashMap<Ident, Prefix>);
 
 impl DbKey {
-    pub(crate) fn new(fields: &Fields) -> Result<Self, &'static str> {
+    pub(crate) fn new(fields: &syn::Fields) -> Result<Self, &'static str> {
         let mut idents: Vec<_> = fields
             .iter()
             .map(|f| f.ident.clone())
@@ -32,7 +32,7 @@ impl DbKey {
     //     [self.prefix(ident)]
     // }
 
-    fn prefix(&self, ident: &Ident) -> Prefix {
+    pub fn prefix(&self, ident: &Ident) -> Prefix {
         *self
             .0
             .get(ident)
