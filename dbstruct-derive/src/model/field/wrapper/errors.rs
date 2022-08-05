@@ -29,6 +29,8 @@ pub enum ErrorVariant {
     ValueNotExpression(syn::parse::Error),
     #[error("Invalid argument for the Default attribute")]
     InvalidDefaultArg,
+    #[error("HashMap is expected two have generic types key and value")]
+    NotHashMapTypes,
 }
 
 pub trait GetSpan {

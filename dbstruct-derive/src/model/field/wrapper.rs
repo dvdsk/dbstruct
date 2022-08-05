@@ -9,11 +9,23 @@ pub use errors::{Error, ErrorVariant};
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum Wrapper {
-    Vec { ty: syn::Type },
-    Map { ty: syn::Type },
-    DefaultTrait { ty: syn::Type },
-    DefaultValue { ty: syn::Type, value: syn::Expr },
-    Option { ty: syn::Type },
+    Vec {
+        ty: syn::Type,
+    },
+    Map {
+        key_ty: syn::Type,
+        val_ty: syn::Type,
+    },
+    DefaultTrait {
+        ty: syn::Type,
+    },
+    DefaultValue {
+        ty: syn::Type,
+        value: syn::Expr,
+    },
+    Option {
+        ty: syn::Type,
+    },
 }
 
 pub enum WrapperAttributes {
@@ -59,16 +71,17 @@ fn parse(
             Some(TokenTree::Punct(punct)) if punct.as_char() == '=' => {
                 let punct = punct.span();
                 match tokens.nth(1) {
-                None => return Err(MissingDefaultValue.with_span(punct)),
-                Some(TokenTree::Literal(lit)) => {
-                    let expr = lit.to_string();
-                    let expr = unescape_literal(&expr);
-                    let expr: syn::Expr = syn::parse_str(&expr)
-                        .map_err(|err| ValueNotExpression(err).with_span(lit))?;
-                    return Ok(WrapperAttributes::DefaultValue { expr });
+                    None => return Err(MissingDefaultValue.with_span(punct)),
+                    Some(TokenTree::Literal(lit)) => {
+                        let expr = lit.to_string();
+                        let expr = unescape_literal(&expr);
+                        let expr: syn::Expr = syn::parse_str(&expr)
+                            .map_err(|err| ValueNotExpression(err).with_span(lit))?;
+                        return Ok(WrapperAttributes::DefaultValue { expr });
+                    }
+                    Some(other) => return Err(InvalidDefaultArg.with_span(other)),
                 }
-                Some(other) => return Err(InvalidDefaultArg.with_span(other)),
-            }},
+            }
             Some(_other) => return Err(InvalidDefaultArg.with_span(_other)),
         },
         TokenTree::Ident(ident) => return Err(NotAWrapper(ident).has_span()),
@@ -123,13 +136,47 @@ impl Wrapper {
             // error at the type and the default trait attribute
             ("Option", Some(DefaultTrait { span })) => return Err(OptionNotAllowed.with_span(span)),
             ("Option", Some(_)) => todo!("Option with default value"),
-            ("HashMap", None) => Self::Map { ty },
+            ("HashMap", None) => {
+                let (key_ty, val_ty) = hasmap_types(&ty)?;
+                Self::Map { key_ty, val_ty }
+            }
             ("HashMap", Some(_)) => todo!("Hashmap with an attribute"),
             (_, None) => return Err(NoDefaultType.with_span(ty)),
             (_, Some(DefaultTrait { .. })) => Self::DefaultTrait { ty },
             (_, Some(DefaultValue { expr })) => Self::DefaultValue { ty, value: expr },
         })
     }
+}
+
+fn hasmap_types(ty: &syn::Type) -> Result<(syn::Type, syn::Type), Error> {
+    let punctuated = match ty {
+        syn::Type::Path(syn::TypePath {
+            path: syn::Path { segments, .. },
+            ..
+        }) => segments,
+        _ => unreachable!("should only run in match arm when matching HashMap"),
+    };
+
+    // aliasing HashMap can result in a macro panic. The person making
+    // the alias will probably understand the panic message
+    let arguments = &punctuated
+        .first()
+        .expect("already checked in `outer_type` function")
+        .arguments;
+    let mut types = match arguments {
+        syn::PathArguments::AngleBracketed(bracketed) => bracketed.args.iter(),
+        _ => return Err(ErrorVariant::NotHashMapTypes.with_span(ty)),
+    };
+    let key = match types.next() {
+        Some(syn::GenericArgument::Type(ty)) => ty,
+        _ => return Err(ErrorVariant::NotHashMapTypes.with_span(ty)),
+    };
+    let value = match types.next() {
+        Some(syn::GenericArgument::Type(ty)) => ty,
+        _ => return Err(ErrorVariant::NotHashMapTypes.with_span(ty)),
+    };
+
+    Ok((key.to_owned(), value.to_owned()))
 }
 
 fn outer_type(type_path: &syn::Type) -> Result<String, Error> {
@@ -149,16 +196,24 @@ fn outer_type(type_path: &syn::Type) -> Result<String, Error> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use syn::parse_quote;
 
     #[test]
     fn default_trait() {
-        let attributes: &[syn::Attribute] = &[
-            syn::parse_quote!(#[dbstruct(Default)]),
-            syn::parse_quote!(#[b]),
-        ];
-        let ty_u8: syn::Type = syn::parse_quote!(u8);
+        let attributes: &[syn::Attribute] =
+            &[parse_quote!(#[dbstruct(Default)]), parse_quote!(#[b])];
+        let ty_u8: syn::Type = parse_quote!(u8);
         let wrapper = Wrapper::try_from(&mut attributes.to_vec(), ty_u8.clone()).unwrap();
         assert_eq!(wrapper, Wrapper::DefaultTrait { ty: ty_u8 })
+    }
+
+    #[test]
+    fn map() {
+        let key_ty: syn::Type = parse_quote!(u8);
+        let val_ty: syn::Type = parse_quote!(Vec<u16>);
+        let ty_hashmap: syn::Type = parse_quote!(HashMap<u8, Vec<u16>>);
+        let wrapper = Wrapper::try_from(&mut Vec::new(), ty_hashmap.clone()).unwrap();
+        assert_eq!(wrapper, Wrapper::Map { key_ty, val_ty })
     }
 
     mod default_value {
