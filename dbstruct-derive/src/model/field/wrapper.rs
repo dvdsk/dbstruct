@@ -27,6 +27,7 @@ pub enum Wrapper {
     },
 }
 
+#[derive(Debug)]
 pub enum WrapperAttributes {
     DefaultTrait { span: proc_macro2::Span },
     DefaultValue { expr: syn::Expr },
@@ -101,7 +102,7 @@ fn as_wrapper(att: syn::Attribute) -> Result<Option<WrapperAttributes>, Error> {
     };
 
     let mut res = None;
-    let mut tokens = dbg!(tokens).into_iter().peekable();
+    let mut tokens = tokens.into_iter().peekable();
     while let Some(token) = tokens.peek() {
         if res.is_none() {
             res = Some(parse(&mut tokens)?);

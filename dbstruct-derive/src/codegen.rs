@@ -143,4 +143,27 @@ mod tests {
         println!("{rust}");
         assert!(syn::parse2::<syn::File>(rust).is_ok())
     }
+
+    #[test]
+    fn end_to_end() {
+        use crate::model::Model;
+        use syn::parse_str;
+
+        let input: syn::ItemStruct = parse_str(
+            "        
+#[dbstruct::dbstruct]
+pub struct Test {
+    #[dbstruct(Default)]
+    the_field: u8,
+}",
+        )
+        .unwrap();
+
+        let model = Model::try_from(input).unwrap();
+        let ir = Ir::from(model);
+        let rust = codegen(ir);
+
+        println!("{rust}");
+        assert!(syn::parse2::<syn::File>(rust).is_ok())
+    }
 }

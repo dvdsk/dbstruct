@@ -14,7 +14,7 @@ fn ds_field() -> syn::Field {
         vis: syn::Visibility::Inherited,
         ident: Some(syn::Ident::new("ds", proc_macro2::Span::call_site())),
         colon_token: None,
-        ty: parse_quote!("DS"),
+        ty: parse_quote!(DS),
     }
 }
 
@@ -25,7 +25,7 @@ fn as_len_field(field: &Field) -> syn::Field {
         vis: syn::Visibility::Inherited,
         ident: Some(syn::Ident::new(&name, proc_macro2::Span::call_site())),
         colon_token: None,
-        ty: parse_quote!("std::sync::Arc<std::sync::atomic::AtomicUsize>"),
+        ty: parse_quote!(std::sync::Arc<std::sync::atomic::AtomicUsize>),
     }
 }
 
@@ -45,5 +45,3 @@ impl From<&Model> for Struct {
         }
     }
 }
-
-
