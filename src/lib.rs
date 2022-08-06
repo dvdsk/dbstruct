@@ -3,7 +3,7 @@ use core::fmt;
 #[doc(hidden)]
 pub use dbstruct_derive::*;
 
-mod stores;
+pub mod stores;
 pub mod traits;
 pub use traits::DataStore;
 pub mod wrappers;

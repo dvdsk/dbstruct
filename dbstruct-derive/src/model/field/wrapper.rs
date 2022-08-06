@@ -137,7 +137,7 @@ impl Wrapper {
             ("Option", Some(DefaultTrait { span })) => return Err(OptionNotAllowed.with_span(span)),
             ("Option", Some(_)) => todo!("Option with default value"),
             ("HashMap", None) => {
-                let (key_ty, val_ty) = hasmap_types(&ty)?;
+                let (key_ty, val_ty) = hashmap_types(&ty)?;
                 Self::Map { key_ty, val_ty }
             }
             ("HashMap", Some(_)) => todo!("Hashmap with an attribute"),
@@ -148,7 +148,7 @@ impl Wrapper {
     }
 }
 
-fn hasmap_types(ty: &syn::Type) -> Result<(syn::Type, syn::Type), Error> {
+fn hashmap_types(ty: &syn::Type) -> Result<(syn::Type, syn::Type), Error> {
     let punctuated = match ty {
         syn::Type::Path(syn::TypePath {
             path: syn::Path { segments, .. },

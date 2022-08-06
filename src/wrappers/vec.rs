@@ -70,6 +70,10 @@ where
     pub fn len(&self) -> usize {
         self.len.load(Ordering::SeqCst)
     }
+
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
 }
 
 #[cfg(test)]

@@ -9,11 +9,12 @@ pub enum Error {
     Poisoned,
 }
 
+#[derive(Default)]
 pub struct HashMap(RwLock<collections::HashMap<Vec<u8>, Vec<u8>>>); 
 
 impl HashMap {
     pub fn new() -> Self {
-        Self(RwLock::new(collections::HashMap::new()))
+        Self::default()
     }
 }
 
