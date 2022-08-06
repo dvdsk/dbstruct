@@ -56,11 +56,12 @@ fn accessor_impl(accessors: Vec<Accessor>) -> TokenStream {
 }
 
 fn definition(definition: Struct, bounds: &syn::WhereClause) -> TokenStream {
-    let Struct { ident, vis, vars } = definition;
+    let Struct { ident, vis, extra_vars } = definition;
     let predicates = &bounds.predicates;
     quote!(
         #vis struct #ident<#predicates> {
-            #(#vars),*
+            ds: DS,
+            #(#extra_vars),*
         }
     )
     .into()
@@ -78,7 +79,7 @@ mod tests {
         Struct {
             ident: parse_quote!(Test),
             vis: parse_quote!(pub),
-            vars: fields
+            extra_vars: fields
                 .into_iter()
                 .map(|s| parser.parse_str(s))
                 .map(Result::unwrap)

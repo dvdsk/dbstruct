@@ -22,7 +22,7 @@ fn as_len_value(ident: syn::Ident) -> syn::FieldValue {
 impl NewMethod {
     pub fn from(model: &Model, struct_def: &Struct) -> Self {
         let fields: Vec<_> = struct_def
-            .vars
+            .extra_vars
             .iter()
             .map(|def| def.ident.clone())
             .map(Option::unwrap)
