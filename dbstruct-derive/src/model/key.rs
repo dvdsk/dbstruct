@@ -1,5 +1,3 @@
-use proc_macro2::TokenStream;
-use quote::quote;
 use std::collections::HashMap;
 use syn::Ident;
 
@@ -28,34 +26,10 @@ impl DbKey {
         Ok(Self(map))
     }
 
-    // pub(crate) fn get(&self, ident: &Ident) -> [u8; 1] {
-    //     [self.prefix(ident)]
-    // }
-
     pub fn prefix(&self, ident: &Ident) -> Prefix {
         *self
             .0
             .get(ident)
             .expect("every field's ident should be in the DbKey map")
-    }
-
-    pub(crate) fn fn_idx_key(&self, ident: &Ident) -> TokenStream {
-        let prefix = self.prefix(ident);
-
-        quote!(
-            fn idx_key(idx: u64) -> [u8; 9] {
-                let mut res = [0u8; 9];
-                res[0] = #prefix;
-                res[1..].copy_from_slice(&idx.to_be_bytes());
-                res
-            }
-        )
-    }
-
-    pub(crate) fn expr_prefix(&self, ident: &Ident) -> TokenStream {
-        let prefix = self.prefix(ident);
-        quote!(
-            #prefix
-        )
     }
 }

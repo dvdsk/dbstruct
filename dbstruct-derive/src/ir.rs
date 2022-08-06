@@ -1,11 +1,9 @@
-use proc_macro2::TokenStream;
-
 mod accessor;
 mod new_method;
 mod struct_def;
 
-use accessor::Accessor;
-use new_method::NewMethod;
+pub use accessor::Accessor;
+pub use new_method::NewMethod;
 pub use struct_def::Struct;
 use syn::parse_quote;
 
@@ -13,9 +11,9 @@ use crate::model::{DbKey, Model};
 
 pub struct Ir {
     pub definition: Struct,
-    new: NewMethod,
-    accessors: Vec<Accessor>,
-    bounds: syn::WhereClause,
+    pub new: NewMethod,
+    pub accessors: Vec<Accessor>,
+    pub bounds: syn::WhereClause,
 }
 
 impl Ir {

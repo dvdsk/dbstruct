@@ -11,7 +11,7 @@ pub struct Field {
 
 impl Field {
     pub fn is_vec(&self) -> bool {
-        matches!(&self.wrapper, Wrapper::Vec { ty })
+        matches!(&self.wrapper, Wrapper::Vec { .. })
     }
 }
 

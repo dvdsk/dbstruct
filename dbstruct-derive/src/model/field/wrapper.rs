@@ -4,7 +4,6 @@ use std::mem;
 use proc_macro2::TokenTree;
 
 mod errors;
-use errors::GetSpan;
 pub use errors::{Error, ErrorVariant};
 
 #[derive(Debug, PartialEq, Eq)]

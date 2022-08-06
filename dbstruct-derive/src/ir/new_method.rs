@@ -5,9 +5,8 @@ use crate::model::Model;
 use super::struct_def::Struct;
 
 pub struct NewMethod {
-    fields: Vec<syn::FieldValue>,
-    vis: syn::Visibility,
-
+    pub fields: Vec<syn::FieldValue>,
+    pub vis: syn::Visibility,
 }
 
 fn ds_value(ident: syn::Ident) -> syn::FieldValue {
@@ -37,11 +36,11 @@ impl NewMethod {
             .map(|def| def.ident.clone())
             .map(Option::unwrap)
             .map(as_len_value)
+            .chain(std::iter::once(ds_value(model.ident.clone())))
             .collect();
         Self {
             fields,
             vis: model.vis.clone(),
         }
-
     }
 }
