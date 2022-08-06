@@ -6,14 +6,14 @@ use crate::ir::{Accessor, Ir, NewMethod, Struct};
 pub fn codegen(ir: Ir) -> TokenStream {
     #![allow(unused_variables)]
     let struct_ident = ir.definition.ident.clone();
-    let definition = definition(ir.definition);
+    let definition = definition(ir.definition, &ir.bounds);
     let accessors = accessor_impl(ir.accessors);
     let new_impl = new_impl(ir.new);
     let bounds = ir.bounds;
     quote!(
         #definition
 
-        impl #struct_ident #bounds {
+        impl<DS> #struct_ident<DS> #bounds {
             #new_impl
             #accessors
         }
@@ -42,7 +42,7 @@ fn accessor_fn(
     }: Accessor,
 ) -> TokenStream {
     quote!(
-        #vis fn #ident() -> #returns {
+        #vis fn #ident(&self) -> #returns {
             #body
         }
     )
@@ -55,10 +55,11 @@ fn accessor_impl(accessors: Vec<Accessor>) -> TokenStream {
     )
 }
 
-fn definition(definition: Struct) -> TokenStream {
+fn definition(definition: Struct, bounds: &syn::WhereClause) -> TokenStream {
     let Struct { ident, vis, vars } = definition;
+    let predicates = &bounds.predicates;
     quote!(
-        #vis struct #ident {
+        #vis struct #ident<#predicates> {
             #(#vars),*
         }
     )
@@ -85,6 +86,10 @@ mod tests {
         }
     }
 
+    fn test_bounds() -> syn::WhereClause {
+        parse_quote!(where DS: dbstruct::DataStore + Clone)
+    }
+
     #[test]
     fn output_is_struct_item() {
         let fields = [
@@ -92,7 +97,7 @@ mod tests {
             "vec_field: Vec<u32>",
             "map_field: HashMap<f32, f64>",
         ];
-        let rust = definition(test_struct(&fields));
+        let rust = definition(test_struct(&fields), &test_bounds());
         println!("{}", rust);
         assert!(syn::parse2::<syn::ItemStruct>(rust).is_ok())
     }

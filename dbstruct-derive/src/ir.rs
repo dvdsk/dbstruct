@@ -25,7 +25,8 @@ impl Ir {
             .into_iter()
             .map(|f| Accessor::from(f, &model.keys))
             .collect();
-        let bounds: syn::WhereClause = parse_quote!(where DS: DataStore + Clone);
+        let bounds: syn::WhereClause =
+            parse_quote!(where DS: dbstruct::DataStore + std::clone::Clone);
         Self {
             definition,
             new,

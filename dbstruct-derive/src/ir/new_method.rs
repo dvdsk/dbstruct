@@ -15,7 +15,7 @@ fn as_len_value(ident: syn::Ident) -> syn::FieldValue {
         attrs: Vec::new(),
         member: syn::Member::Named(ident),
         colon_token: Some(colon),
-        expr: parse_quote!(std::sync::Arc::new(std::sync::atomics::AtomicUsize::new(0))),
+        expr: parse_quote!(std::sync::Arc::new(std::sync::atomic::AtomicUsize::new(0))),
     }
 }
 
