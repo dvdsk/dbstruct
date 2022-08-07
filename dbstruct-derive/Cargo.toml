@@ -7,7 +7,7 @@ authors = ["David Kleingeld"]
 description = "Build a typed database by defining a struct"
 repository = "https://github.com/dvdsk/dbstruct"
 license = "MIT"
-categories = ["database-interfaces"]
+categories = ["database", "caching"]
 exclude = [
 	".github/workflows.test.yml",
 	".gitignore",
