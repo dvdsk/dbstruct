@@ -34,6 +34,8 @@ pub enum ErrorVariant {
     TooFewGenerics{ty: &'static str, n_needed: u8},
     #[error("Too many generics for {ty}, expected {n_needed}")]
     TooManyGenerics{ty: &'static str, n_needed: u8},
+    // #[error("Attribute {0} should not have any arguments")]
+    // ShouldNotHaveArgs(&'static str),
 }
 
 #[derive(thiserror::Error, Debug)]
@@ -79,10 +81,11 @@ impl Error {
     }
 }
 
-impl GetSpan for super::WrapperAttributes {
+impl GetSpan for super::Attribute {
     fn span(&self) -> Span {
-        use super::WrapperAttributes::*;
+        use super::Attribute::*;
         match self {
+            // NoWrap { span } => *span,
             DefaultTrait { span } => *span,
             DefaultValue { expr } => syn::spanned::Spanned::span(expr),
         }

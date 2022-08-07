@@ -28,9 +28,10 @@ pub enum Wrapper {
 }
 
 #[derive(Debug)]
-pub enum WrapperAttributes {
+pub enum Attribute {
     DefaultTrait { span: proc_macro2::Span },
     DefaultValue { expr: syn::Expr },
+    // NoWrap { span: proc_macro2::Span },
 }
 
 fn is_relevant(att: &syn::Attribute) -> bool {
@@ -51,45 +52,74 @@ fn unescape_literal(s: &str) -> String {
     s
 }
 
-fn parse(
+// fn parse_nowrap(
+//     span: proc_macro2::Span,
+//     tokens: &mut Peekable<impl Iterator<Item = TokenTree>>,
+// ) -> Result<Attribute, Error> {
+//     use ErrorVariant::*;
+//     match tokens.peek() {
+//         None => {
+//             tokens.next();
+//             return Ok(Attribute::NoWrap { span });
+//         }
+//         Some(TokenTree::Punct(punct)) if punct.as_char() == ',' => {
+//             tokens.next();
+//             return Ok(Attribute::NoWrap { span });
+//         }
+//         Some(other) => return Err(ShouldNotHaveArgs("NoWrap").with_span(other)),
+//     }
+// }
+
+fn parse_default(
+    span: proc_macro2::Span,
     tokens: &mut Peekable<impl Iterator<Item = TokenTree>>,
-) -> Result<WrapperAttributes, Error> {
+) -> Result<Attribute, Error> {
+    use ErrorVariant::*;
+    match tokens.peek() {
+        None => {
+            tokens.next();
+            return Ok(Attribute::DefaultTrait { span });
+        }
+        Some(TokenTree::Punct(punct)) if punct.as_char() == ',' => {
+            tokens.next();
+            return Ok(Attribute::DefaultTrait { span });
+        }
+        Some(TokenTree::Punct(punct)) if punct.as_char() == '=' => {
+            let punct = punct.span();
+            match tokens.nth(1) {
+                None => return Err(MissingDefaultValue.with_span(punct)),
+                Some(TokenTree::Literal(lit)) => {
+                    let expr = lit.to_string();
+                    let expr = unescape_literal(&expr);
+                    let expr: syn::Expr = syn::parse_str(&expr)
+                        .map_err(|err| ValueNotExpression(err).with_span(lit))?;
+                    return Ok(Attribute::DefaultValue { expr });
+                }
+                Some(other) => return Err(InvalidDefaultArg.with_span(other)),
+            }
+        }
+        Some(_other) => return Err(InvalidDefaultArg.with_span(_other)),
+    }
+}
+
+fn parse(tokens: &mut Peekable<impl Iterator<Item = TokenTree>>) -> Result<Attribute, Error> {
     use ErrorVariant::*;
     let first_token = tokens
         .next()
         .expect("should only get here if peek returned Some");
     match first_token {
-        TokenTree::Ident(ident) if ident.to_string() == "Default" => match tokens.peek() {
-            None => {
-                tokens.next();
-                return Ok(WrapperAttributes::DefaultTrait { span: ident.span() });
-            }
-            Some(TokenTree::Punct(punct)) if punct.as_char() == ',' => {
-                tokens.next();
-                return Ok(WrapperAttributes::DefaultTrait { span: ident.span() });
-            }
-            Some(TokenTree::Punct(punct)) if punct.as_char() == '=' => {
-                let punct = punct.span();
-                match tokens.nth(1) {
-                    None => return Err(MissingDefaultValue.with_span(punct)),
-                    Some(TokenTree::Literal(lit)) => {
-                        let expr = lit.to_string();
-                        let expr = unescape_literal(&expr);
-                        let expr: syn::Expr = syn::parse_str(&expr)
-                            .map_err(|err| ValueNotExpression(err).with_span(lit))?;
-                        return Ok(WrapperAttributes::DefaultValue { expr });
-                    }
-                    Some(other) => return Err(InvalidDefaultArg.with_span(other)),
-                }
-            }
-            Some(_other) => return Err(InvalidDefaultArg.with_span(_other)),
-        },
+        // TokenTree::Ident(ident) if ident.to_string() == "NoWrap" => {
+        //     parse_nowrap(ident.span(), tokens)
+        // }
+        TokenTree::Ident(ident) if ident.to_string() == "Default" => {
+            parse_default(ident.span(), tokens)
+        }
         TokenTree::Ident(ident) => return Err(NotAWrapper(ident).has_span()),
         _ => return Err(InvalidSyntax(first_token).has_span()),
     }
 }
 
-fn as_wrapper(att: syn::Attribute) -> Result<Option<WrapperAttributes>, Error> {
+fn as_wrapper(att: syn::Attribute) -> Result<Option<Attribute>, Error> {
     use ErrorVariant::*;
     let tokens = match att.tokens.into_iter().nth(0) {
         Some(tokens) => tokens,
@@ -116,8 +146,8 @@ fn as_wrapper(att: syn::Attribute) -> Result<Option<WrapperAttributes>, Error> {
 impl Wrapper {
     /// takes relevant attributes from `attributes` and determines the wrapper
     pub fn try_from(attributes: &mut Vec<syn::Attribute>, ty: syn::Type) -> Result<Self, Error> {
+        use Attribute::*;
         use ErrorVariant::*;
-        use WrapperAttributes::*;
 
         let (mut relevant, other): (Vec<_>, Vec<_>) =
             mem::take(attributes).into_iter().partition(is_relevant);
@@ -130,17 +160,14 @@ impl Wrapper {
 
         Ok(match (outer_type(&ty)?.as_str(), attribute) {
             ("Vec", None) => Self::Vec { ty: vec_type(&ty)? },
-            ("Vec", Some(_)) => todo!("Vec with an attribute"),
             ("Option", None) => Self::Option { ty },
             // in the future use proc_macro2::span::join() to give an
             // error at the type and the default trait attribute
             ("Option", Some(DefaultTrait { span })) => return Err(OptionNotAllowed.with_span(span)),
-            ("Option", Some(_)) => todo!("Option with default value"),
             ("HashMap", None) => {
                 let (key_ty, val_ty) = hashmap_types(&ty)?;
                 Self::Map { key_ty, val_ty }
             }
-            ("HashMap", Some(_)) => todo!("Hashmap with an attribute"),
             (_, None) => return Err(NoDefaultType.with_span(ty)),
             (_, Some(DefaultTrait { .. })) => Self::DefaultTrait { ty },
             (_, Some(DefaultValue { expr })) => Self::DefaultValue { ty, value: expr },
