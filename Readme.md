@@ -14,8 +14,8 @@ pub struct Test {
     #[dbstruct(Default)]
     the_awnser: u8,
 	primes: Vec<u32>,
-	// #[dbstruct(Default="format!(\"{}\", 20+2+20)")]
-	// the_result: String,
+	#[dbstruct(Default="format!(\"{}\", 20+2+20)")]
+	the_result: String,
 }
 
 fn main() {
@@ -27,12 +27,12 @@ fn main() {
     db.the_awnser().set(&42).unwrap();
     assert_eq!(42u8, db.the_awnser().get().unwrap());
 
-	// db.primes().push(2).unwrap();
-	// db.primes().push(3).unwrap();
-	// db.primes().push(5).unwrap();
-	// db.primes().push(7).unwrap();
-	// assert_eq!(7, db.primes().pop().unwrap());
+	db.primes().push(2).unwrap();
+	db.primes().push(3).unwrap();
+	db.primes().push(5).unwrap();
+	db.primes().push(7).unwrap();
+	assert_eq!(Some(7), db.primes().pop().unwrap());
 
-	// assert_eq!(String::from("42"), db.the_result().get().unwrap());
+	assert_eq!(String::from("42"), db.the_result().get().unwrap());
 }
 ```
