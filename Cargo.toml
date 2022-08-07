@@ -1,13 +1,15 @@
 [package]
 name = "dbstruct"
-version = "0.1.0"
+version = "0.1.0-alpha.1"
+resolver = "2"
 edition = "2021"
 authors = ["David Kleingeld"]
-readme = "README.md"
+readme = "Readme.md"
 description = "Build a typed database by defining a struct"
+repository = "https://github.com/dvdsk/dbstruct"
 license = "MIT"
-keywords = ["database", "typed database", "sled", "serde"]
-categories = ["database-interfaces"]
+keywords = ["database", "typed-database", "sled", "serde"]
+categories = ["database", "caching"]
 exclude = [
 	".github/workflows.test.yml",
 	".gitignore",
@@ -17,7 +19,7 @@ exclude = [
 [features]
 
 [dependencies]
-dbstruct-derive = { path = "dbstruct-derive" }
+dbstruct-derive = "0.1.0-alpha.1"
 thiserror = "1"
 sled = "0.34"
 serde = { version = "1", features = ["derive"] }
