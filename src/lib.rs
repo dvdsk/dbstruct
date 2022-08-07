@@ -5,7 +5,7 @@ pub use dbstruct_derive::*;
 
 pub mod stores;
 pub mod traits;
-pub use traits::DataStore;
+pub use traits::{DataStore, ByteStore};
 pub mod wrappers;
 
 #[derive(Debug, thiserror::Error)]

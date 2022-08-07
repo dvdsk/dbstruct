@@ -88,6 +88,8 @@ pub fn main() -> Result<(), Box<dyn Error>> {
     let account = db.account().get()?;
     assert_eq!(account, Some(Account {}));
 
+    db.account().conditional_update(Account {}, Account {})?;
+
     println!("Hello, world!");
 
     Ok(())
