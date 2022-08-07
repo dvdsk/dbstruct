@@ -8,7 +8,7 @@ readme = "Readme.md"
 description = "Build a typed database by defining a struct"
 repository = "https://github.com/dvdsk/dbstruct"
 license = "MIT"
-keywords = ["database", "typed database", "sled", "serde"]
+keywords = ["database", "typed-database", "sled", "serde"]
 categories = ["database", "caching"]
 exclude = [
 	".github/workflows.test.yml",
