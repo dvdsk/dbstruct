@@ -19,3 +19,8 @@ pub enum Error<DbError: fmt::Debug> {
     #[error("the database returned an error")]
     Database(#[from] DbError),
 }
+
+// test the readme example as part of the doctests
+#[doc = include_str!("../Readme.md")]
+#[cfg(doctest)]
+pub struct ReadmeDoctests;

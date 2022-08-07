@@ -28,8 +28,12 @@ pub enum ErrorVariant {
     ValueNotExpression(syn::parse::Error),
     #[error("Invalid argument for the Default attribute")]
     InvalidDefaultArg,
-    #[error("HashMap is expected two have generic types key and value")]
-    NotHashMapTypes,
+    #[error("Types must be fully owned and can not have lifetime params")]
+    NotATypeGeneric,
+    #[error("{ty} needs {n_needed} generic types")]
+    TooFewGenerics{ty: &'static str, n_needed: u8},
+    #[error("Too many generics for {ty}, expected {n_needed}")]
+    TooManyGenerics{ty: &'static str, n_needed: u8},
 }
 
 #[derive(thiserror::Error, Debug)]
@@ -46,8 +50,9 @@ impl Help for Error {
 "you can wrap the type in an Option, add an attribute to use the Default trait: 
 `#[dbstruct(Default)]` or provide an expression to generate a default 
 value: `#[dbstruct(Default=<expr>)]"),
-            InvalidSyntax(_) => Some("try one of these: `#[dbstruct(Default)]`, `#[dbstruct(Default=<expr>]`"),
+            InvalidSyntax(_) => Some("try one of these: `#[dbstruct(Default)]`, `#[dbstruct(Default=\"<expr>\"]`"),
             OptionNotAllowed => Some("try removing the attribute"),
+            MultipleWrapperAttributes => Some("when using Default=\"<expr>\" make sure the <expr> string is properly escaped"),
             _ => None,
         }
     }

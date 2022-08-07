@@ -129,7 +129,7 @@ impl Wrapper {
         }
 
         Ok(match (outer_type(&ty)?.as_str(), attribute) {
-            ("Vec", None) => Self::Vec { ty },
+            ("Vec", None) => Self::Vec { ty: vec_type(&ty)? },
             ("Vec", Some(_)) => todo!("Vec with an attribute"),
             ("Option", None) => Self::Option { ty },
             // in the future use proc_macro2::span::join() to give an
@@ -148,7 +148,65 @@ impl Wrapper {
     }
 }
 
+fn vec_type(ty: &syn::Type) -> Result<syn::Type, Error> {
+    let mut generics = generic_types(ty)?;
+    let ty = generics
+        .next()
+        .ok_or(
+            ErrorVariant::TooFewGenerics {
+                ty: "Vec",
+                n_needed: 1,
+            }
+            .with_span(ty),
+        )??
+        .clone();
+
+    if let Some(other_generic) = generics.next() {
+        return Err(ErrorVariant::TooManyGenerics {
+            ty: "Vec",
+            n_needed: 1,
+        }
+        .with_span(other_generic?));
+    }
+
+    Ok(ty)
+}
+
 fn hashmap_types(ty: &syn::Type) -> Result<(syn::Type, syn::Type), Error> {
+    let mut generics = generic_types(ty)?;
+    let key_ty = generics
+        .next()
+        .ok_or(
+            ErrorVariant::TooFewGenerics {
+                ty: "HashMap",
+                n_needed: 2,
+            }
+            .with_span(ty),
+        )??
+        .clone();
+    let val_ty = generics
+        .next()
+        .ok_or(
+            ErrorVariant::TooFewGenerics {
+                ty: "HashMap",
+                n_needed: 2,
+            }
+            .with_span(ty),
+        )??
+        .clone();
+
+    if let Some(other_generic) = generics.next() {
+        return Err(ErrorVariant::TooManyGenerics {
+            ty: "HashMap",
+            n_needed: 2,
+        }
+        .with_span(other_generic?));
+    }
+
+    Ok((key_ty, val_ty))
+}
+
+fn generic_types(ty: &syn::Type) -> Result<impl Iterator<Item = Result<&syn::Type, Error>>, Error> {
     let punctuated = match ty {
         syn::Type::Path(syn::TypePath {
             path: syn::Path { segments, .. },
@@ -163,20 +221,17 @@ fn hashmap_types(ty: &syn::Type) -> Result<(syn::Type, syn::Type), Error> {
         .first()
         .expect("already checked in `outer_type` function")
         .arguments;
-    let mut types = match arguments {
-        syn::PathArguments::AngleBracketed(bracketed) => bracketed.args.iter(),
-        _ => return Err(ErrorVariant::NotHashMapTypes.with_span(ty)),
-    };
-    let key = match types.next() {
-        Some(syn::GenericArgument::Type(ty)) => ty,
-        _ => return Err(ErrorVariant::NotHashMapTypes.with_span(ty)),
-    };
-    let value = match types.next() {
-        Some(syn::GenericArgument::Type(ty)) => ty,
-        _ => return Err(ErrorVariant::NotHashMapTypes.with_span(ty)),
-    };
 
-    Ok((key.to_owned(), value.to_owned()))
+    let types = match arguments {
+        syn::PathArguments::AngleBracketed(bracketed) => bracketed.args.iter(),
+        _ => unreachable!("types in named structs can only have angle bracketed type arguments"),
+    }
+    .map(move |generic| match generic {
+        syn::GenericArgument::Type(ty) => Ok(ty),
+        _ => Err(ErrorVariant::NotATypeGeneric.with_span(ty)),
+    });
+
+    Ok(types)
 }
 
 fn outer_type(type_path: &syn::Type) -> Result<String, Error> {
@@ -205,6 +260,14 @@ mod tests {
         let ty_u8: syn::Type = parse_quote!(u8);
         let wrapper = Wrapper::try_from(&mut attributes.to_vec(), ty_u8.clone()).unwrap();
         assert_eq!(wrapper, Wrapper::DefaultTrait { ty: ty_u8 })
+    }
+
+    #[test]
+    fn vec() {
+        let inner_ty: syn::Type = parse_quote!(u32);
+        let ty_vec: syn::Type = parse_quote!(Vec<u32>);
+        let wrapper = Wrapper::try_from(&mut Vec::new(), ty_vec.clone()).unwrap();
+        assert_eq!(wrapper, Wrapper::Vec { ty: inner_ty })
     }
 
     #[test]

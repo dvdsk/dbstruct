@@ -3,7 +3,16 @@ name = "dbstruct"
 version = "0.1.0"
 edition = "2021"
 authors = ["David Kleingeld"]
-description = "Build a database by defining a struct"
+readme = "README.md"
+description = "Build a typed database by defining a struct"
+license = "MIT"
+keywords = ["database", "typed database", "sled", "serde"]
+categories = ["database-interfaces"]
+exclude = [
+	".github/workflows.test.yml",
+	".gitignore",
+]
+
 
 [features]
 
@@ -13,7 +22,6 @@ thiserror = "1"
 sled = "0.34"
 serde = { version = "1", features = ["derive"] }
 bincode = "1.3"
-rustix = { version = "0.35", features = ["fs"] }
 
 [dev-dependencies]
 trybuild = "1"

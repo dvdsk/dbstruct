@@ -41,11 +41,7 @@ fn accessor_fn(
         body,
     }: Accessor,
 ) -> TokenStream {
-    quote!(
-        #vis fn #ident(&self) -> #returns {
-            #body
-        }
-    )
+    quote!(#vis fn #ident(&self) -> #returns #body)
 }
 
 fn accessor_impl(accessors: Vec<Accessor>) -> TokenStream {
@@ -56,7 +52,11 @@ fn accessor_impl(accessors: Vec<Accessor>) -> TokenStream {
 }
 
 fn definition(definition: Struct, bounds: &syn::WhereClause) -> TokenStream {
-    let Struct { ident, vis, extra_vars } = definition;
+    let Struct {
+        ident,
+        vis,
+        extra_vars,
+    } = definition;
     let predicates = &bounds.predicates;
     quote!(
         #vis struct #ident<#predicates> {
@@ -108,11 +108,9 @@ mod tests {
             vis: parse_quote!(pub),
             ident: parse_quote!(queue),
             returns: parse_quote!(dbstruct::wrappers::Vec<u32>),
-            body: parse_quote!(dbstruct::wrappers::Vec::new(
-                self.ds.clone(),
-                2,
-                self.queue_len.clone()
-            )),
+            body: parse_quote!({
+                dbstruct::wrappers::Vec::new(self.ds.clone(), 2, self.queue_len.clone())
+            }),
         }
     }
 
@@ -159,8 +157,8 @@ mod tests {
             "        
 #[dbstruct::dbstruct]
 pub struct Test {
-    #[dbstruct(Default)]
-    the_field: u8,
+    // #[dbstruct(Default)]
+    primes: Vec<u32>,
 }",
         )
         .unwrap();

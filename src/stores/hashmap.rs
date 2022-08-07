@@ -1,5 +1,5 @@
 use std::collections;
-use std::sync::RwLock;
+use std::sync::{RwLock, Arc};
 
 use crate::traits::ByteStore;
 
@@ -9,8 +9,8 @@ pub enum Error {
     Poisoned,
 }
 
-#[derive(Default)]
-pub struct HashMap(RwLock<collections::HashMap<Vec<u8>, Vec<u8>>>); 
+#[derive(Default, Clone)]
+pub struct HashMap(Arc<RwLock<collections::HashMap<Vec<u8>, Vec<u8>>>>); 
 
 impl HashMap {
     pub fn new() -> Self {
