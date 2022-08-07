@@ -1,14 +1,21 @@
 [package]
 name = "dbstruct-derive"
-version = "0.1.0"
+version = "0.1.0-alpha"
 edition = "2021"
+authors = ["David Kleingeld"]
+description = "Build a typed database by defining a struct"
+license = "MIT"
+categories = ["database-interfaces"]
+exclude = [
+	".github/workflows.test.yml",
+	".gitignore",
+]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 syn = { version = "1", features = ["full", "extra-traits"] }
 quote = "1"
-heck = "0.4.0"
 proc-macro2 = "1"
 proc-macro-error = "1"
 thiserror = "1"
