@@ -11,8 +11,8 @@ Create a typed database by defining a struct. *dbstruct* builds on top of anythi
 ```rust
 #[dbstruct::dbstruct]
 pub struct Test {
-    #[dbstruct(Default)]
-    the_awnser: u8,
+	#[dbstruct(Default)]
+	the_awnser: u8,
 	primes: Vec<u32>,
 	#[dbstruct(Default="format!(\"{}\", 20+2+20)")]
 	the_result: String,
@@ -21,11 +21,11 @@ pub struct Test {
 fn main() {
 	// a wrapper around a HashMap that implements the 
 	// `DataStore` trait
-    let ds = dbstruct::stores::HashMap::default();
-    let db = Test::new(ds).unwrap();
+	let ds = dbstruct::stores::HashMap::default();
+	let db = Test::new(ds).unwrap();
 
-    db.the_awnser().set(&42).unwrap();
-    assert_eq!(42u8, db.the_awnser().get().unwrap());
+	db.the_awnser().set(&42).unwrap();
+	assert_eq!(42u8, db.the_awnser().get().unwrap());
 
 	db.primes().push(2).unwrap();
 	db.primes().push(3).unwrap();
