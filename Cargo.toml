@@ -11,7 +11,7 @@ license = "MIT"
 keywords = ["database", "typed-database", "sled", "serde"]
 categories = ["database", "caching"]
 exclude = [
-	".github/workflows.test.yml",
+	".github/",
 	".gitignore",
 ]
 
