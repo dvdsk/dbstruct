@@ -19,7 +19,7 @@ exclude = [
 [features]
 
 [dependencies]
-dbstruct-derive = { path = "dbstruct-derive" }
+dbstruct-derive = "0.1.0-alpha.1"
 thiserror = "1"
 sled = "0.34"
 serde = { version = "1", features = ["derive"] }
