@@ -1,9 +1,11 @@
 [package]
 name = "dbstruct-derive"
 version = "0.1.0-alpha"
+resolver = "2"
 edition = "2021"
 authors = ["David Kleingeld"]
 description = "Build a typed database by defining a struct"
+repository = "https://github.com/dvdsk/dbstruct"
 license = "MIT"
 categories = ["database-interfaces"]
 exclude = [

@@ -1,10 +1,12 @@
 [package]
 name = "dbstruct"
 version = "0.1.0-alpha"
+resolver = "2"
 edition = "2021"
 authors = ["David Kleingeld"]
 readme = "README.md"
 description = "Build a typed database by defining a struct"
+repository = "https://github.com/dvdsk/dbstruct"
 license = "MIT"
 keywords = ["database", "typed database", "sled", "serde"]
 categories = ["database-interfaces"]
