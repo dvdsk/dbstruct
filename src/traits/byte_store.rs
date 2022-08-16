@@ -47,7 +47,7 @@ where
         let val = BS::get(self, &key)?;
         Ok(match val {
             Some(bytes) => {
-                trace!("bytes of previous value: {:?}", bytes.as_ref());
+                trace!("bytes of value: {:?}", bytes.as_ref());
                 let val = bincode::deserialize(bytes.as_ref()).map_err(Error::DeSerializing)?;
                 Some(val)
             }
@@ -87,7 +87,8 @@ where
         Ok(match existing {
             Some(bytes) => {
                 trace!("bytes of previous value: {:?}", bytes.as_ref());
-                bincode::deserialize(bytes.as_ref()).map_err(Error::DeSerializing)?
+                trace!("deserializing to: {}", std::any::type_name::<V>());
+                Some(bincode::deserialize(bytes.as_ref()).map_err(Error::DeSerializing)?)
             }
             None => None,
         })
