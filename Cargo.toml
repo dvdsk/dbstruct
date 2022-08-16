@@ -31,4 +31,4 @@ rocksdb = { version = "0.19", optional = true }
 
 [dev-dependencies]
 trybuild = "1"
-
+tempdir = "0.3"
