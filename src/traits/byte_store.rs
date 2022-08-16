@@ -1,5 +1,6 @@
 use core::fmt;
 use serde::{de::DeserializeOwned, Serialize};
+use tracing::{instrument, trace};
 
 use super::data_store;
 use super::data_store::DataStore;
@@ -35,15 +36,18 @@ where
 {
     type Error = Error<E>;
 
+    #[instrument(skip_all, level = "trace", err)]
     fn get<K, V>(&self, key: &K) -> Result<Option<V>, Self::Error>
     where
         K: Serialize,
         V: DeserializeOwned,
     {
         let key = bincode::serialize(key).map_err(Error::SerializingKey)?;
+        trace!("getting value for key: {key:?}");
         let val = BS::get(self, &key)?;
         Ok(match val {
             Some(bytes) => {
+                trace!("bytes of previous value: {:?}", bytes.as_ref());
                 let val = bincode::deserialize(bytes.as_ref()).map_err(Error::DeSerializing)?;
                 Some(val)
             }
@@ -51,15 +55,18 @@ where
         })
     }
 
+    #[instrument(skip_all, level = "trace", err)]
     fn remove<K, V>(&self, key: &K) -> Result<Option<V>, Self::Error>
     where
         K: Serialize,
         V: DeserializeOwned,
     {
         let key = bincode::serialize(key).map_err(Error::SerializingKey)?;
+        trace!("removing at key: {key:?}");
         let val = BS::remove(self, &key)?;
         Ok(match val {
             Some(bytes) => {
+                trace!("bytes of current value: {:?}", bytes.as_ref());
                 let val = bincode::deserialize(bytes.as_ref()).map_err(Error::DeSerializing)?;
                 Some(val)
             }
@@ -67,6 +74,7 @@ where
         })
     }
 
+    #[instrument(skip_all, level = "trace", err)]
     fn insert<K, V>(&self, key: &K, val: &V) -> Result<Option<V>, Self::Error>
     where
         K: Serialize,
@@ -74,9 +82,11 @@ where
     {
         let key = bincode::serialize(key).map_err(Error::SerializingKey)?;
         let val = bincode::serialize(val).map_err(Error::SerializingValue)?;
+        trace!("inserting key: {key:?}, val: {val:?}");
         let existing = BS::insert(self, &key, &val)?;
         Ok(match existing {
             Some(bytes) => {
+                trace!("bytes of previous value: {:?}", bytes.as_ref());
                 bincode::deserialize(bytes.as_ref()).map_err(Error::DeSerializing)?
             }
             None => None,
@@ -90,6 +100,7 @@ where
     B: AsRef<[u8]>,
     BS: Atomic<Error = E, Bytes = B>,
 {
+    #[instrument(skip_all, level = "trace", err)]
     fn atomic_update<K, V>(
         &self,
         key: &K,
@@ -103,6 +114,7 @@ where
         let mut res = Ok(());
         let bytes_op = |old: Option<&[u8]>| -> Option<Vec<u8>> {
             if let Some(old) = old {
+                trace!("bytes of current value: {old:?}");
                 match bincode::deserialize(old) {
                     Err(e) => {
                         res = Err(Error::DeSerializing(e));
@@ -126,6 +138,8 @@ where
         BS::atomic_update(self, &key, bytes_op)?;
         res
     }
+
+    #[instrument(skip_all, level = "trace", err)]
     fn conditional_update<K, V>(&self, key: &K, new: &V, expected: &V) -> Result<(), Self::Error>
     where
         K: Serialize,
