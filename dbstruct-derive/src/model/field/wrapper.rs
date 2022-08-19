@@ -52,24 +52,6 @@ fn unescape_literal(s: &str) -> String {
     s
 }
 
-// fn parse_nowrap(
-//     span: proc_macro2::Span,
-//     tokens: &mut Peekable<impl Iterator<Item = TokenTree>>,
-// ) -> Result<Attribute, Error> {
-//     use ErrorVariant::*;
-//     match tokens.peek() {
-//         None => {
-//             tokens.next();
-//             return Ok(Attribute::NoWrap { span });
-//         }
-//         Some(TokenTree::Punct(punct)) if punct.as_char() == ',' => {
-//             tokens.next();
-//             return Ok(Attribute::NoWrap { span });
-//         }
-//         Some(other) => return Err(ShouldNotHaveArgs("NoWrap").with_span(other)),
-//     }
-// }
-
 fn parse_default(
     span: proc_macro2::Span,
     tokens: &mut Peekable<impl Iterator<Item = TokenTree>>,
@@ -108,9 +90,6 @@ fn parse(tokens: &mut Peekable<impl Iterator<Item = TokenTree>>) -> Result<Attri
         .next()
         .expect("should only get here if peek returned Some");
     match first_token {
-        // TokenTree::Ident(ident) if ident.to_string() == "NoWrap" => {
-        //     parse_nowrap(ident.span(), tokens)
-        // }
         TokenTree::Ident(ident) if ident.to_string() == "Default" => {
             parse_default(ident.span(), tokens)
         }
@@ -280,13 +259,26 @@ mod tests {
     use super::*;
     use syn::parse_quote;
 
-    #[test]
-    fn default_trait() {
-        let attributes: &[syn::Attribute] =
-            &[parse_quote!(#[dbstruct(Default)]), parse_quote!(#[b])];
-        let ty_u8: syn::Type = parse_quote!(u8);
-        let wrapper = Wrapper::try_from(&mut attributes.to_vec(), ty_u8.clone()).unwrap();
-        assert_eq!(wrapper, Wrapper::DefaultTrait { ty: ty_u8 })
+    mod default_trait {
+        use super::*;
+
+        #[test]
+        fn u8() {
+            let attributes: &[syn::Attribute] =
+                &[parse_quote!(#[dbstruct(Default)]), parse_quote!(#[b])];
+            let ty_u8: syn::Type = parse_quote!(u8);
+            let wrapper = Wrapper::try_from(&mut attributes.to_vec(), ty_u8.clone()).unwrap();
+            assert_eq!(wrapper, Wrapper::DefaultTrait { ty: ty_u8 })
+        }
+
+        #[test]
+        fn vec() {
+            let attributes: &[syn::Attribute] =
+                &[parse_quote!(#[dbstruct(Default)]), parse_quote!(#[b])];
+            let field_ty: syn::Type = parse_quote!(Vec<u8>);
+            let wrapper = Wrapper::try_from(&mut attributes.to_vec(), field_ty.clone()).unwrap();
+            assert_eq!(wrapper, Wrapper::DefaultTrait { ty: field_ty })
+        }
     }
 
     #[test]
