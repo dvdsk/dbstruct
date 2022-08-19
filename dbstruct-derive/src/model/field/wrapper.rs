@@ -138,8 +138,8 @@ impl Wrapper {
         }
 
         Ok(match (outer_type(&ty)?.as_str(), attribute) {
-            ("Vec", None) => Self::Vec { ty: vec_type(&ty)? },
-            ("Option", None) => Self::Option { ty },
+            ("Vec", None) => Self::Vec { ty: inner_type(&ty, "Vec")? },
+            ("Option", None) => Self::Option { ty: inner_type(&ty, "Option")? },
             // in the future use proc_macro2::span::join() to give an
             // error at the type and the default trait attribute
             ("Option", Some(DefaultTrait { span })) => return Err(OptionNotAllowed.with_span(span)),
@@ -154,13 +154,13 @@ impl Wrapper {
     }
 }
 
-fn vec_type(ty: &syn::Type) -> Result<syn::Type, Error> {
+fn inner_type(ty: &syn::Type, outer_ty: &'static str) -> Result<syn::Type, Error> {
     let mut generics = generic_types(ty)?;
     let ty = generics
         .next()
         .ok_or(
             ErrorVariant::TooFewGenerics {
-                ty: "Vec",
+                ty: outer_ty,
                 n_needed: 1,
             }
             .with_span(ty),
@@ -169,7 +169,7 @@ fn vec_type(ty: &syn::Type) -> Result<syn::Type, Error> {
 
     if let Some(other_generic) = generics.next() {
         return Err(ErrorVariant::TooManyGenerics {
-            ty: "Vec",
+            ty: outer_ty,
             n_needed: 1,
         }
         .with_span(other_generic?));
@@ -296,6 +296,14 @@ mod tests {
         let ty_hashmap: syn::Type = parse_quote!(HashMap<u8, Vec<u16>>);
         let wrapper = Wrapper::try_from(&mut Vec::new(), ty_hashmap.clone()).unwrap();
         assert_eq!(wrapper, Wrapper::Map { key_ty, val_ty })
+    }
+
+    #[test]
+    fn option() {
+        let inner_ty: syn::Type = parse_quote!(u16);
+        let ty: syn::Type = parse_quote!(Option<u16>);
+        let wrapper = Wrapper::try_from(&mut Vec::new(), ty).unwrap();
+        assert_eq!(wrapper, Wrapper::Option { ty: inner_ty })
     }
 
     mod default_value {
