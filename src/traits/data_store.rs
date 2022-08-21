@@ -36,8 +36,8 @@ pub trait Atomic: DataStore {
 }
 
 pub trait Orderd: DataStore {
-    fn get_lt<K, V>(&self, key: &K) -> Result<Option<V>, Self::Error>
+    fn get_lt<K, V>(&self, key: &K) -> Result<Option<(K, V)>, Self::Error>
     where
-        K: Serialize,
+        K: Serialize + DeserializeOwned,
         V: Serialize + DeserializeOwned;
 }

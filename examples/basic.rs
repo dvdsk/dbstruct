@@ -2,9 +2,13 @@ use std::error::Error;
 use std::sync::atomic::AtomicUsize;
 use std::sync::Arc;
 
+use dbstruct::traits::data_store;
 use dbstruct::traits::DataStore;
 use dbstruct::wrappers;
 use serde::{Deserialize, Serialize};
+use tracing::instrument;
+
+mod setup_tracing;
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Eq)]
 pub struct Song;
@@ -38,26 +42,32 @@ pub struct MacroOutput<DS: DataStore> {
 
 impl<DS> MacroOutput<DS>
 where
-    DS: DataStore + Clone
+    DS: DataStore + data_store::Orderd + Clone,
 {
-    pub fn new(ds: DS) -> Result<Self, dbstruct::Error<DS::Error>> {
-        let queue_len = 0; // TODO: decide where to store
-                           // this in DB and how to load it
+    pub fn new(ds: DS) -> Result<Self, dbstruct::Error<<DS as DataStore>::Error>> {
+        let queue_len = data_store::Orderd::get_lt(&ds, &(1+1))?
+            .map(|(len, _): (usize, Song)| len)
+            .unwrap_or(0);
+        tracing::debug!("opening vector queue with len: {queue_len}");
         Ok(Self {
             ds,
             queue_len: Arc::new(AtomicUsize::new(queue_len)),
         })
     }
 
+    #[instrument(skip_all)]
     pub fn queue(&self) -> wrappers::Vec<Song, DS> {
         wrappers::Vec::new(self.ds.clone(), 1, self.queue_len.clone())
     }
+    #[instrument(skip_all)]
     pub fn playing(&self) -> wrappers::DefaultValue<bool, DS> {
         wrappers::DefaultValue::new(self.ds.clone(), 2, PLAYING_DEFAULT)
     }
+    #[instrument(skip_all)]
     pub fn preferences(&self) -> wrappers::DefaultTrait<Preferences, DS> {
         wrappers::DefaultTrait::new(self.ds.clone(), 3)
     }
+    #[instrument(skip_all)]
     pub fn account(&self) -> wrappers::OptionValue<Account, DS> {
         wrappers::OptionValue::new(self.ds.clone(), 4)
     }
@@ -65,7 +75,7 @@ where
 // end macro output
 
 pub fn main() -> Result<(), Box<dyn Error>> {
-
+    setup_tracing::setup("");
     let ds = sled::Config::default()
         .temporary(true)
         .open()?
@@ -89,8 +99,6 @@ pub fn main() -> Result<(), Box<dyn Error>> {
     assert_eq!(account, Some(Account {}));
 
     db.account().conditional_update(Account {}, Account {})?;
-
-    println!("Hello, world!");
 
     Ok(())
 }

@@ -2,6 +2,7 @@ use core::fmt;
 use serde::{de::DeserializeOwned, Serialize};
 use tracing::{instrument, trace};
 
+use super::byte_store;
 use super::data_store;
 use super::data_store::DataStore;
 use crate::Error;
@@ -28,6 +29,10 @@ pub trait Atomic: ByteStore {
     ) -> Result<(), Self::Error>;
 }
 
+pub trait Orderd: ByteStore {
+    fn get_lt(&self, key: &[u8]) -> Result<Option<(Self::Bytes, Self::Bytes)>, Self::Error>;
+}
+
 impl<E, B, BS> DataStore for BS
 where
     E: fmt::Debug,
@@ -48,7 +53,7 @@ where
         Ok(match val {
             Some(bytes) => {
                 trace!("bytes of value: {:?}", bytes.as_ref());
-                let val = bincode::deserialize(bytes.as_ref()).map_err(Error::DeSerializing)?;
+                let val = bincode::deserialize(bytes.as_ref()).map_err(Error::DeSerializingVal)?;
                 Some(val)
             }
             None => None,
@@ -67,7 +72,7 @@ where
         Ok(match val {
             Some(bytes) => {
                 trace!("bytes of current value: {:?}", bytes.as_ref());
-                let val = bincode::deserialize(bytes.as_ref()).map_err(Error::DeSerializing)?;
+                let val = bincode::deserialize(bytes.as_ref()).map_err(Error::DeSerializingVal)?;
                 Some(val)
             }
             None => None,
@@ -88,7 +93,7 @@ where
             Some(bytes) => {
                 trace!("bytes of previous value: {:?}", bytes.as_ref());
                 trace!("deserializing to: {}", std::any::type_name::<V>());
-                Some(bincode::deserialize(bytes.as_ref()).map_err(Error::DeSerializing)?)
+                Some(bincode::deserialize(bytes.as_ref()).map_err(Error::DeSerializingVal)?)
             }
             None => None,
         })
@@ -118,14 +123,14 @@ where
                 trace!("bytes of current value: {old:?}");
                 match bincode::deserialize(old) {
                     Err(e) => {
-                        res = Err(Error::DeSerializing(e));
+                        res = Err(Error::DeSerializingVal(e));
                         Some(old.to_vec())
                     }
                     Ok(val) => {
                         let new = op(val);
                         match bincode::serialize(&new) {
                             Err(e) => {
-                                res = Err(Error::DeSerializing(e));
+                                res = Err(Error::DeSerializingVal(e));
                                 Some(old.to_vec())
                             }
                             Ok(new_bytes) => Some(new_bytes),
@@ -151,5 +156,28 @@ where
         let expected = bincode::serialize(expected).map_err(Error::SerializingValue)?;
         BS::conditional_update(self, &key, &new, &expected)?;
         Ok(())
+    }
+}
+
+impl<E, B, BS> data_store::Orderd for BS
+where
+    E: fmt::Debug,
+    B: AsRef<[u8]>,
+    BS: byte_store::Orderd<Error = E, Bytes = B>,
+{
+    fn get_lt<K, V>(&self, key: &K) -> Result<Option<(K, V)>, Self::Error>
+    where
+        K: Serialize + DeserializeOwned,
+        V: Serialize + DeserializeOwned,
+    {
+        let key = bincode::serialize(key).map_err(Error::SerializingKey)?;
+        Ok(match byte_store::Orderd::get_lt(self, &key)? {
+            None => None,
+            Some((key, val)) => {
+                let key = bincode::deserialize(key.as_ref()).map_err(Error::DeSerializingKey)?;
+                let val = bincode::deserialize(val.as_ref()).map_err(Error::DeSerializingKey)?;
+                Some((key, val))
+            }
+        })
     }
 }
