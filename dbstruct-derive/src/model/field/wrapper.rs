@@ -31,7 +31,6 @@ pub enum Wrapper {
 pub enum Attribute {
     DefaultTrait { span: proc_macro2::Span },
     DefaultValue { expr: syn::Expr },
-    // NoWrap { span: proc_macro2::Span },
 }
 
 fn is_relevant(att: &syn::Attribute) -> bool {

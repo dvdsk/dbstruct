@@ -18,3 +18,8 @@ pub fn setup(additional_filter: &str) {
         .with(fmt)
         .try_init();
 }
+
+// every file not in a folder in the examples dir
+// needs a main.rs
+#[allow(dead_code)]
+fn main() {}

@@ -7,7 +7,7 @@ pub struct Struct {
     pub vis: syn::Visibility,
     /// extra variables such as the current length
     /// of the vector wrapper
-    pub extra_vars: Vec<syn::Field>,
+    pub len_vars: Vec<syn::Field>,
 }
 
 fn as_len_field(field: &Field) -> syn::Field {
@@ -32,7 +32,7 @@ impl From<&Model> for Struct {
         Struct {
             ident: model.ident.clone(),
             vis: model.vis.clone(),
-            extra_vars: len_vars,
+            len_vars,
         }
     }
 }

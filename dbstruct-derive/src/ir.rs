@@ -20,13 +20,17 @@ impl Ir {
     pub fn from(model: Model) -> Self {
         let definition = Struct::from(&model);
         let new = NewMethod::from(&model, &definition);
+        let bounds: syn::WhereClause = if model.has_vec_field() {
+            parse_quote!(where DS: dbstruct::DataStore + dbstruct::traits::data_store::Orderd + std::clone::Clone)
+        } else {
+            parse_quote!(where DS: dbstruct::DataStore + std::clone::Clone)
+        };
         let accessors = model
             .fields
             .into_iter()
-            .map(|f| Accessor::from(f, &model.keys))
+            .map(|f| Accessor::from(f))
             .collect();
-        let bounds: syn::WhereClause =
-            parse_quote!(where DS: dbstruct::DataStore + std::clone::Clone);
+
         Self {
             definition,
             new,
@@ -42,6 +46,6 @@ mod tests {
 
     #[test]
     fn ir_gen_does_not_crash() {
-        let _ir = Ir::from(Model::mock());
+        let _ir = Ir::from(Model::mock_u8field());
     }
 }

@@ -21,10 +21,11 @@ pub fn codegen(ir: Ir) -> TokenStream {
 }
 
 fn new_impl(new: NewMethod) -> TokenStream {
-    let NewMethod { fields, vis } = new;
+    let NewMethod { locals, fields, vis } = new;
 
     quote!(
         #vis fn new(ds: DS) -> Result<Self, dbstruct::Error<DS::Error>> {
+            #(#locals),*
             Ok(Self {
                 ds,
                 #(#fields),*
@@ -55,7 +56,7 @@ fn definition(definition: Struct, bounds: &syn::WhereClause) -> TokenStream {
     let Struct {
         ident,
         vis,
-        extra_vars,
+        len_vars: extra_vars,
     } = definition;
     let predicates = &bounds.predicates;
     quote!(
@@ -79,7 +80,7 @@ mod tests {
         Struct {
             ident: parse_quote!(Test),
             vis: parse_quote!(pub),
-            extra_vars: fields
+            len_vars: fields
                 .into_iter()
                 .map(|s| parser.parse_str(s))
                 .map(Result::unwrap)
@@ -125,6 +126,7 @@ mod tests {
         NewMethod {
             fields: vec![parse_quote!(u8field: 0)],
             vis: parse_quote!(pub),
+            locals: Vec::new(),
         }
     }
 

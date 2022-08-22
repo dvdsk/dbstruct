@@ -32,7 +32,7 @@ impl TryFrom<syn::ItemStruct> for Model {
         let (fields, errors): (Vec<_>, Vec<_>) = input
             .fields
             .into_iter()
-            .map(Field::try_from)
+            .map(|f| Field::analyze(f, &keys))
             .partition_result();
 
         if !errors.is_empty() {
@@ -49,8 +49,27 @@ impl TryFrom<syn::ItemStruct> for Model {
 }
 
 impl Model {
-    #[cfg(test)]
-    pub fn mock() -> Model {
+    pub fn has_vec_field(&self) -> bool {
+        self.fields.iter().any(Field::is_vec)
+    }
+}
+
+#[cfg(test)]
+impl Model {
+    pub fn mock_vec() -> Model {
+        let input: syn::ItemStruct = syn::parse_str(
+            "        
+#[dbstruct::dbstruct]
+pub struct Test {
+    the_field: Vec<u8>,
+}",
+        )
+        .unwrap();
+
+        Model::try_from(input).unwrap()
+    }
+
+    pub fn mock_u8field() -> Model {
         let input: syn::ItemStruct = syn::parse_str(
             "        
 #[dbstruct::dbstruct]

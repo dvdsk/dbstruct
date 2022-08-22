@@ -2,7 +2,7 @@ use quote::format_ident;
 use syn::spanned::Spanned;
 use syn::{parse_quote, parse_quote_spanned};
 
-use crate::model::{DbKey, Field, Wrapper};
+use crate::model::{Field, Wrapper};
 
 pub struct Accessor {
     pub vis: syn::Visibility,
@@ -12,8 +12,8 @@ pub struct Accessor {
 }
 
 impl Accessor {
-    pub fn from(field: Field, keys: &DbKey) -> Self {
-        let key = keys.prefix(&field.ident);
+    pub fn from(field: Field) -> Self {
+        let key = field.key;
         let (body, returns) = match field.wrapper {
             #[allow(unused_variables)]
             Wrapper::Vec { ty } => {
@@ -81,9 +81,9 @@ mod tests {
             wrapper: Wrapper::DefaultTrait {
                 ty: parse_quote!(u8),
             },
+            key: 1,
         };
-        let keys = DbKey::mock();
-        let _a = Accessor::from(field, &keys);
+        let _a = Accessor::from(field);
     }
 
     #[test]
@@ -95,9 +95,9 @@ mod tests {
                 ty: parse_quote!(u8),
                 value: parse_quote!(5 + 12),
             },
+            key: 1,
         };
-        let keys = DbKey::mock();
-        let _a = Accessor::from(field, &keys);
+        let _a = Accessor::from(field);
     }
 
     #[test]
@@ -108,9 +108,9 @@ mod tests {
             wrapper: Wrapper::Option {
                 ty: parse_quote!(u8),
             },
+            key: 1,
         };
-        let keys = DbKey::mock();
-        let _a = Accessor::from(field, &keys);
+        let _a = Accessor::from(field);
     }
 
     #[test]
@@ -121,9 +121,9 @@ mod tests {
             wrapper: Wrapper::Vec {
                 ty: parse_quote!(u8),
             },
+            key: 1,
         };
-        let keys = DbKey::mock();
-        let _a = Accessor::from(field, &keys);
+        let _a = Accessor::from(field);
     }
 
     #[test]
@@ -135,8 +135,8 @@ mod tests {
                 key_ty: parse_quote!(u8),
                 val_ty: parse_quote!(u16),
             },
+            key: 1,
         };
-        let keys = DbKey::mock();
-        let _a = Accessor::from(field, &keys);
+        let _a = Accessor::from(field);
     }
 }
