@@ -1,12 +1,17 @@
+mod attribute;
+pub mod backend;
 mod field;
+pub mod key;
+
 pub use field::Field;
 pub use field::Wrapper;
 
-pub mod key;
 use itertools::Itertools;
 pub use key::DbKey;
 use proc_macro2::Ident;
 use syn::Visibility;
+
+use self::backend::Backend;
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
@@ -14,6 +19,10 @@ pub enum Error {
     Field(Vec<field::Error>),
     #[error(transparent)]
     DbKey(#[from] key::Error),
+    #[error(transparent)]
+    Attribute(#[from] attribute::Error),
+    #[error(transparent)]
+    Backend(#[from] backend::Error),
 }
 
 #[derive(Debug)]
@@ -22,6 +31,7 @@ pub struct Model {
     pub vis: Visibility,
     pub fields: Vec<Field>,
     pub keys: DbKey,
+    pub backend: Backend,
 }
 
 impl TryFrom<syn::ItemStruct> for Model {
@@ -39,11 +49,15 @@ impl TryFrom<syn::ItemStruct> for Model {
             return Err(Error::Field(errors));
         }
 
+        let options = attribute::parse(input.attrs)?;
+        let backend = Backend::try_from(&options, &fields)?;
+
         Ok(Self {
             vis: input.vis,
             ident: input.ident,
             keys,
             fields,
+            backend,
         })
     }
 }
@@ -59,7 +73,7 @@ impl Model {
     pub fn mock_vec() -> Model {
         let input: syn::ItemStruct = syn::parse_str(
             "        
-#[dbstruct::dbstruct]
+#[dbstruct::dbstruct(db=sled)]
 pub struct Test {
     the_field: Vec<u8>,
 }",
@@ -72,7 +86,7 @@ pub struct Test {
     pub fn mock_u8field() -> Model {
         let input: syn::ItemStruct = syn::parse_str(
             "        
-#[dbstruct::dbstruct]
+#[dbstruct::dbstruct(db=test)]
 pub struct Test {
     #[dbstruct(Default)]
     the_field: u8,
@@ -93,7 +107,7 @@ mod tests {
     fn analyze_model_does_not_crash() {
         let input: syn::ItemStruct = parse_str(
             "        
-#[dbstruct::dbstruct]
+#[dbstruct::dbstruct(db=test)]
 pub struct Test {
     #[dbstruct(Default)]
     the_field: u8,
@@ -102,5 +116,41 @@ pub struct Test {
         .unwrap();
 
         let _model = Model::try_from(input).unwrap();
+    }
+
+    mod backend {
+        use super::*;
+
+        #[test]
+        fn sled() {
+            let input: syn::ItemStruct = parse_str(
+                "        
+#[dbstruct::dbstruct(db=sled)]
+pub struct Test {
+    #[dbstruct(Default)]
+    the_field: u8,
+}",
+            )
+            .unwrap();
+
+            let model = Model::try_from(input).unwrap();
+            assert!(matches!(model.backend, Backend::Sled));
+        }
+
+        #[test]
+        fn none() {
+            let input: syn::ItemStruct = parse_str(
+                "        
+#[dbstruct::dbstruct(db=trait)]
+pub struct Test {
+    #[dbstruct(Default)]
+    the_field: u8,
+}",
+            )
+            .unwrap();
+
+            let model = Model::try_from(input).unwrap();
+            assert!(matches!(model.backend, Backend::Trait));
+        }
     }
 }

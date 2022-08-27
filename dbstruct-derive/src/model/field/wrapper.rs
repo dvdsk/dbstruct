@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::iter::Peekable;
 use std::mem;
 
@@ -5,6 +6,8 @@ use proc_macro2::TokenTree;
 
 mod errors;
 pub use errors::{Error, ErrorVariant};
+
+use crate::model::backend::ExtraBounds;
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum Wrapper {
@@ -130,6 +133,7 @@ impl Wrapper {
         let (mut relevant, other): (Vec<_>, Vec<_>) =
             mem::take(attributes).into_iter().partition(is_relevant);
         *attributes = other; /* TODO: use drain_filter when it stabilizes <31-07-22> */
+        /* TODO: emit error when other (non dbstruct) attributes are present <27-08-22, dvdsk> */
 
         let attribute = relevant.pop().map(as_wrapper).transpose()?.flatten();
         if let Some(other) = relevant.pop() {
@@ -150,6 +154,14 @@ impl Wrapper {
             (_, Some(DefaultTrait { .. })) => Self::DefaultTrait { ty },
             (_, Some(DefaultValue { expr })) => Self::DefaultValue { ty, value: expr },
         })
+    }
+
+    pub(crate) fn needed_traits(&self) -> HashSet<ExtraBounds> {
+        use ExtraBounds::*;
+        match self {
+            Wrapper::Vec { ty } => vec![Orderd, Atomic].into_iter(),
+            _ => vec![].into_iter(),
+        }.collect()
     }
 }
 

@@ -157,7 +157,7 @@ mod tests {
 
         let input: syn::ItemStruct = parse_str(
             "        
-#[dbstruct::dbstruct]
+#[dbstruct::dbstruct(db=sled)]
 pub struct Test {
     // #[dbstruct(Default)]
     primes: Vec<u32>,
