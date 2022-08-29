@@ -7,7 +7,7 @@ use proc_macro2::TokenTree;
 mod errors;
 pub use errors::{Error, ErrorVariant};
 
-use crate::model::backend::ExtraBounds;
+use crate::model::backend::ExtraBound;
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum Wrapper {
@@ -156,10 +156,10 @@ impl Wrapper {
         })
     }
 
-    pub(crate) fn needed_traits(&self) -> HashSet<ExtraBounds> {
-        use ExtraBounds::*;
+    pub(crate) fn needed_traits(&self) -> HashSet<ExtraBound> {
+        use ExtraBound::*;
         match self {
-            Wrapper::Vec { ty } => vec![Orderd, Atomic].into_iter(),
+            Wrapper::Vec { .. } => vec![Orderd, Atomic].into_iter(),
             _ => vec![].into_iter(),
         }.collect()
     }

@@ -13,12 +13,13 @@ use errors::{GetSpan, Help};
 #[proc_macro_attribute]
 #[proc_macro_error]
 pub fn dbstruct(
-    _attr: proc_macro::TokenStream,
+    attr: proc_macro::TokenStream,
     item: proc_macro::TokenStream,
 ) -> proc_macro::TokenStream {
     let input = parse_macro_input!(item as syn::ItemStruct);
+    let attr = parse_macro_input!(attr as syn::Attribute);
 
-    let model = match Model::try_from(input) {
+    let model = match Model::try_from(input, attr) {
         Ok(model) => model,
         Err(err) => emit_and_abort(err),
     };

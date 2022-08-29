@@ -10,22 +10,37 @@ pub fn codegen(ir: Ir) -> TokenStream {
     let accessors = accessor_impl(ir.accessors);
     let new_impl = new_impl(ir.new);
     let bounds = ir.bounds;
-    quote!(
-        #definition
 
-        impl<DS> #struct_ident<DS> #bounds {
-            #new_impl
-            #accessors
-        }
-    )
+    match bounds {
+        Some(bounds) => quote!(
+            #definition
+
+            impl<DS> #struct_ident<DS> #bounds {
+                #new_impl
+                #accessors
+            }
+        ),
+        None => quote!(
+            #definition
+
+            impl #struct_ident {
+                #new_impl
+                #accessors
+            }
+        ),
+    }
 }
 
 fn new_impl(new: NewMethod) -> TokenStream {
-    let NewMethod { locals, fields, vis } = new;
-
+    let NewMethod {
+        locals,
+        fields,
+        vis,
+        arg,
+    } = new;
     quote!(
-        #vis fn new(ds: DS) -> Result<Self, dbstruct::Error<DS::Error>> {
-            #(#locals),*
+        #vis fn new(#arg) -> Result<Self, dbstruct::Error<DS::Error>> {
+            #(#locals)*
             Ok(Self {
                 ds,
                 #(#fields),*
@@ -52,19 +67,29 @@ fn accessor_impl(accessors: Vec<Accessor>) -> TokenStream {
     )
 }
 
-fn definition(definition: Struct, bounds: &syn::WhereClause) -> TokenStream {
+fn definition(definition: Struct, bounds: &Option<syn::WhereClause>) -> TokenStream {
     let Struct {
         ident,
         vis,
         len_vars: extra_vars,
+        db,
     } = definition;
-    let predicates = &bounds.predicates;
-    quote!(
-        #vis struct #ident<#predicates> {
-            ds: DS,
-            #(#extra_vars),*
+    match bounds {
+        Some(bounds) => {
+            let predicates = &bounds.predicates;
+            quote!(
+                #vis struct #ident<#predicates> {
+                    ds: DS,
+                    #(#extra_vars),*
+                }
+            )
         }
-    )
+        None => quote!(
+        #vis struct #ident {
+            #db,
+            #(#extra_vars),*
+        }),
+    }
     .into()
 }
 
@@ -85,6 +110,7 @@ mod tests {
                 .map(|s| parser.parse_str(s))
                 .map(Result::unwrap)
                 .collect(),
+            db: parser.parse_str("ds: DS").unwrap(),
         }
     }
 
@@ -99,7 +125,7 @@ mod tests {
             "vec_field: Vec<u32>",
             "map_field: HashMap<f32, f64>",
         ];
-        let rust = definition(test_struct(&fields), &test_bounds());
+        let rust = definition(test_struct(&fields), &Some(test_bounds()));
         println!("{}", rust);
         assert!(syn::parse2::<syn::ItemStruct>(rust).is_ok())
     }
@@ -127,6 +153,7 @@ mod tests {
             fields: vec![parse_quote!(u8field: 0)],
             vis: parse_quote!(pub),
             locals: Vec::new(),
+            arg: parse_quote!(ds: DS),
         }
     }
 
@@ -164,6 +191,32 @@ pub struct Test {
 }",
         )
         .unwrap();
+
+        let model = Model::try_from(input).unwrap();
+        let ir = Ir::from(model);
+        let rust = codegen(ir);
+
+        println!("{rust}");
+        assert!(syn::parse2::<syn::File>(rust).is_ok())
+    }
+
+    #[test]
+    fn fail() {
+        use crate::model::Model;
+        use syn::parse_str;
+
+        let input: syn::ItemStruct = parse_str(
+            r##"        
+#[dbstruct::dbstruct(db=sled)]
+pub struct Test {
+    /// a small list that we dont want structdb to wrap for us
+    #[dbstruct(Default)]
+    small_list: Vec<u8>,
+    /// a small list that we dont want structdb to wrap for us
+    #[dbstruct(Default)]
+    small_map: HashMap<usize, u32>,
+}
+"##).unwrap();
 
         let model = Model::try_from(input).unwrap();
         let ir = Ir::from(model);

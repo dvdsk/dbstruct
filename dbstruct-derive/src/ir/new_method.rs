@@ -2,6 +2,7 @@ use proc_macro2::Span;
 use syn::punctuated::Punctuated;
 use syn::{parse_quote, Pat, PathArguments, Token};
 
+use crate::model::backend::Backend;
 use crate::model::{Field, Model, Wrapper};
 
 use super::struct_def::Struct;
@@ -10,6 +11,7 @@ pub struct NewMethod {
     pub locals: Vec<syn::Local>,
     pub fields: Vec<syn::FieldValue>,
     pub vis: syn::Visibility,
+    pub arg: syn::FnArg,
 }
 
 fn as_len_value(ident: syn::Ident) -> syn::FieldValue {
@@ -62,13 +64,27 @@ fn len_init(field: &Field) -> Option<syn::Local> {
     })
 }
 
+fn sled_from_path() -> syn::Local {
+    let stmt: syn::Stmt = parse_quote!(
+    let ds = sled::Config::default()
+        .path(path)
+        .open()?
+        .open_tree("DbStruct")?;
+    );
+    match stmt {
+        syn::Stmt::Local(local) => local,
+        _ => unreachable!(),
+    }
+}
+
 impl NewMethod {
     pub fn from(model: &Model, struct_def: &Struct) -> Self {
-        let locals: Vec<_> = model
+        let mut locals: Vec<_> = model
             .fields
             .iter()
             .filter_map(|field| len_init(field))
             .collect();
+
         let fields: Vec<_> = struct_def
             .len_vars
             .iter()
@@ -76,23 +92,55 @@ impl NewMethod {
             .map(Option::unwrap)
             .map(as_len_value)
             .collect();
+        let arg = match model.backend {
+            Backend::Sled => {
+                locals.push(sled_from_path());
+                parse_quote!(path: &std::path::Path)
+            }
+            Backend::Trait { .. } => parse_quote!(ds: DS),
+            #[cfg(test)]
+            Backend::Test => unreachable!("test not used in new method"),
+        };
         Self {
             locals,
             fields,
             vis: model.vis.clone(),
+            arg,
         }
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use quote::ToTokens;
+
     use super::*;
 
     #[test]
-    fn new_method_has_one_local() {
+    fn has_one_local() {
         let model = Model::mock_vec();
         let struct_def = Struct::from(&model);
         let new_method = NewMethod::from(&model, &struct_def);
-        assert!(new_method.locals.len() == 1);
+        assert!(new_method.locals.len() == 2);
+    }
+
+    #[test]
+    fn body_is_valid_rust() {
+        let model = Model::mock_vec();
+        let struct_def = Struct::from(&model);
+        let new_method = NewMethod::from(&model, &struct_def);
+
+        let stmts: Vec<_> = new_method
+            .locals
+            .into_iter()
+            .map(syn::Stmt::Local)
+            .collect();
+        let block = syn::Block {
+            brace_token: syn::token::Brace(proc_macro2::Span::call_site()),
+            stmts,
+        };
+        let tokens = block.to_token_stream();
+        println!("{tokens}");
+        assert!(syn::parse2::<syn::Block>(tokens).is_ok())
     }
 }

@@ -62,12 +62,6 @@ impl TryFrom<syn::ItemStruct> for Model {
     }
 }
 
-impl Model {
-    pub fn has_vec_field(&self) -> bool {
-        self.fields.iter().any(Field::is_vec)
-    }
-}
-
 #[cfg(test)]
 impl Model {
     pub fn mock_vec() -> Model {

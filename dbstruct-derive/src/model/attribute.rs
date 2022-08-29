@@ -3,15 +3,22 @@ pub use errors::{Error, ErrorVariant};
 
 pub use super::field::Field;
 pub use super::field::Wrapper;
-use super::Backend;
 use std::iter::Peekable;
 
 pub use super::key::DbKey;
 use proc_macro2::TokenTree;
 
+#[derive(Debug, Clone, Copy)]
+pub enum BackendOption {
+    Sled,
+    Trait,
+    #[cfg(test)]
+    Test,
+}
+
 #[derive(Debug)]
 pub enum Options {
-    Backend(Backend),
+    Backend(BackendOption),
     Async,
 }
 
@@ -57,13 +64,12 @@ pub fn parse(attrs: Vec<syn::Attribute>) -> Result<Vec<Options>, Error> {
 fn parse_db(
     span: proc_macro2::Span,
     tokens: &mut Peekable<impl Iterator<Item = TokenTree>>,
-) -> Result<Backend, Error> {
+) -> Result<BackendOption, Error> {
     use ErrorVariant::*;
     match tokens.peek() {
         None => {
             tokens.next();
-            todo!();
-            // return Ok(Attribute::DefaultTrait { span });
+            return Err(MissingDb.with_span(span));
         }
         Some(TokenTree::Punct(punct)) if punct.as_char() == ',' => {
             tokens.next();
@@ -75,10 +81,10 @@ fn parse_db(
                 None => return Err(MissingBackendValue.with_span(punct)),
                 Some(TokenTree::Ident(ident)) => {
                     let backend = match ident.to_string().as_str() {
-                        "sled" => Backend::Sled,
-                        "trait" => Backend::Trait,
+                        "sled" => BackendOption::Sled,
+                        "trait" => BackendOption::Trait,
                         #[cfg(test)]
-                        "test" => Backend::Test,
+                        "test" => BackendOption::Test,
                         _ => return Err(NotABackend(ident).has_span()),
                     };
                     return Ok(backend);
@@ -120,7 +126,7 @@ struct Test {}",
         )
         .unwrap();
         let attribute = parse(input.attrs).unwrap().pop().unwrap();
-        assert!(matches!(attribute, Options::Backend(Backend::Sled)));
+        assert!(matches!(attribute, Options::Backend(BackendOption::Sled)));
     }
 
     #[test]
@@ -135,7 +141,7 @@ struct Test {}",
         assert!(matches!(attributes.pop().unwrap(), Options::Async));
         assert!(matches!(
             attributes.pop().unwrap(),
-            Options::Backend(Backend::Sled)
+            Options::Backend(BackendOption::Sled)
         ));
     }
 }

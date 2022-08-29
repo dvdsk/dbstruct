@@ -7,24 +7,38 @@ pub use new_method::NewMethod;
 pub use struct_def::Struct;
 use syn::parse_quote;
 
+use crate::model::backend::{Backend, ExtraBound};
 use crate::model::Model;
 
 pub struct Ir {
     pub definition: Struct,
     pub new: NewMethod,
     pub accessors: Vec<Accessor>,
-    pub bounds: syn::WhereClause,
+    pub bounds: Option<syn::WhereClause>,
+}
+
+fn bound_to_ir(bound: &ExtraBound) -> syn::TraitBound {
+    match bound {
+        ExtraBound::Atomic => parse_quote!(dbstruct::traits::data_store::Atomic),
+        ExtraBound::Orderd => parse_quote!(dbstruct::traits::data_store::Orderd),
+    }
+}
+
+fn bounds_from(model: &Model) -> Option<syn::WhereClause> {
+    match &model.backend {
+        Backend::Trait { bounds } => {
+            let bounds = bounds.iter().map(bound_to_ir);
+            parse_quote!(where DS: dbstruct::DataStore + std::clone::Clone + #(#bounds),*)
+        }
+        _ => None,
+    }
 }
 
 impl Ir {
     pub fn from(model: Model) -> Self {
         let definition = Struct::from(&model);
         let new = NewMethod::from(&model, &definition);
-        let bounds: syn::WhereClause = if model.has_vec_field() {
-            parse_quote!(where DS: dbstruct::DataStore + dbstruct::traits::data_store::Orderd + std::clone::Clone)
-        } else {
-            parse_quote!(where DS: dbstruct::DataStore + std::clone::Clone)
-        };
+        let bounds = bounds_from(&model);
         let accessors = model
             .fields
             .into_iter()

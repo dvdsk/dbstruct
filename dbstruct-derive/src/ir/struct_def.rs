@@ -1,5 +1,6 @@
 use syn::parse_quote;
 
+use crate::model::backend::Backend;
 use crate::model::{Field, Model};
 
 pub struct Struct {
@@ -8,6 +9,7 @@ pub struct Struct {
     /// extra variables such as the current length
     /// of the vector wrapper
     pub len_vars: Vec<syn::Field>,
+    pub db: syn::Field,
 }
 
 fn as_len_field(field: &Field) -> syn::Field {
@@ -29,10 +31,27 @@ impl From<&Model> for Struct {
             .filter(|f| f.is_vec())
             .map(as_len_field)
             .collect();
+
+        let ty = match model.backend {
+            Backend::Sled => parse_quote!(::dbstruct::stores::sled::Tree),
+            Backend::Trait { .. } => parse_quote!(DS),
+            #[cfg(test)]
+            Backend::Test => unreachable!("Test backend is not supported for codegen"),
+        };
+
+        let db = syn::Field {
+            attrs: Vec::new(),
+            vis: syn::Visibility::Inherited,
+            ident: Some(syn::Ident::new("ds", proc_macro2::Span::call_site())),
+            colon_token: None,
+            ty,
+        };
+
         Struct {
             ident: model.ident.clone(),
             vis: model.vis.clone(),
             len_vars,
+            db,
         }
     }
 }

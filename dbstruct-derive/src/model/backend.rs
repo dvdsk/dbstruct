@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use super::attribute::Options;
+use super::attribute::{BackendOption, Options};
 use super::{attribute, Field};
 
 #[derive(Debug, thiserror::Error)]
@@ -12,20 +12,22 @@ pub enum Error {
     #[error("No database backend specified for the struct")]
     MissesTraits {
         backend: Backend,
-        missing: HashSet<ExtraBounds>,
+        missing: HashSet<ExtraBound>,
     },
 }
 
 #[derive(PartialEq, Eq, Hash, Clone, Copy, Debug)]
-pub enum ExtraBounds {
+pub enum ExtraBound {
     Atomic,
     Orderd,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 pub enum Backend {
     Sled,
-    Trait,
+    Trait {
+        bounds: Vec<ExtraBound>,
+    },
     #[cfg(test)]
     Test,
 }
@@ -43,6 +45,21 @@ impl Backend {
             (Some(_), Some(_)) => return Err(Error::MultipleBackends),
         };
 
+        let backend = match backend {
+            BackendOption::Trait => {
+                return Ok(Backend::Trait {
+                    bounds: fields
+                        .iter()
+                        .map(|f| f.wrapper.needed_traits().into_iter())
+                        .flatten()
+                        .collect(),
+                })
+            }
+            BackendOption::Sled => Backend::Sled,
+            #[cfg(test)]
+            BackendOption::Test => Backend::Test,
+        };
+
         for field in fields {
             let needed = field.wrapper.needed_traits();
             let missing: HashSet<_> = needed.difference(&backend.traits()).copied().collect();
@@ -54,11 +71,11 @@ impl Backend {
         Ok(backend)
     }
 
-    fn traits(&self) -> HashSet<ExtraBounds> {
-        use ExtraBounds::*;
+    fn traits(&self) -> HashSet<ExtraBound> {
+        use ExtraBound::*;
         match self {
             Backend::Sled => vec![Atomic, Orderd].into_iter(),
-            Backend::Trait => vec![Atomic, Orderd].into_iter(),
+            Backend::Trait { .. } => unreachable!("should never be called when backend is Trait"),
             #[cfg(test)]
             Backend::Test => vec![].into_iter(),
         }
@@ -70,13 +87,13 @@ impl Backend {
 mod tests {
     use attribute::Wrapper;
     use syn::parse_quote;
-    use ExtraBounds::*;
+    use ExtraBound::*;
 
     use super::*;
 
     #[test]
     fn error_on_unsupported_backend() {
-        let options = [Options::Backend(Backend::Test)];
+        let options = [Options::Backend(BackendOption::Test)];
         let fields = [Field {
             ident: parse_quote!(test_a),
             vis: parse_quote!(pub),
@@ -97,7 +114,7 @@ mod tests {
 
     #[test]
     fn supported_backend() {
-        let options = [Options::Backend(Backend::Sled)];
+        let options = [Options::Backend(BackendOption::Sled)];
         let fields = [Field {
             ident: parse_quote!(test_a),
             vis: parse_quote!(pub),
@@ -113,8 +130,8 @@ mod tests {
     #[test]
     fn reject_double_backend() {
         let options = [
-            Options::Backend(Backend::Sled),
-            Options::Backend(Backend::Sled),
+            Options::Backend(BackendOption::Sled),
+            Options::Backend(BackendOption::Sled),
         ];
         let fields = [Field {
             ident: parse_quote!(test_a),
