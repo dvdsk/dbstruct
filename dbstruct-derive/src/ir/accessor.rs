@@ -83,7 +83,8 @@ mod tests {
             },
             key: 1,
         };
-        let _a = Accessor::from(field);
+        let ds_ty = parse_quote!(DS);
+        let _a = Accessor::from(field, ds_ty);
     }
 
     #[test]
@@ -97,7 +98,8 @@ mod tests {
             },
             key: 1,
         };
-        let _a = Accessor::from(field);
+        let ds_ty = parse_quote!(DS);
+        let _a = Accessor::from(field, ds_ty);
     }
 
     #[test]
@@ -110,7 +112,8 @@ mod tests {
             },
             key: 1,
         };
-        let _a = Accessor::from(field);
+        let ds_ty = parse_quote!(DS);
+        let _a = Accessor::from(field, ds_ty);
     }
 
     #[test]
@@ -123,7 +126,8 @@ mod tests {
             },
             key: 1,
         };
-        let _a = Accessor::from(field);
+        let ds_ty = parse_quote!(DS);
+        let _a = Accessor::from(field, ds_ty);
     }
 
     #[test]
@@ -137,6 +141,7 @@ mod tests {
             },
             key: 1,
         };
-        let _a = Accessor::from(field);
+        let ds_ty = parse_quote!(DS);
+        let _a = Accessor::from(field, ds_ty);
     }
 }

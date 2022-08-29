@@ -96,6 +96,8 @@ fn definition(definition: Struct, bounds: &Option<syn::WhereClause>) -> TokenStr
 
 #[cfg(test)]
 mod tests {
+    use std::str::FromStr;
+
     use syn::parse::Parser;
     use syn::parse_quote;
 
@@ -155,6 +157,7 @@ mod tests {
             vis: parse_quote!(pub),
             locals: Vec::new(),
             arg: parse_quote!(ds: DS),
+            error_ty: parse_quote!(DS),
         }
     }
 
@@ -183,9 +186,9 @@ mod tests {
         use crate::model::Model;
         use syn::parse_str;
 
-        let input: syn::ItemStruct = parse_str(
+        let input_attr = proc_macro2::TokenStream::from_str("db=sled").unwrap();
+        let input_struct: syn::ItemStruct = parse_str(
             "        
-#[dbstruct::dbstruct(db=sled)]
 pub struct Test {
     // #[dbstruct(Default)]
     primes: Vec<u32>,
@@ -193,7 +196,7 @@ pub struct Test {
         )
         .unwrap();
 
-        let model = Model::try_from(input).unwrap();
+        let model = Model::try_from(input_struct, input_attr).unwrap();
         let ir = Ir::from(model);
         let rust = codegen(ir);
 
@@ -206,9 +209,9 @@ pub struct Test {
         use crate::model::Model;
         use syn::parse_str;
 
-        let input: syn::ItemStruct = parse_str(
+        let input_attr = proc_macro2::TokenStream::from_str("db=sled").unwrap();
+        let input_struct: syn::ItemStruct = parse_str(
             r##"        
-#[dbstruct::dbstruct(db=sled)]
 pub struct Test {
     /// a small list that we dont want structdb to wrap for us
     #[dbstruct(Default)]
@@ -217,9 +220,11 @@ pub struct Test {
     #[dbstruct(Default)]
     small_map: HashMap<usize, u32>,
 }
-"##).unwrap();
+"##,
+        )
+        .unwrap();
 
-        let model = Model::try_from(input).unwrap();
+        let model = Model::try_from(input_struct, input_attr).unwrap();
         let ir = Ir::from(model);
         let rust = codegen(ir);
 

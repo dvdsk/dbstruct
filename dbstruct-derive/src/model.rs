@@ -62,14 +62,14 @@ impl Model {
 }
 
 #[cfg(test)]
+use std::str::FromStr;
+
+#[cfg(test)]
 impl Model {
     pub fn mock_vec() -> Model {
-        let input_attr = syn::Attribute::parse_args(
-            "#[dbstruct::dbstruct(db=sled)]"
-        ).unwrap();
+        let input_attr = proc_macro2::TokenStream::from_str("db=sled").unwrap();
         let input_struct: syn::ItemStruct = syn::parse_str(
             "        
-#[dbstruct::dbstruct(db=sled)]
 pub struct Test {
     the_field: Vec<u8>,
 }",
@@ -80,12 +80,9 @@ pub struct Test {
     }
 
     pub fn mock_u8field() -> Model {
-        let input_attr: syn::Attribute = syn::parse_str(
-            "#[dbstruct::dbstruct(db=sled)]"
-        ).unwrap();
+        let input_attr = proc_macro2::TokenStream::from_str("db=sled").unwrap();
         let input_struct: syn::ItemStruct = syn::parse_str(
             "        
-#[dbstruct::dbstruct(db=sled)]
 pub struct Test {
     #[dbstruct(Default)]
     the_field: u8,
@@ -99,17 +96,16 @@ pub struct Test {
 
 #[cfg(test)]
 mod tests {
+    use std::str::FromStr;
+
     use super::*;
     use syn::parse_str;
 
     #[test]
     fn analyze_model_does_not_crash() {
-        let input_attr: syn::Attribute = parse_str(
-            "#[dbstruct::dbstruct(db=test)]"
-        ).unwrap();
+        let input_attr = proc_macro2::TokenStream::from_str("db=sled").unwrap();
         let input_struct: syn::ItemStruct = parse_str(
             "        
-#[dbstruct::dbstruct(db=test)]
 pub struct Test {
     #[dbstruct(Default)]
     the_field: u8,
@@ -125,12 +121,9 @@ pub struct Test {
 
         #[test]
         fn sled() {
-            let input_attr: syn::Attribute = parse_str(
-            "#[dbstruct::dbstruct(db=sled)]"
-            ).unwrap();
+            let input_attr = proc_macro2::TokenStream::from_str("db=sled").unwrap();
             let input_struct: syn::ItemStruct = parse_str(
                 "        
-#[dbstruct::dbstruct(db=sled)]
 pub struct Test {
     #[dbstruct(Default)]
     the_field: u8,
@@ -144,12 +137,9 @@ pub struct Test {
 
         #[test]
         fn none() {
-            let input_attr: syn::Attribute = parse_str(
-            "#[dbstruct::dbstruct(db=trait)]"
-            ).unwrap();
+            let input_attr = proc_macro2::TokenStream::from_str("db=trait").unwrap();
             let input_struct: syn::ItemStruct = parse_str(
                 "        
-#[dbstruct::dbstruct(db=trait)]
 pub struct Test {
     #[dbstruct(Default)]
     the_field: u8,
