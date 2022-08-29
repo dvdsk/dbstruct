@@ -34,15 +34,25 @@ fn bounds_from(model: &Model) -> Option<syn::WhereClause> {
     }
 }
 
+fn backend_type(backend: &Backend) -> syn::Type {
+    match backend {
+        Backend::Sled => parse_quote!(::dbstruct::sled::Tree),
+        Backend::Trait { .. } => parse_quote!(DS),
+        #[cfg(test)]
+        Backend::Test => unreachable!("Test backend is not supported for codegen"),
+    }
+}
+
 impl Ir {
     pub fn from(model: Model) -> Self {
         let definition = Struct::from(&model);
         let new = NewMethod::from(&model, &definition);
         let bounds = bounds_from(&model);
+        let backend_ty = backend_type(&model.backend);
         let accessors = model
             .fields
             .into_iter()
-            .map(|f| Accessor::from(f))
+            .map(|f| Accessor::from(f, backend_ty.clone()))
             .collect();
 
         Self {

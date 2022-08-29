@@ -12,7 +12,7 @@ pub struct Accessor {
 }
 
 impl Accessor {
-    pub fn from(field: Field) -> Self {
+    pub fn from(field: Field, ds: syn::Type) -> Self {
         let key = field.key;
         let (body, returns) = match field.wrapper {
             #[allow(unused_variables)]
@@ -21,7 +21,7 @@ impl Accessor {
                 let body = parse_quote!({
                     dbstruct::wrappers::Vec::new(self.ds.clone(), #key, self.#len_ident.clone())
                 });
-                let returns = parse_quote_spanned!(ty.span()=> dbstruct::wrappers::Vec<#ty, DS>);
+                let returns = parse_quote_spanned!(ty.span()=> dbstruct::wrappers::Vec<#ty, #ds>);
                 (body, returns)
             }
             #[allow(unused_variables)]
@@ -30,7 +30,7 @@ impl Accessor {
                     dbstruct::wrappers::Map::new(self.ds.clone(), #key)
                 });
                 let span = key_ty.span().join(val_ty.span()).unwrap();
-                let returns = parse_quote_spanned!(span=> dbstruct::wrappers::Map<#key_ty, #val_ty, DS>);
+                let returns = parse_quote_spanned!(span=> dbstruct::wrappers::Map<#key_ty, #val_ty, #ds>);
                 (body, returns)
             }
             #[allow(unused_variables)]
@@ -38,7 +38,7 @@ impl Accessor {
                 let body = parse_quote!({
                     dbstruct::wrappers::DefaultTrait::new(self.ds.clone(), #key)
                 });
-                let returns = parse_quote_spanned!(ty.span()=> dbstruct::wrappers::DefaultTrait<#ty, DS>);
+                let returns = parse_quote_spanned!(ty.span()=> dbstruct::wrappers::DefaultTrait<#ty, #ds>);
                 (body, returns)
             }
             #[allow(unused_variables)]
@@ -47,7 +47,7 @@ impl Accessor {
                     let default_value = #value;
                     dbstruct::wrappers::DefaultValue::new(self.ds.clone(), #key, default_value)
                 });
-                let returns = parse_quote_spanned!(ty.span()=> dbstruct::wrappers::DefaultValue<#ty, DS>);
+                let returns = parse_quote_spanned!(ty.span()=> dbstruct::wrappers::DefaultValue<#ty, #ds>);
                 (body, returns)
             }
             #[allow(unused_variables)]
@@ -55,7 +55,7 @@ impl Accessor {
                 let body = parse_quote!({
                     dbstruct::wrappers::OptionValue::new(self.ds.clone(), #key)
                 });
-                let returns = parse_quote_spanned!(ty.span()=> dbstruct::wrappers::OptionValue<#ty, DS>);
+                let returns = parse_quote_spanned!(ty.span()=> dbstruct::wrappers::OptionValue<#ty, #ds>);
                 (body, returns)
             }
         };

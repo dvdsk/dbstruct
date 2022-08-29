@@ -6,8 +6,6 @@ use crate::GetSpan;
 
 #[derive(Debug, thiserror::Error)]
 pub enum ErrorVariant {
-    #[error("You must choose which database to wrap")]
-    NoBackendSpecified,
     #[error("todo")]
     MissingDb,
     #[error("todo")]
@@ -22,8 +20,6 @@ pub enum ErrorVariant {
     InvalidSyntax(TokenTree),
     #[error("Not a known dbstruct backend: `{0}`")]
     NotABackend(proc_macro2::Ident),
-    #[error("Invalid token tree expected Group")]
-    InvalidTokenTree,
 }
 
 #[derive(thiserror::Error, Debug)]

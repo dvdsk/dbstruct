@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-#[dbstruct::dbstruct(db=sled)]
+#[dbstruct::dbstruct(db=trait)]
 pub struct Test {
     /// a small list that we dont want structdb to wrap for us
     #[dbstruct(Default)]

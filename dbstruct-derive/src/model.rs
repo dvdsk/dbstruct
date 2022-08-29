@@ -34,9 +34,8 @@ pub struct Model {
     pub backend: Backend,
 }
 
-impl TryFrom<syn::ItemStruct> for Model {
-    type Error = Error;
-    fn try_from(input: syn::ItemStruct) -> Result<Self, Self::Error> {
+impl Model {
+    pub fn try_from(input: syn::ItemStruct, attr: proc_macro2::TokenStream) -> Result<Self, Error> {
         let keys = DbKey::new(&input.fields)?;
 
         let (fields, errors): (Vec<_>, Vec<_>) = input
@@ -49,7 +48,7 @@ impl TryFrom<syn::ItemStruct> for Model {
             return Err(Error::Field(errors));
         }
 
-        let options = attribute::parse(input.attrs)?;
+        let options = attribute::parse(attr)?;
         let backend = Backend::try_from(&options, &fields)?;
 
         Ok(Self {
@@ -65,7 +64,10 @@ impl TryFrom<syn::ItemStruct> for Model {
 #[cfg(test)]
 impl Model {
     pub fn mock_vec() -> Model {
-        let input: syn::ItemStruct = syn::parse_str(
+        let input_attr = syn::Attribute::parse_args(
+            "#[dbstruct::dbstruct(db=sled)]"
+        ).unwrap();
+        let input_struct: syn::ItemStruct = syn::parse_str(
             "        
 #[dbstruct::dbstruct(db=sled)]
 pub struct Test {
@@ -74,13 +76,16 @@ pub struct Test {
         )
         .unwrap();
 
-        Model::try_from(input).unwrap()
+        Model::try_from(input_struct, input_attr).unwrap()
     }
 
     pub fn mock_u8field() -> Model {
-        let input: syn::ItemStruct = syn::parse_str(
+        let input_attr: syn::Attribute = syn::parse_str(
+            "#[dbstruct::dbstruct(db=sled)]"
+        ).unwrap();
+        let input_struct: syn::ItemStruct = syn::parse_str(
             "        
-#[dbstruct::dbstruct(db=test)]
+#[dbstruct::dbstruct(db=sled)]
 pub struct Test {
     #[dbstruct(Default)]
     the_field: u8,
@@ -88,7 +93,7 @@ pub struct Test {
         )
         .unwrap();
 
-        Model::try_from(input).unwrap()
+        Model::try_from(input_struct, input_attr).unwrap()
     }
 }
 
@@ -99,7 +104,10 @@ mod tests {
 
     #[test]
     fn analyze_model_does_not_crash() {
-        let input: syn::ItemStruct = parse_str(
+        let input_attr: syn::Attribute = parse_str(
+            "#[dbstruct::dbstruct(db=test)]"
+        ).unwrap();
+        let input_struct: syn::ItemStruct = parse_str(
             "        
 #[dbstruct::dbstruct(db=test)]
 pub struct Test {
@@ -109,7 +117,7 @@ pub struct Test {
         )
         .unwrap();
 
-        let _model = Model::try_from(input).unwrap();
+        let _model = Model::try_from(input_struct, input_attr).unwrap();
     }
 
     mod backend {
@@ -117,7 +125,10 @@ pub struct Test {
 
         #[test]
         fn sled() {
-            let input: syn::ItemStruct = parse_str(
+            let input_attr: syn::Attribute = parse_str(
+            "#[dbstruct::dbstruct(db=sled)]"
+            ).unwrap();
+            let input_struct: syn::ItemStruct = parse_str(
                 "        
 #[dbstruct::dbstruct(db=sled)]
 pub struct Test {
@@ -127,13 +138,16 @@ pub struct Test {
             )
             .unwrap();
 
-            let model = Model::try_from(input).unwrap();
+            let model = Model::try_from(input_struct, input_attr).unwrap();
             assert!(matches!(model.backend, Backend::Sled));
         }
 
         #[test]
         fn none() {
-            let input: syn::ItemStruct = parse_str(
+            let input_attr: syn::Attribute = parse_str(
+            "#[dbstruct::dbstruct(db=trait)]"
+            ).unwrap();
+            let input_struct: syn::ItemStruct = parse_str(
                 "        
 #[dbstruct::dbstruct(db=trait)]
 pub struct Test {
@@ -143,8 +157,8 @@ pub struct Test {
             )
             .unwrap();
 
-            let model = Model::try_from(input).unwrap();
-            assert!(matches!(model.backend, Backend::Trait));
+            let model = Model::try_from(input_struct, input_attr).unwrap();
+            assert!(matches!(model.backend, Backend::Trait { .. }));
         }
     }
 }

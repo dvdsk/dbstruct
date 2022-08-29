@@ -22,34 +22,11 @@ pub enum Options {
     Async,
 }
 
-fn is_relevant(att: &syn::Attribute) -> bool {
-    let ident = match att.path.segments.first().map(|s| &s.ident) {
-        Some(ident) => ident.to_string(),
-        None => return false,
-    };
-    &ident == "dbstruct"
-}
-
-pub fn parse(attrs: Vec<syn::Attribute>) -> Result<Vec<Options>, Error> {
-    let attr = attrs
-        .into_iter()
-        .filter(is_relevant) /* TODO: return error if any non dbstruct attributes are present <27-08-22, dvdsk> */
-        .nth(0)
-        .ok_or(ErrorVariant::NoBackendSpecified.has_span())?;
-
-    let tokens = match attr.tokens.into_iter().nth(0) {
-        Some(tokens) => tokens,
-        None => return Ok(Vec::new()),
-    };
-
-    let tokens = match tokens {
-        TokenTree::Group(group) => group.stream(),
-        _other => return Err(ErrorVariant::InvalidTokenTree.with_span(_other)),
-    };
-
+/// attrs is the tokenstream returned by Attribute::parse_args();
+pub fn parse(attrs: proc_macro2::TokenStream) -> Result<Vec<Options>, Error> {
     let mut attributes = Vec::new();
-    let mut tokens = tokens.into_iter().peekable();
-    loop {
+    let mut tokens = attrs.into_iter().peekable();
+    while tokens.peek().is_some() {
         let attribute = parse_item(&mut tokens)?;
         attributes.push(attribute);
         match tokens.next() {
@@ -114,30 +91,20 @@ fn parse_item(tokens: &mut Peekable<impl Iterator<Item = TokenTree>>) -> Result<
 
 #[cfg(test)]
 mod tests {
+    use std::str::FromStr;
     use super::*;
-    use syn::parse_str;
 
     #[test]
     fn parse_db_option() {
-        let input: syn::ItemStruct = parse_str(
-            "        
-#[dbstruct::dbstruct(db=sled)]
-struct Test {}",
-        )
-        .unwrap();
-        let attribute = parse(input.attrs).unwrap().pop().unwrap();
+        let attr = proc_macro2::TokenStream::from_str("db=sled").unwrap();
+        let attribute = parse(attr).unwrap().pop().unwrap();
         assert!(matches!(attribute, Options::Backend(BackendOption::Sled)));
     }
 
     #[test]
     fn parse_multiple_option() {
-        let input: syn::ItemStruct = parse_str(
-            "        
-#[dbstruct::dbstruct(db=sled,async)]
-struct Test {}",
-        )
-        .unwrap();
-        let mut attributes = parse(input.attrs).unwrap();
+        let attr = proc_macro2::TokenStream::from_str("db=sled,async").unwrap();
+        let mut attributes = parse(attr).unwrap();
         assert!(matches!(attributes.pop().unwrap(), Options::Async));
         assert!(matches!(
             attributes.pop().unwrap(),

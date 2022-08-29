@@ -12,6 +12,7 @@ pub struct NewMethod {
     pub fields: Vec<syn::FieldValue>,
     pub vis: syn::Visibility,
     pub arg: syn::FnArg,
+    pub error_ty: syn::Type,
 }
 
 fn as_len_value(ident: syn::Ident) -> syn::FieldValue {
@@ -66,7 +67,7 @@ fn len_init(field: &Field) -> Option<syn::Local> {
 
 fn sled_from_path() -> syn::Local {
     let stmt: syn::Stmt = parse_quote!(
-    let ds = sled::Config::default()
+    let ds = ::sled::Config::default()
         .path(path)
         .open()?
         .open_tree("DbStruct")?;
@@ -92,12 +93,19 @@ impl NewMethod {
             .map(Option::unwrap)
             .map(as_len_value)
             .collect();
-        let arg = match model.backend {
+
+        let arg;
+        let error_ty;
+        match model.backend {
             Backend::Sled => {
                 locals.push(sled_from_path());
-                parse_quote!(path: &std::path::Path)
+                arg = parse_quote!(path: &std::path::Path);
+                error_ty = parse_quote!(::dbstruct::sled::Error);
             }
-            Backend::Trait { .. } => parse_quote!(ds: DS),
+            Backend::Trait { .. } => {
+                arg = parse_quote!(ds: DS);
+                error_ty = parse_quote!(DS::Error);
+            }
             #[cfg(test)]
             Backend::Test => unreachable!("test not used in new method"),
         };
@@ -106,6 +114,7 @@ impl NewMethod {
             fields,
             vis: model.vis.clone(),
             arg,
+            error_ty,
         }
     }
 }

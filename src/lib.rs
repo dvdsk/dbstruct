@@ -8,6 +8,8 @@ pub mod traits;
 pub use traits::{DataStore, ByteStore};
 pub mod wrappers;
 
+pub use sled;
+
 #[derive(Debug, thiserror::Error)]
 pub enum Error<DbError: fmt::Debug> {
     #[error("value could not be deserialized using bincode")]
