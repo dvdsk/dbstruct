@@ -67,7 +67,7 @@ fn len_init(field: &Field) -> Option<syn::Local> {
 
 fn sled_from_path() -> syn::Local {
     let stmt: syn::Stmt = parse_quote!(
-    let ds = ::sled::Config::default()
+    let ds = ::dbstruct::sled::Config::default()
         .path(path)
         .open()?
         .open_tree("DbStruct")?;
@@ -80,12 +80,6 @@ fn sled_from_path() -> syn::Local {
 
 impl NewMethod {
     pub fn from(model: &Model, struct_def: &Struct) -> Self {
-        let mut locals: Vec<_> = model
-            .fields
-            .iter()
-            .filter_map(|field| len_init(field))
-            .collect();
-
         let fields: Vec<_> = struct_def
             .len_vars
             .iter()
@@ -93,6 +87,8 @@ impl NewMethod {
             .map(Option::unwrap)
             .map(as_len_value)
             .collect();
+
+        let mut locals = Vec::new();
 
         let arg;
         let error_ty;
@@ -109,6 +105,10 @@ impl NewMethod {
             #[cfg(test)]
             Backend::Test => unreachable!("test not used in new method"),
         };
+
+        let inits = model.fields.iter().filter_map(|field| len_init(field));
+        locals.extend(inits);
+
         Self {
             locals,
             fields,
