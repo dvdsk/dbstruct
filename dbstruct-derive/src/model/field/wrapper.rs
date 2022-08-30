@@ -159,7 +159,7 @@ impl Wrapper {
     pub(crate) fn needed_traits(&self) -> HashSet<ExtraBound> {
         use ExtraBound::*;
         match self {
-            Wrapper::Vec { .. } => vec![Orderd, Atomic].into_iter(),
+            Wrapper::Vec { .. } => vec![Orderd].into_iter(),
             _ => vec![].into_iter(),
         }.collect()
     }

@@ -1,5 +1,6 @@
 mod errors;
 pub use errors::{Error, ErrorVariant};
+use proc_macro2::Span;
 
 pub use super::field::Field;
 pub use super::field::Wrapper;
@@ -9,11 +10,18 @@ pub use super::key::DbKey;
 use proc_macro2::TokenTree;
 
 #[derive(Debug, Clone, Copy)]
-pub enum BackendOption {
+pub enum BackendOptionVariant {
     Sled,
+    HashMap,
     Trait,
     #[cfg(test)]
     Test,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct BackendOption {
+    pub backend: BackendOptionVariant,
+    pub span: Span,
 }
 
 #[derive(Debug)]
@@ -42,7 +50,9 @@ fn parse_db(
     span: proc_macro2::Span,
     tokens: &mut Peekable<impl Iterator<Item = TokenTree>>,
 ) -> Result<BackendOption, Error> {
+    use BackendOptionVariant::*;
     use ErrorVariant::*;
+
     match tokens.peek() {
         None => {
             tokens.next();
@@ -58,13 +68,17 @@ fn parse_db(
                 None => return Err(MissingBackendValue.with_span(punct)),
                 Some(TokenTree::Ident(ident)) => {
                     let backend = match ident.to_string().as_str() {
-                        "sled" => BackendOption::Sled,
-                        "trait" => BackendOption::Trait,
+                        "sled" => Sled,
+                        "hashmap" => HashMap,
+                        "trait" => Trait,
                         #[cfg(test)]
-                        "test" => BackendOption::Test,
+                        "test" => Test,
                         _ => return Err(NotABackend(ident).has_span()),
                     };
-                    return Ok(backend);
+                    return Ok(BackendOption {
+                        backend,
+                        span: ident.span(),
+                    });
                 }
                 Some(other) => return Err(InvalidBackendSyntax.with_span(other)),
             }
@@ -91,14 +105,20 @@ fn parse_item(tokens: &mut Peekable<impl Iterator<Item = TokenTree>>) -> Result<
 
 #[cfg(test)]
 mod tests {
-    use std::str::FromStr;
     use super::*;
+    use std::str::FromStr;
 
     #[test]
     fn parse_db_option() {
         let attr = proc_macro2::TokenStream::from_str("db=sled").unwrap();
         let attribute = parse(attr).unwrap().pop().unwrap();
-        assert!(matches!(attribute, Options::Backend(BackendOption::Sled)));
+        assert!(matches!(
+            attribute,
+            Options::Backend(BackendOption {
+                backend: BackendOptionVariant::Sled,
+                span: _span
+            })
+        ));
     }
 
     #[test]
@@ -108,7 +128,10 @@ mod tests {
         assert!(matches!(attributes.pop().unwrap(), Options::Async));
         assert!(matches!(
             attributes.pop().unwrap(),
-            Options::Backend(BackendOption::Sled)
+            Options::Backend(BackendOption {
+                backend: BackendOptionVariant::Sled,
+                span: _span
+            })
         ));
     }
 }

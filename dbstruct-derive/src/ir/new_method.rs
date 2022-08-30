@@ -11,7 +11,7 @@ pub struct NewMethod {
     pub locals: Vec<syn::Local>,
     pub fields: Vec<syn::FieldValue>,
     pub vis: syn::Visibility,
-    pub arg: syn::FnArg,
+    pub arg: Option<syn::FnArg>,
     pub error_ty: syn::Type,
 }
 
@@ -81,6 +81,16 @@ fn sled_from_path() -> syn::Local {
     }
 }
 
+fn hashmap() -> syn::Local {
+    let stmt: syn::Stmt = parse_quote!(
+    let ds = ::dbstruct::stores::HashMap::new();
+    );
+    match stmt {
+        syn::Stmt::Local(local) => local,
+        _ => unreachable!(),
+    }
+}
+
 impl NewMethod {
     pub fn from(model: &Model, struct_def: &Struct) -> Self {
         let fields: Vec<_> = struct_def
@@ -98,11 +108,16 @@ impl NewMethod {
         match model.backend {
             Backend::Sled => {
                 locals.push(sled_from_path());
-                arg = parse_quote!(path: &std::path::Path);
+                arg = Some(parse_quote!(path: &std::path::Path));
                 error_ty = parse_quote!(::dbstruct::sled::Error);
             }
+            Backend::HashMap => {
+                locals.push(hashmap());
+                arg = None;
+                error_ty = parse_quote!(::dbstruct::stores::HashMapError);
+            }
             Backend::Trait { .. } => {
-                arg = parse_quote!(ds: DS);
+                arg = Some(parse_quote!(ds: DS));
                 error_ty = parse_quote!(DS::Error);
             }
             #[cfg(test)]

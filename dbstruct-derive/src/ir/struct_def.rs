@@ -38,6 +38,7 @@ impl From<&Model> for Struct {
 
         let ty = match model.backend {
             Backend::Sled => parse_quote!(::dbstruct::sled::Tree),
+            Backend::HashMap => parse_quote!(::dbstruct::stores::HashMap),
             Backend::Trait { .. } => parse_quote!(DS),
             #[cfg(test)]
             Backend::Test => unreachable!("Test backend is not supported for codegen"),

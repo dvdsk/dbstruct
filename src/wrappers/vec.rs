@@ -39,9 +39,6 @@ impl Prefixed {
     }
 }
 
-// probably gonna need to add a method to keep the index for the Vec wrapper
-// might need to scan on creation (::new), could also specialize that to use less then
-// when supported (sled etc). TODO figure out a way to represent that in a trait
 impl<T, E, DS> Vec<T, DS>
 where
     E: fmt::Debug,

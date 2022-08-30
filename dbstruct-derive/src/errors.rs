@@ -1,7 +1,7 @@
 use proc_macro2::Span;
 
 pub trait Help {
-    fn help(&self) -> Option<&str>;
+    fn help(&self) -> Option<String>;
 }
 
 pub trait GetSpan {

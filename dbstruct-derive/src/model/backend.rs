@@ -1,19 +1,73 @@
+use core::fmt;
 use std::collections::HashSet;
 
-use super::attribute::{BackendOption, Options};
+use proc_macro2::Span;
+
+use crate::errors::{GetSpan, Help};
+use crate::model::attribute::BackendOptionVariant;
+
+use super::attribute::Options;
 use super::{attribute, Field};
 
 #[derive(Debug, thiserror::Error)]
-pub enum Error {
-    #[error("Multiple backends specified")]
+pub enum ErrorVariant {
+    #[error("multiple database backends specified")]
     MultipleBackends,
-    #[error("No database backend specified for the struct")]
+    #[error("No database backend specified to use as backend")]
     NoBackendSpecified,
-    #[error("No database backend specified for the struct")]
+    #[error(
+        "The database backend ({backend}) you specified can not support all the structs fields"
+    )]
     MissesTraits {
         backend: Backend,
-        missing: HashSet<ExtraBound>,
+        needed: HashSet<ExtraBound>,
     },
+}
+
+impl ErrorVariant {
+    pub(super) fn with_span(self, item: impl GetSpan) -> Error {
+        Error {
+            variant: self,
+            span: item.span(),
+        }
+    }
+}
+
+#[derive(thiserror::Error, Debug)]
+pub struct Error {
+    variant: ErrorVariant,
+    span: Span,
+}
+
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.variant.fmt(f)
+    }
+}
+
+impl Help for Error {
+    fn help(&self) -> Option<String> {
+        use ErrorVariant::*;
+        Some(match &self.variant {
+            MultipleBackends => "remove one of the backends".to_owned(),
+            NoBackendSpecified => "specify a backend using #[dbstruct(db=sled)]".to_owned(),
+            MissesTraits { needed, .. } => {
+                let compatible = Backend::provided()
+                    .into_iter()
+                    .filter(|b| b.traits().is_superset(needed))
+                    .map(|b| b.to_string())
+                    .collect::<Vec<_>>()
+                    .join(", ");
+                format!("You need a backend that implements all of these traits: {needed:?}.\nDatabase backends that implement those traits: {compatible}")
+            }
+        })
+    }
+}
+
+impl Error {
+    pub fn span(&self) -> Span {
+        self.span
+    }
 }
 
 #[derive(PartialEq, Eq, Hash, Clone, Copy, Debug)]
@@ -25,6 +79,7 @@ pub enum ExtraBound {
 #[derive(Debug, Clone)]
 pub enum Backend {
     Sled,
+    HashMap,
     Trait {
         bounds: Vec<ExtraBound>,
     },
@@ -32,21 +87,39 @@ pub enum Backend {
     Test,
 }
 
+impl fmt::Display for Backend {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Backend::Sled => write!(f, "sled"),
+            Backend::HashMap => write!(f, "hashmap"),
+            Backend::Trait { .. } => write!(f, "trait"),
+            #[cfg(test)]
+            Backend::Test => unreachable!(),
+        }
+    }
+}
+
 impl Backend {
     pub fn try_from(options: &[attribute::Options], fields: &[Field]) -> Result<Backend, Error> {
+        use BackendOptionVariant::*;
+        use ErrorVariant::*;
+
         let mut backends = options.iter().filter_map(|opt| match opt {
             Options::Backend(b) => Some(b),
             _ => None,
         });
 
-        let backend = match (backends.next(), backends.next()) {
-            (None, _) => return Err(Error::NoBackendSpecified),
+        let backend_option = match (backends.next(), backends.next()) {
+            (None, _) => return Err(NoBackendSpecified.with_span(Span::call_site())),
             (Some(b), None) => *b,
-            (Some(_), Some(_)) => return Err(Error::MultipleBackends),
+            (Some(b0), Some(b1)) => {
+                let span = b0.span.join(b1.span).unwrap();
+                return Err(MultipleBackends.with_span(span));
+            }
         };
 
-        let backend = match backend {
-            BackendOption::Trait => {
+        let backend = match backend_option.backend {
+            Trait => {
                 return Ok(Backend::Trait {
                     bounds: fields
                         .iter()
@@ -55,16 +128,17 @@ impl Backend {
                         .collect(),
                 })
             }
-            BackendOption::Sled => Backend::Sled,
+            HashMap => Backend::HashMap,
+            Sled => Backend::Sled,
             #[cfg(test)]
-            BackendOption::Test => Backend::Test,
+            Test => Backend::Test,
         };
 
         for field in fields {
             let needed = field.wrapper.needed_traits();
             let missing: HashSet<_> = needed.difference(&backend.traits()).copied().collect();
             if !missing.is_empty() {
-                return Err(Error::MissesTraits { backend, missing });
+                return Err(MissesTraits { backend, needed }.with_span(backend_option.span));
             }
         }
 
@@ -75,11 +149,16 @@ impl Backend {
         use ExtraBound::*;
         match self {
             Backend::Sled => vec![Atomic, Orderd].into_iter(),
+            Backend::HashMap => vec![].into_iter(),
             Backend::Trait { .. } => unreachable!("should never be called when backend is Trait"),
             #[cfg(test)]
             Backend::Test => vec![].into_iter(),
         }
         .collect()
+    }
+
+    fn provided() -> [Backend; 2] {
+        [Backend::Sled, Backend::HashMap]
     }
 }
 
@@ -89,11 +168,16 @@ mod tests {
     use syn::parse_quote;
     use ExtraBound::*;
 
+    use crate::model::attribute::{BackendOption, BackendOptionVariant};
+
     use super::*;
 
     #[test]
     fn error_on_unsupported_backend() {
-        let options = [Options::Backend(BackendOption::Test)];
+        let options = [Options::Backend(BackendOption {
+            backend: BackendOptionVariant::Test,
+            span: Span::call_site(),
+        })];
         let fields = [Field {
             ident: parse_quote!(test_a),
             vis: parse_quote!(pub),
@@ -103,8 +187,10 @@ mod tests {
             key: 1,
         }];
         let err = Backend::try_from(&options, &fields).unwrap_err();
-        match err {
-            Error::MissesTraits { missing, .. } => {
+        match err.variant {
+            ErrorVariant::MissesTraits {
+                needed: missing, ..
+            } => {
                 let correct = [Atomic, Orderd].into_iter().collect();
                 assert_eq!(missing, correct);
             }
@@ -114,7 +200,11 @@ mod tests {
 
     #[test]
     fn supported_backend() {
-        let options = [Options::Backend(BackendOption::Sled)];
+        let options = [Options::Backend(BackendOption {
+            backend: BackendOptionVariant::Sled,
+            span: Span::call_site(),
+        })];
+
         let fields = [Field {
             ident: parse_quote!(test_a),
             vis: parse_quote!(pub),
@@ -129,9 +219,16 @@ mod tests {
 
     #[test]
     fn reject_double_backend() {
+        let span = Span::call_site();
         let options = [
-            Options::Backend(BackendOption::Sled),
-            Options::Backend(BackendOption::Sled),
+            Options::Backend(BackendOption {
+                backend: BackendOptionVariant::Sled,
+                span,
+            }),
+            Options::Backend(BackendOption {
+                backend: BackendOptionVariant::Sled,
+                span,
+            }),
         ];
         let fields = [Field {
             ident: parse_quote!(test_a),
@@ -142,6 +239,6 @@ mod tests {
             key: 1,
         }];
         let err = Backend::try_from(&options, &fields).unwrap_err();
-        assert!(matches!(err, Error::MultipleBackends));
+        assert!(matches!(err.variant, ErrorVariant::MultipleBackends));
     }
 }

@@ -156,7 +156,7 @@ mod tests {
             fields: vec![parse_quote!(u8field: 0)],
             vis: parse_quote!(pub),
             locals: Vec::new(),
-            arg: parse_quote!(ds: DS),
+            arg: Some(parse_quote!(ds: DS)),
             error_ty: parse_quote!(DS),
         }
     }

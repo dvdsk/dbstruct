@@ -33,7 +33,7 @@ impl fmt::Display for Error {
 }
 
 impl Help for Error {
-    fn help(&self) -> Option<&str> {
+    fn help(&self) -> Option<String> {
         use ErrorVariant::*;
         Some(match self.variant {
             MissingDb => "try specifying an db, for example: `db=sled`",
@@ -42,7 +42,7 @@ impl Help for Error {
             NotAnOption(_) => "the only supported option currently is: db",
             InvalidSyntax(_) => "the option should be a single word not enclosed in \"",
             NotABackend(_) => "try sled as database backend",
-        })
+        }.to_owned())
     }
 }
 
@@ -54,7 +54,7 @@ impl Error {
             (InvalidSyntax(item), None) => item.span(),
             (NotABackend(item), None) => item.span(),
             (_, Some(span)) => span,
-            (_var, _) => panic!(
+            (_var, _) => unreachable!(
                 "error should track a span for {_var:?} as 
                 the variant itself does not contain one"
             ),
