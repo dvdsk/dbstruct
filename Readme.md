@@ -9,7 +9,9 @@ Create a typed database by defining a struct. *dbstruct* builds on top of anythi
 
 ## Example
 ```rust
-#[dbstruct::dbstruct]
+use std::path::Path;
+
+#[dbstruct::dbstruct(db=sled)]
 pub struct Test {
 	#[dbstruct(Default)]
 	the_awnser: u8,
@@ -21,8 +23,7 @@ pub struct Test {
 fn main() {
 	// a wrapper around a HashMap that implements the 
 	// `DataStore` trait
-	let ds = dbstruct::stores::HashMap::default();
-	let db = Test::new(ds).unwrap();
+	let db = Test::new(&Path::new("the_db")).unwrap();
 
 	db.the_awnser().set(&42).unwrap();
 	assert_eq!(42u8, db.the_awnser().get().unwrap());

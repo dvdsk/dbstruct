@@ -1,0 +1,7 @@
+error: not a known dbstruct option
+ --> tests/ui/unknown_option.rs:3:12
+  |
+3 | #[dbstruct(starship=enterprise)]
+  |            ^^^^^^^^
+  |
+  = help: the only supported option currently is: db

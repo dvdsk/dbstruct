@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-#[dbstruct::dbstruct]
+#[dbstruct::dbstruct(db=trait)]
 pub struct Test {
     /// a small list that we dont want structdb to wrap for us
     #[dbstruct(Default)]
@@ -10,6 +10,7 @@ pub struct Test {
     small_map: HashMap<usize, u32>,
 }
 
+#[test]
 fn main() {
     let ds = dbstruct::stores::HashMap::default();
     let db = Test::new(ds).unwrap();

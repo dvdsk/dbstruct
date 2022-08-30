@@ -1,0 +1,7 @@
+error: incorrect syntax for backend
+ --> tests/ui/invalid_db_value.rs:3:15
+  |
+3 | #[dbstruct(db="sled")]
+  |               ^^^^^^
+  |
+  = help: a backend should be a single world not enclosed in "

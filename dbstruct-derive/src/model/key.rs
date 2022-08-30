@@ -20,19 +20,6 @@ type Prefix = u8;
 pub struct DbKey(HashMap<Ident, Prefix>);
 
 impl DbKey {
-    #[cfg(test)]
-    /// inserts ident test_a till test_d with keys 0..
-    pub(crate) fn mock() -> Self {
-        Self(
-            ["test_a", "test_b", "test_c", "test_d"]
-                .into_iter()
-                .map(|id| Ident::new(id, proc_macro2::Span::call_site()))
-                .enumerate()
-                .map(|(a, b)| (b, a as u8))
-                .collect(),
-        )
-    }
-
     pub(crate) fn new(fields: &syn::Fields) -> Result<Self, Error> {
         let mut idents: Vec<_> = fields
             .iter()

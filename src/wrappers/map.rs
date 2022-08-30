@@ -3,6 +3,7 @@ use std::marker::PhantomData;
 
 use serde::de::DeserializeOwned;
 use serde::Serialize;
+use tracing::{trace, instrument};
 
 use crate::traits::DataStore;
 use crate::Error;
@@ -35,6 +36,7 @@ where
     Value: Serialize + DeserializeOwned,
     DS: DataStore<Error = E>,
 {
+    #[instrument(skip(tree), level="debug")]
     pub fn new(tree: DS, prefix: u8) -> Self {
         Self {
             phantom_key: PhantomData,
@@ -44,21 +46,25 @@ where
         }
     }
 
-    /// returns existing value if any was set
-    pub fn set(&self, key: &'a Key, value: &'a Value) -> Result<Option<Value>, Error<E>> {
-        let key = Prefixed {
+    fn prefix(&self, key: &'a Key) -> Prefixed<'a, Key> {
+        trace!("prefixing key with: {}", self.prefix);
+        Prefixed {
             prefix: self.prefix,
             key,
-        };
+        }
+    }
+
+    /// returns existing value if any was set
+    #[instrument(skip_all, level="debug")]
+    pub fn set(&self, key: &'a Key, value: &'a Value) -> Result<Option<Value>, Error<E>> {
+        let key = self.prefix(key);
         let existing = self.tree.insert(&key, value).unwrap();
         Ok(existing)
     }
 
+    #[instrument(skip_all, level="debug")]
     pub fn get(&self, key: &'a Key) -> Result<Option<Value>, Error<E>> {
-        let key = Prefixed {
-            prefix: self.prefix,
-            key,
-        };
+        let key = self.prefix(key);
         let value = self.tree.get(&key).unwrap();
         Ok(value)
     }

@@ -1,7 +1,7 @@
 use proc_macro2::Span;
 
 pub trait Help {
-    fn help(&self) -> Option<&str>;
+    fn help(&self) -> Option<String>;
 }
 
 pub trait GetSpan {
@@ -32,6 +32,7 @@ macro_rules! impl_getspan {
 impl_getspan!(proc_macro2::Punct);
 impl_getspan!(proc_macro2::Literal);
 impl_getspan!(proc_macro2::TokenTree);
+impl_getspan!(proc_macro2::Ident);
 
 macro_rules! impl_getspan_syn {
     ($type:ty) => {

@@ -1,7 +1,8 @@
 use quote::format_ident;
-use syn::parse_quote;
+use syn::spanned::Spanned;
+use syn::{parse_quote, parse_quote_spanned};
 
-use crate::model::{DbKey, Field, Wrapper};
+use crate::model::{Field, Wrapper};
 
 pub struct Accessor {
     pub vis: syn::Visibility,
@@ -11,8 +12,8 @@ pub struct Accessor {
 }
 
 impl Accessor {
-    pub fn from(field: Field, keys: &DbKey) -> Self {
-        let key = keys.prefix(&field.ident);
+    pub fn from(field: Field, ds: syn::Type) -> Self {
+        let key = field.key;
         let (body, returns) = match field.wrapper {
             #[allow(unused_variables)]
             Wrapper::Vec { ty } => {
@@ -20,7 +21,7 @@ impl Accessor {
                 let body = parse_quote!({
                     dbstruct::wrappers::Vec::new(self.ds.clone(), #key, self.#len_ident.clone())
                 });
-                let returns = parse_quote!(dbstruct::wrappers::Vec<#ty, DS>);
+                let returns = parse_quote_spanned!(ty.span()=> dbstruct::wrappers::Vec<#ty, #ds>);
                 (body, returns)
             }
             #[allow(unused_variables)]
@@ -28,7 +29,8 @@ impl Accessor {
                 let body = parse_quote!({
                     dbstruct::wrappers::Map::new(self.ds.clone(), #key)
                 });
-                let returns = parse_quote!(dbstruct::wrappers::Map<#key_ty, #val_ty, DS>);
+                let span = key_ty.span().join(val_ty.span()).unwrap();
+                let returns = parse_quote_spanned!(span=> dbstruct::wrappers::Map<#key_ty, #val_ty, #ds>);
                 (body, returns)
             }
             #[allow(unused_variables)]
@@ -36,16 +38,16 @@ impl Accessor {
                 let body = parse_quote!({
                     dbstruct::wrappers::DefaultTrait::new(self.ds.clone(), #key)
                 });
-                let returns = parse_quote!(dbstruct::wrappers::DefaultTrait<#ty, DS>);
+                let returns = parse_quote_spanned!(ty.span()=> dbstruct::wrappers::DefaultTrait<#ty, #ds>);
                 (body, returns)
             }
             #[allow(unused_variables)]
             Wrapper::DefaultValue { ty, value } => {
-                let body = parse_quote!({
+                let body = parse_quote_spanned!(ty.span()=> {
                     let default_value = #value;
                     dbstruct::wrappers::DefaultValue::new(self.ds.clone(), #key, default_value)
                 });
-                let returns = parse_quote!(dbstruct::wrappers::DefaultValue<#ty, DS>);
+                let returns = parse_quote_spanned!(ty.span()=> dbstruct::wrappers::DefaultValue<#ty, #ds>);
                 (body, returns)
             }
             #[allow(unused_variables)]
@@ -53,7 +55,7 @@ impl Accessor {
                 let body = parse_quote!({
                     dbstruct::wrappers::OptionValue::new(self.ds.clone(), #key)
                 });
-                let returns = parse_quote!(dbstruct::wrappers::OptionValue<#ty, DS>);
+                let returns = parse_quote_spanned!(ty.span()=> dbstruct::wrappers::OptionValue<#ty, #ds>);
                 (body, returns)
             }
         };
@@ -79,9 +81,10 @@ mod tests {
             wrapper: Wrapper::DefaultTrait {
                 ty: parse_quote!(u8),
             },
+            key: 1,
         };
-        let keys = DbKey::mock();
-        let _a = Accessor::from(field, &keys);
+        let ds_ty = parse_quote!(DS);
+        let _a = Accessor::from(field, ds_ty);
     }
 
     #[test]
@@ -93,9 +96,10 @@ mod tests {
                 ty: parse_quote!(u8),
                 value: parse_quote!(5 + 12),
             },
+            key: 1,
         };
-        let keys = DbKey::mock();
-        let _a = Accessor::from(field, &keys);
+        let ds_ty = parse_quote!(DS);
+        let _a = Accessor::from(field, ds_ty);
     }
 
     #[test]
@@ -106,9 +110,10 @@ mod tests {
             wrapper: Wrapper::Option {
                 ty: parse_quote!(u8),
             },
+            key: 1,
         };
-        let keys = DbKey::mock();
-        let _a = Accessor::from(field, &keys);
+        let ds_ty = parse_quote!(DS);
+        let _a = Accessor::from(field, ds_ty);
     }
 
     #[test]
@@ -119,9 +124,10 @@ mod tests {
             wrapper: Wrapper::Vec {
                 ty: parse_quote!(u8),
             },
+            key: 1,
         };
-        let keys = DbKey::mock();
-        let _a = Accessor::from(field, &keys);
+        let ds_ty = parse_quote!(DS);
+        let _a = Accessor::from(field, ds_ty);
     }
 
     #[test]
@@ -133,8 +139,9 @@ mod tests {
                 key_ty: parse_quote!(u8),
                 val_ty: parse_quote!(u16),
             },
+            key: 1,
         };
-        let keys = DbKey::mock();
-        let _a = Accessor::from(field, &keys);
+        let ds_ty = parse_quote!(DS);
+        let _a = Accessor::from(field, ds_ty);
     }
 }

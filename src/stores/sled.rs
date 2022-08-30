@@ -32,8 +32,13 @@ impl byte_store::Atomic for sled::Tree {
         new: &[u8],
         expected: &[u8],
     ) -> Result<(), Self::Error> {
-        let _ignore_compare_and_swap_res =
-            self.compare_and_swap(key, Some(expected), Some(new))?;
+        let _ignore_compare_and_swap_res = self.compare_and_swap(key, Some(expected), Some(new))?;
         Ok(())
+    }
+}
+
+impl byte_store::Orderd for sled::Tree {
+    fn get_lt(&self, key: &[u8]) -> Result<Option<(Self::Bytes, Self::Bytes)>, Self::Error> {
+        self.get_lt(key)
     }
 }

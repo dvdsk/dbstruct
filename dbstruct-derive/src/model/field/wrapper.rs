@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::iter::Peekable;
 use std::mem;
 
@@ -5,6 +6,8 @@ use proc_macro2::TokenTree;
 
 mod errors;
 pub use errors::{Error, ErrorVariant};
+
+use crate::model::backend::ExtraBound;
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum Wrapper {
@@ -31,7 +34,6 @@ pub enum Wrapper {
 pub enum Attribute {
     DefaultTrait { span: proc_macro2::Span },
     DefaultValue { expr: syn::Expr },
-    // NoWrap { span: proc_macro2::Span },
 }
 
 fn is_relevant(att: &syn::Attribute) -> bool {
@@ -51,24 +53,6 @@ fn unescape_literal(s: &str) -> String {
     let s = s.replace(r#"\"#, r#""#);
     s
 }
-
-// fn parse_nowrap(
-//     span: proc_macro2::Span,
-//     tokens: &mut Peekable<impl Iterator<Item = TokenTree>>,
-// ) -> Result<Attribute, Error> {
-//     use ErrorVariant::*;
-//     match tokens.peek() {
-//         None => {
-//             tokens.next();
-//             return Ok(Attribute::NoWrap { span });
-//         }
-//         Some(TokenTree::Punct(punct)) if punct.as_char() == ',' => {
-//             tokens.next();
-//             return Ok(Attribute::NoWrap { span });
-//         }
-//         Some(other) => return Err(ShouldNotHaveArgs("NoWrap").with_span(other)),
-//     }
-// }
 
 fn parse_default(
     span: proc_macro2::Span,
@@ -108,9 +92,6 @@ fn parse(tokens: &mut Peekable<impl Iterator<Item = TokenTree>>) -> Result<Attri
         .next()
         .expect("should only get here if peek returned Some");
     match first_token {
-        // TokenTree::Ident(ident) if ident.to_string() == "NoWrap" => {
-        //     parse_nowrap(ident.span(), tokens)
-        // }
         TokenTree::Ident(ident) if ident.to_string() == "Default" => {
             parse_default(ident.span(), tokens)
         }
@@ -152,6 +133,7 @@ impl Wrapper {
         let (mut relevant, other): (Vec<_>, Vec<_>) =
             mem::take(attributes).into_iter().partition(is_relevant);
         *attributes = other; /* TODO: use drain_filter when it stabilizes <31-07-22> */
+        /* TODO: emit error when other (non dbstruct) attributes are present <27-08-22, dvdsk> */
 
         let attribute = relevant.pop().map(as_wrapper).transpose()?.flatten();
         if let Some(other) = relevant.pop() {
@@ -159,8 +141,8 @@ impl Wrapper {
         }
 
         Ok(match (outer_type(&ty)?.as_str(), attribute) {
-            ("Vec", None) => Self::Vec { ty: vec_type(&ty)? },
-            ("Option", None) => Self::Option { ty },
+            ("Vec", None) => Self::Vec { ty: inner_type(&ty, "Vec")? },
+            ("Option", None) => Self::Option { ty: inner_type(&ty, "Option")? },
             // in the future use proc_macro2::span::join() to give an
             // error at the type and the default trait attribute
             ("Option", Some(DefaultTrait { span })) => return Err(OptionNotAllowed.with_span(span)),
@@ -173,15 +155,23 @@ impl Wrapper {
             (_, Some(DefaultValue { expr })) => Self::DefaultValue { ty, value: expr },
         })
     }
+
+    pub(crate) fn needed_traits(&self) -> HashSet<ExtraBound> {
+        use ExtraBound::*;
+        match self {
+            Wrapper::Vec { .. } => vec![Orderd].into_iter(),
+            _ => vec![].into_iter(),
+        }.collect()
+    }
 }
 
-fn vec_type(ty: &syn::Type) -> Result<syn::Type, Error> {
+fn inner_type(ty: &syn::Type, outer_ty: &'static str) -> Result<syn::Type, Error> {
     let mut generics = generic_types(ty)?;
     let ty = generics
         .next()
         .ok_or(
             ErrorVariant::TooFewGenerics {
-                ty: "Vec",
+                ty: outer_ty,
                 n_needed: 1,
             }
             .with_span(ty),
@@ -190,7 +180,7 @@ fn vec_type(ty: &syn::Type) -> Result<syn::Type, Error> {
 
     if let Some(other_generic) = generics.next() {
         return Err(ErrorVariant::TooManyGenerics {
-            ty: "Vec",
+            ty: outer_ty,
             n_needed: 1,
         }
         .with_span(other_generic?));
@@ -280,13 +270,26 @@ mod tests {
     use super::*;
     use syn::parse_quote;
 
-    #[test]
-    fn default_trait() {
-        let attributes: &[syn::Attribute] =
-            &[parse_quote!(#[dbstruct(Default)]), parse_quote!(#[b])];
-        let ty_u8: syn::Type = parse_quote!(u8);
-        let wrapper = Wrapper::try_from(&mut attributes.to_vec(), ty_u8.clone()).unwrap();
-        assert_eq!(wrapper, Wrapper::DefaultTrait { ty: ty_u8 })
+    mod default_trait {
+        use super::*;
+
+        #[test]
+        fn u8() {
+            let attributes: &[syn::Attribute] =
+                &[parse_quote!(#[dbstruct(Default)]), parse_quote!(#[b])];
+            let ty_u8: syn::Type = parse_quote!(u8);
+            let wrapper = Wrapper::try_from(&mut attributes.to_vec(), ty_u8.clone()).unwrap();
+            assert_eq!(wrapper, Wrapper::DefaultTrait { ty: ty_u8 })
+        }
+
+        #[test]
+        fn vec() {
+            let attributes: &[syn::Attribute] =
+                &[parse_quote!(#[dbstruct(Default)]), parse_quote!(#[b])];
+            let field_ty: syn::Type = parse_quote!(Vec<u8>);
+            let wrapper = Wrapper::try_from(&mut attributes.to_vec(), field_ty.clone()).unwrap();
+            assert_eq!(wrapper, Wrapper::DefaultTrait { ty: field_ty })
+        }
     }
 
     #[test]
@@ -304,6 +307,14 @@ mod tests {
         let ty_hashmap: syn::Type = parse_quote!(HashMap<u8, Vec<u16>>);
         let wrapper = Wrapper::try_from(&mut Vec::new(), ty_hashmap.clone()).unwrap();
         assert_eq!(wrapper, Wrapper::Map { key_ty, val_ty })
+    }
+
+    #[test]
+    fn option() {
+        let inner_ty: syn::Type = parse_quote!(u16);
+        let ty: syn::Type = parse_quote!(Option<u16>);
+        let wrapper = Wrapper::try_from(&mut Vec::new(), ty).unwrap();
+        assert_eq!(wrapper, Wrapper::Option { ty: inner_ty })
     }
 
     mod default_value {

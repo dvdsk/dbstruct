@@ -34,3 +34,10 @@ pub trait Atomic: DataStore {
         K: Serialize,
         V: Serialize + DeserializeOwned;
 }
+
+pub trait Orderd: DataStore {
+    fn get_lt<K, V>(&self, key: &K) -> Result<Option<(K, V)>, Self::Error>
+    where
+        K: Serialize + DeserializeOwned,
+        V: Serialize + DeserializeOwned;
+}

@@ -10,21 +10,38 @@ pub fn codegen(ir: Ir) -> TokenStream {
     let accessors = accessor_impl(ir.accessors);
     let new_impl = new_impl(ir.new);
     let bounds = ir.bounds;
-    quote!(
-        #definition
 
-        impl<DS> #struct_ident<DS> #bounds {
-            #new_impl
-            #accessors
-        }
-    )
+    match bounds {
+        Some(bounds) => quote!(
+            #definition
+
+            impl<DS> #struct_ident<DS> #bounds {
+                #new_impl
+                #accessors
+            }
+        ),
+        None => quote!(
+            #definition
+
+            impl #struct_ident {
+                #new_impl
+                #accessors
+            }
+        ),
+    }
 }
 
 fn new_impl(new: NewMethod) -> TokenStream {
-    let NewMethod { fields, vis } = new;
-
+    let NewMethod {
+        locals,
+        fields,
+        vis,
+        arg,
+        error_ty,
+    } = new;
     quote!(
-        #vis fn new(ds: DS) -> Result<Self, dbstruct::Error<DS::Error>> {
+        #vis fn new(#arg) -> Result<Self, dbstruct::Error<#error_ty>> {
+            #(#locals)*
             Ok(Self {
                 ds,
                 #(#fields),*
@@ -51,24 +68,36 @@ fn accessor_impl(accessors: Vec<Accessor>) -> TokenStream {
     )
 }
 
-fn definition(definition: Struct, bounds: &syn::WhereClause) -> TokenStream {
+fn definition(definition: Struct, bounds: &Option<syn::WhereClause>) -> TokenStream {
     let Struct {
         ident,
         vis,
-        extra_vars,
+        len_vars: extra_vars,
+        db,
     } = definition;
-    let predicates = &bounds.predicates;
-    quote!(
-        #vis struct #ident<#predicates> {
-            ds: DS,
-            #(#extra_vars),*
+    match bounds {
+        Some(bounds) => {
+            let predicates = &bounds.predicates;
+            quote!(
+                #vis struct #ident<#predicates> {
+                    ds: DS,
+                    #(#extra_vars),*
+                }
+            )
         }
-    )
+        None => quote!(
+        #vis struct #ident {
+            #db,
+            #(#extra_vars),*
+        }),
+    }
     .into()
 }
 
 #[cfg(test)]
 mod tests {
+    use std::str::FromStr;
+
     use syn::parse::Parser;
     use syn::parse_quote;
 
@@ -79,11 +108,12 @@ mod tests {
         Struct {
             ident: parse_quote!(Test),
             vis: parse_quote!(pub),
-            extra_vars: fields
+            len_vars: fields
                 .into_iter()
                 .map(|s| parser.parse_str(s))
                 .map(Result::unwrap)
                 .collect(),
+            db: parser.parse_str("ds: DS").unwrap(),
         }
     }
 
@@ -98,7 +128,7 @@ mod tests {
             "vec_field: Vec<u32>",
             "map_field: HashMap<f32, f64>",
         ];
-        let rust = definition(test_struct(&fields), &test_bounds());
+        let rust = definition(test_struct(&fields), &Some(test_bounds()));
         println!("{}", rust);
         assert!(syn::parse2::<syn::ItemStruct>(rust).is_ok())
     }
@@ -125,6 +155,9 @@ mod tests {
         NewMethod {
             fields: vec![parse_quote!(u8field: 0)],
             vis: parse_quote!(pub),
+            locals: Vec::new(),
+            arg: Some(parse_quote!(ds: DS)),
+            error_ty: parse_quote!(DS),
         }
     }
 
@@ -153,9 +186,9 @@ mod tests {
         use crate::model::Model;
         use syn::parse_str;
 
-        let input: syn::ItemStruct = parse_str(
+        let input_attr = proc_macro2::TokenStream::from_str("db=sled").unwrap();
+        let input_struct: syn::ItemStruct = parse_str(
             "        
-#[dbstruct::dbstruct]
 pub struct Test {
     // #[dbstruct(Default)]
     primes: Vec<u32>,
@@ -163,7 +196,35 @@ pub struct Test {
         )
         .unwrap();
 
-        let model = Model::try_from(input).unwrap();
+        let model = Model::try_from(input_struct, input_attr).unwrap();
+        let ir = Ir::from(model);
+        let rust = codegen(ir);
+
+        println!("{rust}");
+        assert!(syn::parse2::<syn::File>(rust).is_ok())
+    }
+
+    #[test]
+    fn fail() {
+        use crate::model::Model;
+        use syn::parse_str;
+
+        let input_attr = proc_macro2::TokenStream::from_str("db=sled").unwrap();
+        let input_struct: syn::ItemStruct = parse_str(
+            r##"        
+pub struct Test {
+    /// a small list that we dont want structdb to wrap for us
+    #[dbstruct(Default)]
+    small_list: Vec<u8>,
+    /// a small list that we dont want structdb to wrap for us
+    #[dbstruct(Default)]
+    small_map: HashMap<usize, u32>,
+}
+"##,
+        )
+        .unwrap();
+
+        let model = Model::try_from(input_struct, input_attr).unwrap();
         let ir = Ir::from(model);
         let rust = codegen(ir);
 

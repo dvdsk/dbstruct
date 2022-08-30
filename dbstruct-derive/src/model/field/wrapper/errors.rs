@@ -31,11 +31,9 @@ pub enum ErrorVariant {
     #[error("Types must be fully owned and can not have lifetime params")]
     NotATypeGeneric,
     #[error("{ty} needs {n_needed} generic types")]
-    TooFewGenerics{ty: &'static str, n_needed: u8},
+    TooFewGenerics { ty: &'static str, n_needed: u8 },
     #[error("Too many generics for {ty}, expected {n_needed}")]
-    TooManyGenerics{ty: &'static str, n_needed: u8},
-    // #[error("Attribute {0} should not have any arguments")]
-    // ShouldNotHaveArgs(&'static str),
+    TooManyGenerics { ty: &'static str, n_needed: u8 },
 }
 
 #[derive(thiserror::Error, Debug)]
@@ -45,18 +43,24 @@ pub struct Error {
 }
 
 impl Help for Error {
-    fn help(&self) -> Option<&str> {
+    fn help(&self) -> Option<String> {
         use ErrorVariant::*;
-        match self.variant {
-            NoDefaultType => Some(
-"you can wrap the type in an Option, add an attribute to use the Default trait: 
-`#[dbstruct(Default)]` or provide an expression to generate a default 
-value: `#[dbstruct(Default=<expr>)]"),
-            InvalidSyntax(_) => Some("try one of these: `#[dbstruct(Default)]`, `#[dbstruct(Default=\"<expr>\"]`"),
-            OptionNotAllowed => Some("try removing the attribute"),
-            MultipleWrapperAttributes => Some("when using Default=\"<expr>\" make sure the <expr> string is properly escaped"),
-            _ => None,
+        Some(match self.variant {
+            NoDefaultType => {
+                "you can wrap the type in an Option, add an attribute to use the Default trait: 
+                `#[dbstruct(Default)]` or provide an expression to generate a default 
+                value: `#[dbstruct(Default=<expr>)]"
+            }
+            InvalidSyntax(_) => {
+                "try one of these: `#[dbstruct(Default)]`, `#[dbstruct(Default=\"<expr>\"]`"
+            }
+            OptionNotAllowed => "try removing the attribute",
+            MultipleWrapperAttributes => {
+                "when using Default=\"<expr>\" make sure the <expr> string is properly escaped"
+            }
+            _ => return None,
         }
+        .to_owned())
     }
 }
 

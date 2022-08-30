@@ -5,6 +5,7 @@ use std::sync::Arc;
 
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
+use tracing::debug;
 
 use crate::traits::DataStore;
 use crate::Error;
@@ -19,15 +20,25 @@ where
     len: Arc<AtomicUsize>,
 }
 
-#[derive(Serialize, Deserialize, Hash, Eq, PartialEq, Clone)]
+#[derive(Serialize, Deserialize, Hash, Eq, PartialEq, Clone, Debug)]
 pub struct Prefixed {
     prefix: u8,
     index: usize,
 }
 
-// probably gonna need to add a method to keep the index for the Vec wrapper
-// might need to scan on creation (::new), could also specialize that to use less then
-// when supported (sled etc). TODO figure out a way to represent that in a trait
+impl Prefixed {
+    pub fn index(&self) -> usize {
+        self.index
+    }
+
+    pub fn max(prefix: u8) -> Self {
+        Self {
+            prefix,
+            index: usize::max_value(),
+        }
+    }
+}
+
 impl<T, E, DS> Vec<T, DS>
 where
     E: fmt::Debug,
@@ -44,17 +55,24 @@ where
     }
 
     pub fn push(&self, value: T) -> Result<(), Error<E>> {
-        let index = self.len.fetch_add(1, Ordering::SeqCst);
+        let prev_len = self.len.fetch_add(1, Ordering::SeqCst);
         let key = Prefixed {
             prefix: self.prefix,
-            index,
+            index: prev_len,
         };
+        debug!("pushing onto vector (index: {prev_len})");
         self.ds.insert(&key, &value)?;
         Ok(())
     }
 
     pub fn pop(&self) -> Result<Option<T>, Error<E>> {
-        let old_len = self.len.fetch_sub(1, Ordering::SeqCst);
+        let old_len = self
+            .len
+            .fetch_update(Ordering::SeqCst, Ordering::SeqCst, |len| {
+                Some(len.saturating_sub(1))
+            })
+            .unwrap();
+
         let index = match old_len.checked_sub(1) {
             Some(idx) => idx,
             None => return Ok(None),
@@ -64,6 +82,7 @@ where
             index,
         };
 
+        debug!("popping from vector (index: {index})");
         Ok(self.ds.remove(&key)?)
     }
 
@@ -78,8 +97,8 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::stores;
     use super::*;
+    use crate::stores;
 
     type TestVec<T> = Vec<T, stores::HashMap>;
     fn empty<T: Clone + Serialize + DeserializeOwned>() -> TestVec<T> {

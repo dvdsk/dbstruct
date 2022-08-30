@@ -10,15 +10,17 @@ use codegen::codegen;
 mod errors;
 use errors::{GetSpan, Help};
 
+/* TODO: dummy stream? (see proc-macro-error) <dvdsk noreply@davidsk.dev> */
+
 #[proc_macro_attribute]
 #[proc_macro_error]
 pub fn dbstruct(
-    _attr: proc_macro::TokenStream,
+    attr: proc_macro::TokenStream,
     item: proc_macro::TokenStream,
 ) -> proc_macro::TokenStream {
     let input = parse_macro_input!(item as syn::ItemStruct);
 
-    let model = match Model::try_from(input) {
+    let model = match Model::try_from(input, attr.into()) {
         Ok(model) => model,
         Err(err) => emit_and_abort(err),
     };
@@ -39,6 +41,12 @@ fn emit_and_abort(err: model::Error) -> ! {
                 emit_error!(e.span(), e.to_string(); help =? e.help(););
             }
             abort!(last.span(),last.to_string(); help =? last.help(););
+        }
+        model::Error::Attribute(e) => {
+            abort!(e.span(), e.to_string(); help =? e.help(););
+        }
+        model::Error::Backend(e) => {
+            abort!(e.span(), e.to_string(); help =? e.help(););
         }
     }
 }
