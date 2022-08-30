@@ -20,7 +20,7 @@ pub struct Ir {
 fn bound_to_ir(bound: &ExtraBound) -> syn::TraitBound {
     match bound {
         ExtraBound::Atomic => parse_quote!(dbstruct::traits::data_store::Atomic),
-        ExtraBound::Orderd => parse_quote!(dbstruct::traits::data_store::Orderd),
+        ExtraBound::Ordered => parse_quote!(dbstruct::traits::data_store::Ordered),
     }
 }
 

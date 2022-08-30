@@ -29,7 +29,7 @@ pub trait Atomic: ByteStore {
     ) -> Result<(), Self::Error>;
 }
 
-pub trait Orderd: ByteStore {
+pub trait Ordered: ByteStore {
     fn get_lt(&self, key: &[u8]) -> Result<Option<(Self::Bytes, Self::Bytes)>, Self::Error>;
 }
 
@@ -159,11 +159,11 @@ where
     }
 }
 
-impl<E, B, BS> data_store::Orderd for BS
+impl<E, B, BS> data_store::Ordered for BS
 where
     E: fmt::Debug,
     B: AsRef<[u8]>,
-    BS: byte_store::Orderd<Error = E, Bytes = B>,
+    BS: byte_store::Ordered<Error = E, Bytes = B>,
 {
     #[instrument(skip_all, level = "trace", err)]
     fn get_lt<K, V>(&self, key: &K) -> Result<Option<(K, V)>, Self::Error>
@@ -173,7 +173,7 @@ where
     {
         let key = bincode::serialize(key).map_err(Error::SerializingKey)?;
         trace!("getting less then key: {key:?}");
-        Ok(match byte_store::Orderd::get_lt(self, &key)? {
+        Ok(match byte_store::Ordered::get_lt(self, &key)? {
             None => None,
             Some((key, val)) => {
                 trace!(
