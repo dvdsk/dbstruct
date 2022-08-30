@@ -6,6 +6,7 @@ pub struct Test {
     the_field: u8,
 }
 
+#[test]
 fn main() {
     let db = Test::new(&Path::new("test")).unwrap();
 

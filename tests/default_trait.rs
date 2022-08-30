@@ -10,6 +10,7 @@ pub struct Test {
     small_map: HashMap<usize, u32>,
 }
 
+#[test]
 fn main() {
     let ds = dbstruct::stores::HashMap::default();
     let db = Test::new(ds).unwrap();
