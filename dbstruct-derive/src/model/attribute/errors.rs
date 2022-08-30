@@ -6,19 +6,17 @@ use crate::GetSpan;
 
 #[derive(Debug, thiserror::Error)]
 pub enum ErrorVariant {
-    #[error("todo")]
+    #[error("no database backend specified")]
     MissingDb,
-    #[error("todo")]
+    #[error("backend option has no value set")]
     MissingBackendValue,
-    #[error("todo")]
-    InvalidBackendFormat,
-    #[error("todo")]
-    InvalidBackendArgs,
-    #[error("todo")]
-    NotAnAttribute(proc_macro2::Ident),
-    #[error("todo")]
+    #[error("incorrect syntax for backend")]
+    InvalidBackendSyntax,
+    #[error("not a known dbstruct option")]
+    NotAnOption(proc_macro2::Ident),
+    #[error("invalid syntax for dbstruct option")]
     InvalidSyntax(TokenTree),
-    #[error("Not a known dbstruct backend: `{0}`")]
+    #[error("Not a known database backend: `{0}`")]
     NotABackend(proc_macro2::Ident),
 }
 
@@ -36,15 +34,25 @@ impl fmt::Display for Error {
 
 impl Help for Error {
     fn help(&self) -> Option<&str> {
-        todo!()
+        use ErrorVariant::*;
+        Some(match self.variant {
+            MissingDb => "try specifying an db, for example: `db=sled`",
+            MissingBackendValue => "try setting a supported backend, for example `db=sled`",
+            InvalidBackendSyntax => "a backend should be a single world not enclosed in \"",
+            NotAnOption(_) => "the only supported option currently is: db",
+            InvalidSyntax(_) => "the option should be a single word not enclosed in \"",
+            NotABackend(_) => "try sled as database backend",
+        })
     }
 }
 
 impl Error {
     pub fn span(&self) -> Span {
+        use ErrorVariant::*;
         match (&self.variant, self.span) {
-            (ErrorVariant::NotAnAttribute(item), None) => item.span(),
-            (ErrorVariant::InvalidSyntax(item), None) => item.span(),
+            (NotAnOption(item), None) => item.span(),
+            (InvalidSyntax(item), None) => item.span(),
+            (NotABackend(item), None) => item.span(),
             (_, Some(span)) => span,
             (_var, _) => panic!(
                 "error should track a span for {_var:?} as 

@@ -66,10 +66,10 @@ fn parse_db(
                     };
                     return Ok(backend);
                 }
-                Some(other) => return Err(InvalidBackendFormat.with_span(other)),
+                Some(other) => return Err(InvalidBackendSyntax.with_span(other)),
             }
         }
-        Some(_other) => return Err(InvalidBackendArgs.with_span(_other)),
+        Some(other) => return Err(InvalidBackendSyntax.with_span(other)),
     }
 }
 
@@ -84,7 +84,7 @@ fn parse_item(tokens: &mut Peekable<impl Iterator<Item = TokenTree>>) -> Result<
             Ok(Options::Backend(backend))
         }
         TokenTree::Ident(ident) if ident.to_string() == "async" => Ok(Options::Async),
-        TokenTree::Ident(ident) => return Err(NotAnAttribute(ident).has_span()),
+        TokenTree::Ident(ident) => return Err(NotAnOption(ident).has_span()),
         _ => return Err(InvalidSyntax(first_token).has_span()),
     }
 }

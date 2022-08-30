@@ -42,6 +42,9 @@ fn emit_and_abort(err: model::Error) -> ! {
             }
             abort!(last.span(),last.to_string(); help =? last.help(););
         }
+        model::Error::Attribute(e) => {
+            abort!(e.span(), e.to_string(); help =? e.help(););
+        }
         err => { // not specifying span, will span macro attribute
             abort!("{}", err)
         }
