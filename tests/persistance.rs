@@ -8,7 +8,7 @@ pub struct Test {
 }
 
 #[test]
-fn main() {
+fn persistance() {
     let dir = tempdir::TempDir::new("dbstruct_test").unwrap();
     let path = dir.path().join("db");
 
@@ -27,5 +27,4 @@ fn main() {
     assert_eq!(8u8, db.the_field().get().unwrap());
 	assert_eq!(Some(7), db.primes().pop().unwrap());
 	assert_eq!(Some(5), db.primes().pop().unwrap());
-
 }

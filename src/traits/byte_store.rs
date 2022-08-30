@@ -165,15 +165,24 @@ where
     B: AsRef<[u8]>,
     BS: byte_store::Orderd<Error = E, Bytes = B>,
 {
+    #[instrument(skip_all, level = "trace", err)]
     fn get_lt<K, V>(&self, key: &K) -> Result<Option<(K, V)>, Self::Error>
     where
         K: Serialize + DeserializeOwned,
         V: Serialize + DeserializeOwned,
     {
         let key = bincode::serialize(key).map_err(Error::SerializingKey)?;
+        trace!("getting less then key: {key:?}");
         Ok(match byte_store::Orderd::get_lt(self, &key)? {
             None => None,
             Some((key, val)) => {
+                trace!(
+                    "key ({}): {:?}, val ({}): {:?}",
+                    std::any::type_name::<K>(),
+                    key.as_ref(),
+                    std::any::type_name::<V>(),
+                    val.as_ref()
+                );
                 let key = bincode::deserialize(key.as_ref()).map_err(Error::DeSerializingKey)?;
                 let val = bincode::deserialize(val.as_ref()).map_err(Error::DeSerializingKey)?;
                 Some((key, val))

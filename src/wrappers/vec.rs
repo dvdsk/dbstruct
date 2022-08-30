@@ -20,10 +20,23 @@ where
     len: Arc<AtomicUsize>,
 }
 
-#[derive(Serialize, Deserialize, Hash, Eq, PartialEq, Clone)]
+#[derive(Serialize, Deserialize, Hash, Eq, PartialEq, Clone, Debug)]
 pub struct Prefixed {
     prefix: u8,
     index: usize,
+}
+
+impl Prefixed {
+    pub fn index(&self) -> usize {
+        self.index
+    }
+
+    pub fn max(prefix: u8) -> Self {
+        Self {
+            prefix,
+            index: usize::max_value(),
+        }
+    }
 }
 
 // probably gonna need to add a method to keep the index for the Vec wrapper

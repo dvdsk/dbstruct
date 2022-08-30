@@ -5,7 +5,7 @@ use syn::{parse_quote, Pat, PathArguments, Token};
 use crate::model::backend::Backend;
 use crate::model::{Field, Model, Wrapper};
 
-use super::struct_def::Struct;
+use super::struct_def::{as_len_ident, Struct};
 
 pub struct NewMethod {
     pub locals: Vec<syn::Local>,
@@ -19,18 +19,21 @@ fn as_len_value(ident: syn::Ident) -> syn::FieldValue {
     let colon: syn::token::Colon = syn::Token![:](Span::call_site());
     syn::FieldValue {
         attrs: Vec::new(),
-        member: syn::Member::Named(ident),
+        member: syn::Member::Named(ident.clone()),
         colon_token: Some(colon),
-        expr: parse_quote!(std::sync::Arc::new(std::sync::atomic::AtomicUsize::new(0))),
+        expr: parse_quote!(std::sync::Arc::new(std::sync::atomic::AtomicUsize::new(#ident))),
     }
 }
 
 fn len_expr(ty: &syn::Type, prefix: u8) -> Box<syn::Expr> {
-    let next_prefix = prefix + 1;
     let expr: syn::Expr = parse_quote!(
-    dbstruct::traits::data_store::Orderd::get_lt(&ds, &#next_prefix)?
-        .map(|(len, _): (u8, #ty)| len)
-        .unwrap_or(0)
+        ::dbstruct::traits::data_store::Orderd::get_lt(
+                &ds,
+                &::dbstruct::wrappers::Prefixed::max(#prefix),
+            )?
+            .map(|(key, _): (::dbstruct::wrappers::Prefixed, #ty)| key)
+            .map(|key| key.index() + 1) // a vecs len is index + 1
+            .unwrap_or(0)
     );
     Box::new(expr)
 }
@@ -42,7 +45,7 @@ fn len_init(field: &Field) -> Option<syn::Local> {
     };
 
     let ident = syn::PathSegment {
-        ident: field.ident.clone(),
+        ident: as_len_ident(&field.ident),
         arguments: PathArguments::None,
     };
     let ident = syn::Path {

@@ -12,12 +12,16 @@ pub struct Struct {
     pub db: syn::Field,
 }
 
+pub fn as_len_ident(ident: &syn::Ident) -> syn::Ident {
+    let name = format!("{}_len", ident);
+    syn::Ident::new(&name, proc_macro2::Span::call_site())
+}
+
 fn as_len_field(field: &Field) -> syn::Field {
-    let name = format!("{}_len", field.ident);
     syn::Field {
         attrs: Vec::new(),
         vis: syn::Visibility::Inherited,
-        ident: Some(syn::Ident::new(&name, proc_macro2::Span::call_site())),
+        ident: Some(as_len_ident(&field.ident)),
         colon_token: None,
         ty: parse_quote!(std::sync::Arc<std::sync::atomic::AtomicUsize>),
     }
