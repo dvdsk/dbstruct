@@ -1,11 +1,22 @@
-**This is an early release, the API is unstable and might still change in**
+# dbstruct
 
-Create a typed database by defining a struct. *dbstruct* builds on top of anything that implements `dbstruct::DataStore` or `dbstruct::BytesStore` and provides a typed API similar to the standard library. An implementation for [sled](https://crates.io/crates/sled) is provided. 
+> **Derive a database from a struct**
+
+[![Crates.io](https://img.shields.io/crates/v/clap?style=flat-square)](https://crates.io/crates/clap)
+[![Crates.io](https://img.shields.io/crates/d/clap?style=flat-square)](https://crates.io/crates/clap)
+[![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](LICENSE-MIT)
+**This is an early release, the API is mostly stable but might still change**
+
+Create a typed embedded database by defining a struct. Interact with the database through getters and setters. Choose how values missing in the database are represented. Standard library types `Vec`, `HashMap` and `Option` have special getters and setters to mimic their standard library functionality. You can push and pop from vecs. 
+
+Choose out of various popular key-value databases then instantiate the struct providing only the db path. Alternatively pass any object that implements `dbstruct::DataStore`. 
+
 
 ## Usecase
 *dbstruct* is ideal when:
-- writing a simple app that needs some fast data storage.
-- quickly getting a storage layer done when prototyping a system that you can later replace.
+- Writing a simple app that needs some form of persistence.
+- Quickly getting a storage layer done when developing a system that you can later replace.
+
 
 ## Example
 ```rust
@@ -37,3 +48,19 @@ fn main() {
 	assert_eq!(String::from("42"), db.the_result().get().unwrap());
 }
 ```
+
+## Out of the box support
+| Name                                    | advantage | attribute option |
+|-----------------------------------------|-----------|------------------|
+| [Sled](https://crates.io/crates/sled)   | pure Rust | `db=sled`        |
+
+work in progress: rocksdb
+
+## Future Work
+These are some features I am planning to work on, in no particular order.
+- Example workflow for migrations.
+- (Dis)Allow access from multiple threads cloning the struct
+- Flushing the database, explicitly via a function on the struct and implicitly whenever a field changes. Will be configurable through an attribute on the struct and a field specifically.
+- Expand the wrappers API to more closely match that of their standard library counterparts.
+- Async support for flushing the database.
+- Figure out how to represent transactions _(hard if even possible)_
