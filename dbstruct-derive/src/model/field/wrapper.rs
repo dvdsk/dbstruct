@@ -141,8 +141,12 @@ impl Wrapper {
         }
 
         Ok(match (outer_type(&ty)?.as_str(), attribute) {
-            ("Vec", None) => Self::Vec { ty: inner_type(&ty, "Vec")? },
-            ("Option", None) => Self::Option { ty: inner_type(&ty, "Option")? },
+            ("Vec", None) => Self::Vec {
+                ty: inner_type(&ty, "Vec")?,
+            },
+            ("Option", None) => Self::Option {
+                ty: inner_type(&ty, "Option")?,
+            },
             // in the future use proc_macro2::span::join() to give an
             // error at the type and the default trait attribute
             ("Option", Some(DefaultTrait { span })) => return Err(OptionNotAllowed.with_span(span)),
@@ -161,12 +165,13 @@ impl Wrapper {
         match self {
             Wrapper::Vec { .. } => vec![Ordered].into_iter(),
             _ => vec![].into_iter(),
-        }.collect()
+        }
+        .collect()
     }
 }
 
 fn inner_type(ty: &syn::Type, outer_ty: &'static str) -> Result<syn::Type, Error> {
-    let mut generics = generic_types(ty)?;
+    let mut generics = generic_types(ty, outer_ty, 1)?;
     let ty = generics
         .next()
         .ok_or(
@@ -190,7 +195,7 @@ fn inner_type(ty: &syn::Type, outer_ty: &'static str) -> Result<syn::Type, Error
 }
 
 fn hashmap_types(ty: &syn::Type) -> Result<(syn::Type, syn::Type), Error> {
-    let mut generics = generic_types(ty)?;
+    let mut generics = generic_types(ty, "HashMap", 2)?;
     let key_ty = generics
         .next()
         .ok_or(
@@ -223,7 +228,11 @@ fn hashmap_types(ty: &syn::Type) -> Result<(syn::Type, syn::Type), Error> {
     Ok((key_ty, val_ty))
 }
 
-fn generic_types(ty: &syn::Type) -> Result<impl Iterator<Item = Result<&syn::Type, Error>>, Error> {
+fn generic_types<'a>(
+    ty: &'a syn::Type,
+    outer_ty: &'static str,
+    n_needed: u8,
+) -> Result<impl Iterator<Item = Result<&'a syn::Type, Error>>, Error> {
     let punctuated = match ty {
         syn::Type::Path(syn::TypePath {
             path: syn::Path { segments, .. },
@@ -241,7 +250,12 @@ fn generic_types(ty: &syn::Type) -> Result<impl Iterator<Item = Result<&syn::Typ
 
     let types = match arguments {
         syn::PathArguments::AngleBracketed(bracketed) => bracketed.args.iter(),
-        _ => unreachable!("types in named structs can only have angle bracketed type arguments"),
+        _ => {
+            return Err(ErrorVariant::TooFewGenerics {
+                ty: outer_ty,
+                n_needed,
+            }.with_span(ty))
+        }
     }
     .map(move |generic| match generic {
         syn::GenericArgument::Type(ty) => Ok(ty),
@@ -289,6 +303,19 @@ mod tests {
             let field_ty: syn::Type = parse_quote!(Vec<u8>);
             let wrapper = Wrapper::try_from(&mut attributes.to_vec(), field_ty.clone()).unwrap();
             assert_eq!(wrapper, Wrapper::DefaultTrait { ty: field_ty })
+        }
+    }
+
+    #[test]
+    fn missing_generics() {
+        let ty_vec: syn::Type = parse_quote!(Vec);
+        let res = Wrapper::try_from(&mut Vec::new(), ty_vec).unwrap_err();
+        match res.variant {
+            ErrorVariant::TooFewGenerics {
+                ty: "Vec",
+                n_needed: 1,
+            } => (),
+            _ => panic!("Incorrect error: {:?}", res.variant),
         }
     }
 

@@ -102,6 +102,21 @@ mod tests {
     use syn::parse_str;
 
     #[test]
+    fn failt2() {
+        // todo figure out why not fail? (unit test time)
+        let input_attr = proc_macro2::TokenStream::from_str("db=sled").unwrap();
+        let input_struct: syn::ItemStruct = parse_str(
+            "struct PersistentData {
+                mode_cur_playlist: HashMap<AudioMode, String>,
+                playlist_positions: HashMap<String, Position>,
+                playlist_last_played: HashMap<String, u64>,
+                current_mode: Option<AudioMode>,
+            }",
+        ).unwrap();
+        let _model = Model::try_from(input_struct, input_attr).unwrap();
+    }
+
+    #[test]
     fn analyze_model_does_not_crash() {
         let input_attr = proc_macro2::TokenStream::from_str("db=sled").unwrap();
         let input_struct: syn::ItemStruct = parse_str(

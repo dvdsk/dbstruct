@@ -173,7 +173,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn error_on_unsupported_backend() {
+    fn err_on_unsupported_backend() {
         let options = [Options::Backend(BackendOption {
             backend: BackendOptionVariant::Test,
             span: Span::call_site(),
@@ -191,7 +191,7 @@ mod tests {
             ErrorVariant::MissesTraits {
                 needed: missing, ..
             } => {
-                let correct = [Atomic, Ordered].into_iter().collect();
+                let correct = [Ordered].into_iter().collect();
                 assert_eq!(missing, correct);
             }
             _ => unreachable!("expected error missingtraits got: {err:?}"),
