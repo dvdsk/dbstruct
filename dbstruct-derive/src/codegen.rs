@@ -205,7 +205,7 @@ pub struct Test {
     }
 
     #[test]
-    fn fail() {
+    fn default_vec_and_map () {
         use crate::model::Model;
         use syn::parse_str;
 
@@ -216,7 +216,6 @@ pub struct Test {
     /// a small list that we dont want structdb to wrap for us
     #[dbstruct(Default)]
     small_list: Vec<u8>,
-    /// a small list that we dont want structdb to wrap for us
     #[dbstruct(Default)]
     small_map: HashMap<usize, u32>,
 }

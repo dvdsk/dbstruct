@@ -73,7 +73,7 @@ impl Error {
 #[derive(PartialEq, Eq, Hash, Clone, Copy, Debug)]
 pub enum ExtraBound {
     Atomic,
-    Orderd,
+    Ordered,
 }
 
 #[derive(Debug, Clone)]
@@ -148,7 +148,7 @@ impl Backend {
     fn traits(&self) -> HashSet<ExtraBound> {
         use ExtraBound::*;
         match self {
-            Backend::Sled => vec![Atomic, Orderd].into_iter(),
+            Backend::Sled => vec![Atomic, Ordered].into_iter(),
             Backend::HashMap => vec![].into_iter(),
             Backend::Trait { .. } => unreachable!("should never be called when backend is Trait"),
             #[cfg(test)]
@@ -173,7 +173,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn error_on_unsupported_backend() {
+    fn err_on_unsupported_backend() {
         let options = [Options::Backend(BackendOption {
             backend: BackendOptionVariant::Test,
             span: Span::call_site(),
@@ -191,7 +191,7 @@ mod tests {
             ErrorVariant::MissesTraits {
                 needed: missing, ..
             } => {
-                let correct = [Atomic, Orderd].into_iter().collect();
+                let correct = [Ordered].into_iter().collect();
                 assert_eq!(missing, correct);
             }
             _ => unreachable!("expected error missingtraits got: {err:?}"),

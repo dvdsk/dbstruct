@@ -27,7 +27,7 @@ fn as_len_value(ident: syn::Ident) -> syn::FieldValue {
 
 fn len_expr(ty: &syn::Type, prefix: u8) -> Box<syn::Expr> {
     let expr: syn::Expr = parse_quote!(
-        ::dbstruct::traits::data_store::Orderd::get_lt(
+        ::dbstruct::traits::data_store::Ordered::get_lt(
                 &ds,
                 &::dbstruct::wrappers::Prefixed::max(#prefix),
             )?

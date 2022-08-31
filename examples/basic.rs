@@ -42,10 +42,10 @@ pub struct MacroOutput<DS: DataStore> {
 
 impl<DS> MacroOutput<DS>
 where
-    DS: DataStore + data_store::Orderd + Clone,
+    DS: DataStore + data_store::Ordered + Clone,
 {
     pub fn new(ds: DS) -> Result<Self, dbstruct::Error<<DS as DataStore>::Error>> {
-        let queue_len = data_store::Orderd::get_lt(&ds, &(1+1))?
+        let queue_len = data_store::Ordered::get_lt(&ds, &(1+1))?
             .map(|(len, _): (usize, Song)| len)
             .unwrap_or(0);
         tracing::debug!("opening vector queue with len: {queue_len}");

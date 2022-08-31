@@ -38,7 +38,7 @@ pub enum ErrorVariant {
 
 #[derive(thiserror::Error, Debug)]
 pub struct Error {
-    variant: ErrorVariant,
+    pub variant: ErrorVariant,
     span: Option<Span>,
 }
 

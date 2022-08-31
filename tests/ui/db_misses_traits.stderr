@@ -4,5 +4,5 @@ error: The database backend (hashmap) you specified can not support all the stru
 3 | #[dbstruct(db=hashmap)]
   |               ^^^^^^^
   |
-  = help: You need a backend that implements all of these traits: {Orderd}.
+  = help: You need a backend that implements all of these traits: {Ordered}.
           Database backends that implement those traits: sled

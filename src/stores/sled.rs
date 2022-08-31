@@ -37,7 +37,7 @@ impl byte_store::Atomic for sled::Tree {
     }
 }
 
-impl byte_store::Orderd for sled::Tree {
+impl byte_store::Ordered for sled::Tree {
     fn get_lt(&self, key: &[u8]) -> Result<Option<(Self::Bytes, Self::Bytes)>, Self::Error> {
         self.get_lt(key)
     }
