@@ -2,8 +2,8 @@
 
 > **Derive a database from a struct**
 
-[![Crates.io](https://img.shields.io/crates/v/clap?style=flat-square)](https://crates.io/crates/dbstruct)
-[![Crates.io](https://img.shields.io/crates/d/clap?style=flat-square)](https://crates.io/crates/dbstruct)
+[![Crates.io](https://img.shields.io/crates/v/dbstruct?style=flat-square)](https://crates.io/crates/dbstruct)
+[![Crates.io](https://img.shields.io/crates/d/dbstruct?style=flat-square)](https://crates.io/crates/dbstruct)
 [![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](LICENSE-MIT)
 **This is an early release, the API is mostly stable but might still change**
 
