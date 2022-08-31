@@ -2,8 +2,8 @@
 
 > **Derive a database from a struct**
 
-[![Crates.io](https://img.shields.io/crates/v/clap?style=flat-square)](https://crates.io/crates/dbstruct)
-[![Crates.io](https://img.shields.io/crates/d/clap?style=flat-square)](https://crates.io/crates/dbstruct)
+[![Crates.io](https://img.shields.io/crates/v/dbstruct?style=flat-square)](https://crates.io/crates/dbstruct)
+[![Crates.io](https://img.shields.io/crates/d/dbstruct?style=flat-square)](https://crates.io/crates/dbstruct)
 [![API](https://docs.rs/dbstruct/badge.svg)](https://docs.rs/dbstruct)
 [![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](LICENSE-MIT)
 **This is an early release, the API is mostly stable but might still change**
@@ -13,8 +13,8 @@ Create a typed embedded database by defining a struct. Interact with the databas
 Choose out of various popular key-value databases then instantiate the struct providing only the db path. Alternatively pass any object that implements `dbstruct::DataStore`. 
 
 
-## Usecase
-*dbstruct* is ideal when:
+## Use case
+dbstruct is ideal when:
 - Writing a simple app that needs some form of persistence.
 - Quickly getting a storage layer done when developing a system that you can later replace.
 
