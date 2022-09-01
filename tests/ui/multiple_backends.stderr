@@ -1,7 +1,8 @@
 error: multiple database backends specified
- --> tests/ui/multiple_backends.rs:3:15
+
+         = help: remove one of the backends
+
+ --> tests/ui/multiple_backends.rs:3:24
   |
 3 | #[dbstruct(db=sled, db=trait)]
-  |               ^^^^^^^^^^^^^^
-  |
-  = help: remove one of the backends
+  |                        ^^^^^

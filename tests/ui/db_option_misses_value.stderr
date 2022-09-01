@@ -1,7 +1,8 @@
 error: backend option has no value set
+
+         = help: try setting a supported backend, for example `db=sled`
+
  --> tests/ui/db_option_misses_value.rs:3:14
   |
 3 | #[dbstruct(db=)]
   |              ^
-  |
-  = help: try setting a supported backend, for example `db=sled`

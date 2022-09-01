@@ -1,5 +1,3 @@
-use std::path::Path;
-
 #[dbstruct::dbstruct(db=sled)]
 pub struct Test {
     #[dbstruct(Default)]

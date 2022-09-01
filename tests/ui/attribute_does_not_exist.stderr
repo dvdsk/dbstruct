@@ -1,7 +1,8 @@
 error: incorrect syntax for backend
+
+         = help: a backend should be a single world not enclosed in "
+
  --> tests/ui/attribute_does_not_exist.rs:3:14
   |
 3 | #[dbstruct(db+)]
   |              ^
-  |
-  = help: a backend should be a single world not enclosed in "

@@ -1,8 +1,9 @@
 error: The database backend (hashmap) you specified can not support all the structs fields
+
+         = help: You need a backend that implements all of these traits: {Ordered}.
+       Database backends that implement those traits: sled
+
  --> tests/ui/db_misses_traits.rs:3:15
   |
 3 | #[dbstruct(db=hashmap)]
   |               ^^^^^^^
-  |
-  = help: You need a backend that implements all of these traits: {Ordered}.
-          Database backends that implement those traits: sled

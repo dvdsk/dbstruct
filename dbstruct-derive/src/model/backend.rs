@@ -113,7 +113,7 @@ impl Backend {
             (None, _) => return Err(NoBackendSpecified.with_span(Span::call_site())),
             (Some(b), None) => *b,
             (Some(b0), Some(b1)) => {
-                let span = b0.span.join(b1.span).unwrap();
+                let span = b0.span.join(b1.span).unwrap_or(b1.span);
                 return Err(MultipleBackends.with_span(span));
             }
         };

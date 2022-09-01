@@ -1,7 +1,8 @@
 error: Not a known database backend: `starship_voyager`
+
+         = help: try sled as database backend
+
  --> tests/ui/not_a_db_backend.rs:3:15
   |
 3 | #[dbstruct(db=starship_voyager)]
   |               ^^^^^^^^^^^^^^^^
-  |
-  = help: try sled as database backend
