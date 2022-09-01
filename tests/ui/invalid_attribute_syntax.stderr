@@ -1,7 +1,8 @@
 error: invalid syntax for dbstruct option
+
+         = help: the option should be a single word not enclosed in "
+
  --> tests/ui/invalid_attribute_syntax.rs:3:12
   |
 3 | #[dbstruct("db"=sled)]
   |            ^^^^
-  |
-  = help: the option should be a single word not enclosed in "

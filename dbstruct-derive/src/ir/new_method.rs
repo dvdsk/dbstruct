@@ -97,7 +97,7 @@ impl NewMethod {
             .len_vars
             .iter()
             .map(|def| def.ident.clone())
-            .map(Option::unwrap)
+            .map(|ident| ident.expect("ident is None"))
             .map(as_len_value)
             .collect();
 

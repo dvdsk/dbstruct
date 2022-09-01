@@ -1,5 +1,5 @@
 use std::collections;
-use std::sync::{RwLock, Arc};
+use std::sync::{Arc, RwLock};
 
 use crate::traits::ByteStore;
 
@@ -9,8 +9,14 @@ pub enum Error {
     Poisoned,
 }
 
+/// This is a very simple backend that offers no persistance but also needs no path argument. It only
+/// supports some wrappers. Use it for testing.
+///
+/// ### ALL CHANGES ARE LOST WHEN THE OBJECT IS DROPPED
+/// again: use for testing the api only
+///
 #[derive(Default, Clone)]
-pub struct HashMap(Arc<RwLock<collections::HashMap<Vec<u8>, Vec<u8>>>>); 
+pub struct HashMap(Arc<RwLock<collections::HashMap<Vec<u8>, Vec<u8>>>>);
 
 impl HashMap {
     pub fn new() -> Self {

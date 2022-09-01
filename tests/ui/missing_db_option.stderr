@@ -1,7 +1,8 @@
 error: no database backend specified
+
+         = help: try specifying an db, for example: `db=sled`
+
  --> tests/ui/missing_db_option.rs:3:12
   |
 3 | #[dbstruct(db)]
   |            ^^
-  |
-  = help: try specifying an db, for example: `db=sled`
