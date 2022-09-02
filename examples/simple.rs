@@ -11,11 +11,15 @@ pub struct Computer {
 pub struct Test {
     the_awnser: Option<u8>,
     questions: Vec<String>,
+    // we dont need HashMap to be in scope as dbstruct 
+    // will not use that type
     computers: HashMap<String, Computer>,
 }
 
 fn main() {
-    let db = Test::new("simple_example_db").unwrap();
+    let dir = tempdir::TempDir::new("dbstruct_examples").unwrap();
+    let path = dir.path().join("advanced");
+    let db = Test::new(path).unwrap();
 
     // we can store simple fields
     assert_eq!(None, db.the_awnser().get().unwrap());

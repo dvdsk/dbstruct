@@ -58,7 +58,7 @@ fn main() {
 work in progress: rocksdb
 
 ## Future Work
-These are some features I am planning to work on, in no particular order.
+These are some features I am planning to work on, in no particular order. If you miss anything *please let me know* via an issue!
 - Example workflow for migrations.
 - (Dis)Allow access from multiple threads cloning the struct
 - Flushing the database, explicitly via a function on the struct and implicitly whenever a field changes. Will be configurable through an attribute on the struct and a field specifically.

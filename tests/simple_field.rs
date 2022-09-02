@@ -6,7 +6,10 @@ pub struct Test {
 
 #[test]
 fn main() {
-    let db = Test::new("test").unwrap();
+    let dir = tempdir::TempDir::new("dbstruct_tests").unwrap();
+    let path = dir.path().join("simple_field_db");
+
+    let db = Test::new(path).unwrap();
 
     db.the_field().set(&8).unwrap();
     assert_eq!(8u8, db.the_field().get().unwrap());
