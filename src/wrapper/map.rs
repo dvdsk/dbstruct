@@ -58,7 +58,7 @@ where
 
     /// returns existing value if any was set
     #[instrument(skip_all, level="debug")]
-    pub fn set(&self, key: &'a Key, value: &'a Value) -> Result<Option<Value>, Error<E>> {
+    pub fn insert(&self, key: &'a Key, value: &'a Value) -> Result<Option<Value>, Error<E>> {
         let key = self.prefix(key);
         let existing = self.tree.insert(&key, value).unwrap();
         Ok(existing)
