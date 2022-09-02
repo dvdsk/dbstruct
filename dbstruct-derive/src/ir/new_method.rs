@@ -108,7 +108,7 @@ impl NewMethod {
         match model.backend {
             Backend::Sled => {
                 locals.push(sled_from_path());
-                arg = Some(parse_quote!(path: &std::path::Path));
+                arg = Some(parse_quote!(path: impl AsRef<std::path::Path>));
                 error_ty = parse_quote!(::dbstruct::sled::Error);
             }
             Backend::HashMap => {
