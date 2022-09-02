@@ -1,4 +1,4 @@
-//! The traits used by the wrappers to operate on the database.
+//! The traits used by the wrapper to operate on the database.
 use core::fmt;
 
 use serde::de::DeserializeOwned;
@@ -22,7 +22,7 @@ pub trait DataStore {
         V: Serialize + DeserializeOwned;
 }
 
-/// This trait enables wrappers to provide `update` and `conditional` update. 
+/// This trait enables wrapper to provide `update` and `conditional` update. 
 /// It is usually more convenient to implement
 /// [`byte_store::Atomic`][super::byte_store::Atomic] instead.
 pub trait Atomic: DataStore {

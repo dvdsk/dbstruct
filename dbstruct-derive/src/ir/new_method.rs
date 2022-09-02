@@ -29,9 +29,9 @@ fn len_expr(ty: &syn::Type, prefix: u8) -> Box<syn::Expr> {
     let expr: syn::Expr = parse_quote!(
         ::dbstruct::traits::data_store::Ordered::get_lt(
                 &ds,
-                &::dbstruct::wrappers::Prefixed::max(#prefix),
+                &::dbstruct::wrapper::Prefixed::max(#prefix),
             )?
-            .map(|(key, _): (::dbstruct::wrappers::Prefixed, #ty)| key)
+            .map(|(key, _): (::dbstruct::wrapper::Prefixed, #ty)| key)
             .map(|key| key.index() + 1) // a vecs len is index + 1
             .unwrap_or(0)
     );

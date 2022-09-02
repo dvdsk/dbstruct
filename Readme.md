@@ -62,7 +62,7 @@ These are some features I am planning to work on, in no particular order.
 - Example workflow for migrations.
 - (Dis)Allow access from multiple threads cloning the struct
 - Flushing the database, explicitly via a function on the struct and implicitly whenever a field changes. Will be configurable through an attribute on the struct and a field specifically.
-- Expand the wrappers API to more closely match that of their standard library counterparts.
+- Expand the wrapper API to more closely match that of their standard library counterparts.
 - Async support for flushing the database.
 - Figure out how to represent transactions _(hard if even possible)_
 

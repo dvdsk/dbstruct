@@ -4,7 +4,7 @@ use std::sync::Arc;
 
 use dbstruct::traits::data_store;
 use dbstruct::traits::DataStore;
-use dbstruct::wrappers;
+use dbstruct::wrapper;
 use serde::{Deserialize, Serialize};
 use tracing::instrument;
 
@@ -56,20 +56,20 @@ where
     }
 
     #[instrument(skip_all)]
-    pub fn queue(&self) -> wrappers::Vec<Song, DS> {
-        wrappers::Vec::new(self.ds.clone(), 1, self.queue_len.clone())
+    pub fn queue(&self) -> wrapper::Vec<Song, DS> {
+        wrapper::Vec::new(self.ds.clone(), 1, self.queue_len.clone())
     }
     #[instrument(skip_all)]
-    pub fn playing(&self) -> wrappers::DefaultValue<bool, DS> {
-        wrappers::DefaultValue::new(self.ds.clone(), 2, PLAYING_DEFAULT)
+    pub fn playing(&self) -> wrapper::DefaultValue<bool, DS> {
+        wrapper::DefaultValue::new(self.ds.clone(), 2, PLAYING_DEFAULT)
     }
     #[instrument(skip_all)]
-    pub fn preferences(&self) -> wrappers::DefaultTrait<Preferences, DS> {
-        wrappers::DefaultTrait::new(self.ds.clone(), 3)
+    pub fn preferences(&self) -> wrapper::DefaultTrait<Preferences, DS> {
+        wrapper::DefaultTrait::new(self.ds.clone(), 3)
     }
     #[instrument(skip_all)]
-    pub fn account(&self) -> wrappers::OptionValue<Account, DS> {
-        wrappers::OptionValue::new(self.ds.clone(), 4)
+    pub fn account(&self) -> wrapper::OptionValue<Account, DS> {
+        wrapper::OptionValue::new(self.ds.clone(), 4)
     }
 }
 // end macro output

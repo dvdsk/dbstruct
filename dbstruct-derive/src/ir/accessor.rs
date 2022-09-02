@@ -20,49 +20,49 @@ impl Accessor {
             Wrapper::Vec { ty } => {
                 let len_ident = format_ident!("{}_len", field.ident);
                 let body = parse_quote!({
-                    dbstruct::wrappers::Vec::new(self.ds.clone(), #key, self.#len_ident.clone())
+                    dbstruct::wrapper::Vec::new(self.ds.clone(), #key, self.#len_ident.clone())
                 });
-                let returns = parse_quote_spanned!(ty.span()=> dbstruct::wrappers::Vec<#ty, #ds>);
+                let returns = parse_quote_spanned!(ty.span()=> dbstruct::wrapper::Vec<#ty, #ds>);
                 (body, returns)
             }
             #[allow(unused_variables)]
             Wrapper::Map { key_ty, val_ty } => {
                 let body = parse_quote!({
-                    dbstruct::wrappers::Map::new(self.ds.clone(), #key)
+                    dbstruct::wrapper::Map::new(self.ds.clone(), #key)
                 });
                 // Using proc_macro2 version until
                 // https://github.com/rust-lang/rust/issues/54725 stabalizes
                 let span = key_ty.span().join(val_ty.span()).unwrap_or(Span::call_site());
                 let returns =
-                    parse_quote_spanned!(span=> dbstruct::wrappers::Map<#key_ty, #val_ty, #ds>);
+                    parse_quote_spanned!(span=> dbstruct::wrapper::Map<#key_ty, #val_ty, #ds>);
                 (body, returns)
             }
             #[allow(unused_variables)]
             Wrapper::DefaultTrait { ty } => {
                 let body = parse_quote!({
-                    dbstruct::wrappers::DefaultTrait::new(self.ds.clone(), #key)
+                    dbstruct::wrapper::DefaultTrait::new(self.ds.clone(), #key)
                 });
                 let returns =
-                    parse_quote_spanned!(ty.span()=> dbstruct::wrappers::DefaultTrait<#ty, #ds>);
+                    parse_quote_spanned!(ty.span()=> dbstruct::wrapper::DefaultTrait<#ty, #ds>);
                 (body, returns)
             }
             #[allow(unused_variables)]
             Wrapper::DefaultValue { ty, value } => {
                 let body = parse_quote_spanned!(ty.span()=> {
                     let default_value = #value;
-                    dbstruct::wrappers::DefaultValue::new(self.ds.clone(), #key, default_value)
+                    dbstruct::wrapper::DefaultValue::new(self.ds.clone(), #key, default_value)
                 });
                 let returns =
-                    parse_quote_spanned!(ty.span()=> dbstruct::wrappers::DefaultValue<#ty, #ds>);
+                    parse_quote_spanned!(ty.span()=> dbstruct::wrapper::DefaultValue<#ty, #ds>);
                 (body, returns)
             }
             #[allow(unused_variables)]
             Wrapper::Option { ty } => {
                 let body = parse_quote!({
-                    dbstruct::wrappers::OptionValue::new(self.ds.clone(), #key)
+                    dbstruct::wrapper::OptionValue::new(self.ds.clone(), #key)
                 });
                 let returns =
-                    parse_quote_spanned!(ty.span()=> dbstruct::wrappers::OptionValue<#ty, #ds>);
+                    parse_quote_spanned!(ty.span()=> dbstruct::wrapper::OptionValue<#ty, #ds>);
                 (body, returns)
             }
         };

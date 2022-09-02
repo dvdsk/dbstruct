@@ -15,7 +15,7 @@ error[E0277]: the trait bound `CustomType: serde::ser::Serialize` is not satisfi
              (T0, T1, T2, T3, T4, T5)
            and 126 others
 note: required by a bound in `DefaultTrait`
-  --> src/wrappers/default_trait.rs
+  --> src/wrapper/default_trait.rs
    |
    |     T: Serialize + DeserializeOwned + Default,
    |        ^^^^^^^^^ required by this bound in `DefaultTrait`
@@ -27,7 +27,7 @@ error[E0277]: the trait bound `CustomType: Default` is not satisfied
    |            ^^^^^^^^^^ the trait `Default` is not implemented for `CustomType`
    |
 note: required by a bound in `DefaultTrait`
-  --> src/wrappers/default_trait.rs
+  --> src/wrapper/default_trait.rs
    |
    |     T: Serialize + DeserializeOwned + Default,
    |                                       ^^^^^^^ required by this bound in `DefaultTrait`
@@ -54,7 +54,7 @@ error[E0277]: the trait bound `for<'de> CustomType: serde::de::Deserialize<'de>`
            and 134 others
    = note: required because of the requirements on the impl of `serde::de::DeserializeOwned` for `CustomType`
 note: required by a bound in `DefaultTrait`
-  --> src/wrappers/default_trait.rs
+  --> src/wrapper/default_trait.rs
    |
    |     T: Serialize + DeserializeOwned + Default,
    |                    ^^^^^^^^^^^^^^^^ required by this bound in `DefaultTrait`

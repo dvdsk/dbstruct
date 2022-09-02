@@ -21,7 +21,7 @@
 //! fn main() {
 //! 	// a wrapper around a HashMap that implements the
 //! 	// `DataStore` trait
-//! 	let db = Test::new(&Path::new("the_db")).unwrap();
+//! 	let db = Test::new(&Path::new("the_db2")).unwrap();
 //!
 //! 	db.the_awnser().set(&42).unwrap();
 //! 	assert_eq!(42u8, db.the_awnser().get().unwrap());
@@ -56,7 +56,7 @@
 //! ## How it works
 //! dbstruct replaces the *fields* in your struct *with methods*. Each method returns a [`wrapper`]
 //! that allows getting and setting values. While your program runs the fields of a struct are
-//! stored in memory, there values lost the program stops. The wrappers store the values in a
+//! stored in memory, there values lost the program stops. The wrapper store the values in a
 //! database.
 //!
 //! ##### Missing values
@@ -65,8 +65,8 @@
 //! [`Option`]. Then dbstruct will return None if the value is missing. Alternatively you can instruct dbstruct
 //! to use the types [`Default`] implementation or set an expression to generate a default value.
 //!
-//! ##### Special wrappers
-//! Some fields get methods that return special wrappers. These wrappers mimic the fields type and
+//! ##### Special wrapper
+//! Some fields get methods that return special wrapper. These wrappers mimic the fields type and
 //! handle missing values on their own. Struct fields with type Vec are transformed into methods that
 //! return a Vec wrapper. It allows pushing and popping values. You can opt out of this by defining
 //! how to handle missing values (see above)

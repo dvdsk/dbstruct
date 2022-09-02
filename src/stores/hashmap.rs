@@ -10,7 +10,7 @@ pub enum Error {
 }
 
 /// This is a very simple backend that offers no persistance but also needs no path argument. It only
-/// supports some wrappers. Use it for testing.
+/// supports some wrapper. Use it for testing.
 ///
 /// ### ALL CHANGES ARE LOST WHEN THE OBJECT IS DROPPED
 /// again: use for testing the api only

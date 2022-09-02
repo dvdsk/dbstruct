@@ -137,9 +137,9 @@ mod tests {
         Accessor {
             vis: parse_quote!(pub),
             ident: parse_quote!(queue),
-            returns: parse_quote!(dbstruct::wrappers::Vec<u32>),
+            returns: parse_quote!(dbstruct::wrapper::Vec<u32>),
             body: parse_quote!({
-                dbstruct::wrappers::Vec::new(self.ds.clone(), 2, self.queue_len.clone())
+                dbstruct::wrapper::Vec::new(self.ds.clone(), 2, self.queue_len.clone())
             }),
         }
     }

@@ -14,11 +14,11 @@ error[E0277]: the trait bound `CustomKeyType: serde::ser::Serialize` is not sati
              (T0, T1, T2, T3, T4)
              (T0, T1, T2, T3, T4, T5)
            and 126 others
-note: required by a bound in `dbstruct::wrappers::Map`
-  --> src/wrappers/map.rs
+note: required by a bound in `dbstruct::wrapper::Map`
+  --> src/wrapper/map.rs
    |
    |     Key: Serialize,
-   |          ^^^^^^^^^ required by this bound in `dbstruct::wrappers::Map`
+   |          ^^^^^^^^^ required by this bound in `dbstruct::wrapper::Map`
    = note: this error originates in the attribute macro `dbstruct::dbstruct` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: the trait bound `CustomValType: serde::ser::Serialize` is not satisfied
@@ -37,11 +37,11 @@ error[E0277]: the trait bound `CustomValType: serde::ser::Serialize` is not sati
              (T0, T1, T2, T3, T4)
              (T0, T1, T2, T3, T4, T5)
            and 126 others
-note: required by a bound in `dbstruct::wrappers::Map`
-  --> src/wrappers/map.rs
+note: required by a bound in `dbstruct::wrapper::Map`
+  --> src/wrapper/map.rs
    |
    |     Value: Serialize + DeserializeOwned,
-   |            ^^^^^^^^^ required by this bound in `dbstruct::wrappers::Map`
+   |            ^^^^^^^^^ required by this bound in `dbstruct::wrapper::Map`
    = note: this error originates in the attribute macro `dbstruct::dbstruct` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: the trait bound `for<'de> CustomValType: serde::de::Deserialize<'de>` is not satisfied
@@ -61,9 +61,9 @@ error[E0277]: the trait bound `for<'de> CustomValType: serde::de::Deserialize<'d
              (T0, T1, T2, T3, T4)
            and 134 others
    = note: required because of the requirements on the impl of `serde::de::DeserializeOwned` for `CustomValType`
-note: required by a bound in `dbstruct::wrappers::Map`
-  --> src/wrappers/map.rs
+note: required by a bound in `dbstruct::wrapper::Map`
+  --> src/wrapper/map.rs
    |
    |     Value: Serialize + DeserializeOwned,
-   |                        ^^^^^^^^^^^^^^^^ required by this bound in `dbstruct::wrappers::Map`
+   |                        ^^^^^^^^^^^^^^^^ required by this bound in `dbstruct::wrapper::Map`
    = note: this error originates in the attribute macro `dbstruct::dbstruct` (in Nightly builds, run with -Z macro-backtrace for more info)
