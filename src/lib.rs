@@ -4,7 +4,7 @@
 //!
 //!
 //! ## How to use `derive(dbstruct)`
-//! Lets go through an example:
+//! Lets go through an example, there are many more [here](https://github.com/dvdsk/dbstruct/tree/main/examples):
 //!
 //! ```rust
 //! use std::path::Path;
