@@ -1,3 +1,5 @@
+//! provides a non peristant store for testing
+
 #[cfg(feature = "sled")]
 mod sled;
 #[cfg(feature = "rocksdb")]

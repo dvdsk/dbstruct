@@ -10,6 +10,7 @@ use tracing::debug;
 use crate::traits::DataStore;
 use crate::Error;
 
+/// mimics the API of [`Vec`]
 pub struct Vec<T, DS>
 where
     DS: DataStore,
@@ -45,6 +46,7 @@ where
     T: Serialize + DeserializeOwned,
     DS: DataStore<Error = E>,
 {
+    #[doc(hidden)]
     pub fn new(ds: DS, prefix: u8, len: Arc<AtomicUsize>) -> Self {
         Self {
             phantom: PhantomData,

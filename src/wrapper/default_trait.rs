@@ -7,6 +7,7 @@ use serde::de::DeserializeOwned;
 use crate::Error;
 use crate::traits::DataStore;
 
+/// handles missing values by generating a replacement using the types [`Default`] implementation
 pub struct DefaultTrait<T, DS> 
 where 
     T: Serialize + DeserializeOwned + Default,
@@ -24,6 +25,7 @@ where
     DS: DataStore<Error = E>,
 
 {
+    #[doc(hidden)]
     pub fn new(ds: DS, key: u8) -> Self {
         Self {
             phantom: PhantomData::default(),

@@ -1,3 +1,6 @@
+//! Helper traits that are easier to implement. These implement the similarly named trait in
+//! [`data_store`].
+
 use core::fmt;
 use serde::{de::DeserializeOwned, Serialize};
 use tracing::{instrument, trace};
@@ -7,6 +10,8 @@ use super::data_store;
 use super::data_store::DataStore;
 use crate::Error;
 
+/// A helper trait, implementing this automatically implements
+/// [`DataStore`][super::data_store::DataStore]
 pub trait ByteStore {
     type Error: fmt::Debug;
     type Bytes: AsRef<[u8]>;
@@ -15,6 +20,8 @@ pub trait ByteStore {
     fn insert(&self, key: &[u8], val: &[u8]) -> Result<Option<Self::Bytes>, Self::Error>;
 }
 
+/// A helper trait, implementing this automatically implements
+/// [`data_store::Atomic`][super::data_store::Atomic]
 pub trait Atomic: ByteStore {
     fn atomic_update(
         &self,
@@ -29,6 +36,8 @@ pub trait Atomic: ByteStore {
     ) -> Result<(), Self::Error>;
 }
 
+/// A helper trait, implementing this automatically implements
+/// [`data_store::Ordered`][super::data_store::Ordered]
 pub trait Ordered: ByteStore {
     fn get_lt(&self, key: &[u8]) -> Result<Option<(Self::Bytes, Self::Bytes)>, Self::Error>;
 }

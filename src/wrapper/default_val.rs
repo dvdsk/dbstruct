@@ -1,31 +1,32 @@
-use core::fmt;
-use std::marker::PhantomData;
+use std::fmt;
 
-use serde::Serialize;
 use serde::de::DeserializeOwned;
+use serde::Serialize;
 
 use crate::traits::{data_store, DataStore};
 use crate::Error;
 
-// while defaultvalue requires T: Clone, this does not
-pub struct OptionValue<T, DS>
+/// handles missing values by generating a replacement from an expression. 
+pub struct DefaultValue<T, DS>
 where
+    T: Serialize + DeserializeOwned + Clone,
     DS: DataStore,
 {
-    phantom: PhantomData<T>,
+    default_value: T,
     ds: DS,
     key: u8,
 }
 
-impl<T, E, DS> OptionValue<T, DS>
+impl<T, E, DS> DefaultValue<T, DS>
 where
     E: fmt::Debug,
-    T: Serialize + DeserializeOwned,
+    T: Serialize + DeserializeOwned + Clone,
     DS: DataStore<Error = E>,
 {
-    pub fn new(ds: DS, key: u8) -> Self {
+    #[doc(hidden)]
+    pub fn new(ds: DS, key: u8, default_value: T) -> Self {
         Self {
-            phantom: PhantomData::default(),
+            default_value,
             ds,
             key,
         }
@@ -36,22 +37,24 @@ where
         Ok(())
     }
 
-    pub fn get(&self) -> Result<Option<T>, Error<E>> {
-        Ok(self.ds.get(&self.key)?)
+    pub fn get(&self) -> Result<T, Error<E>> {
+        Ok(self
+            .ds
+            .get(&self.key)?
+            .unwrap_or_else(|| self.default_value.clone()))
     }
 }
 
-impl<T, E, DS> OptionValue<T, DS>
+impl<T, E, DS> DefaultValue<T, DS>
 where
     E: fmt::Debug,
-    T: Serialize + DeserializeOwned,
+    T: Serialize + DeserializeOwned + Clone,
     DS: data_store::Atomic<Error = E>,
 {
     pub fn update(&self, op: impl FnMut(T) -> T + Clone) -> Result<(), Error<E>> {
         self.ds.atomic_update(&self.key, op)?;
         Ok(())
     }
-    /// if the value is None then no update is performed
     pub fn conditional_update(&self, old: T, new: T) -> Result<(), Error<E>> {
         Ok(self.ds.conditional_update(&self.key, &new, &old)?)
     }

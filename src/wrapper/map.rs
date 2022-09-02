@@ -8,6 +8,7 @@ use tracing::{trace, instrument};
 use crate::traits::DataStore;
 use crate::Error;
 
+/// mimics the API of [`HashMap`][std::collections::HashMap]
 pub struct Map<'a, Key, Value, DS>
 where
     Key: Serialize,
@@ -36,6 +37,7 @@ where
     Value: Serialize + DeserializeOwned,
     DS: DataStore<Error = E>,
 {
+    #[doc(hidden)]
     #[instrument(skip(tree), level="debug")]
     pub fn new(tree: DS, prefix: u8) -> Self {
         Self {

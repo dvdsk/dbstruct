@@ -1,8 +1,11 @@
+//! The traits used by the wrappers to operate on the database.
 use core::fmt;
 
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 
+/// Base trait needed by every wrapper. It is usually more convenient to implement
+/// [`ByteStore`][super::byte_store::ByteStore] instead.
 pub trait DataStore {
     type Error: fmt::Debug;
     fn get<K, V>(&self, key: &K) -> Result<Option<V>, Self::Error>
@@ -19,6 +22,9 @@ pub trait DataStore {
         V: Serialize + DeserializeOwned;
 }
 
+/// This trait enables wrappers to provide `update` and `conditional` update. 
+/// It is usually more convenient to implement
+/// [`byte_store::Atomic`][super::byte_store::Atomic] instead.
 pub trait Atomic: DataStore {
     fn atomic_update<K, V>(
         &self,
@@ -35,6 +41,8 @@ pub trait Atomic: DataStore {
         V: Serialize + DeserializeOwned;
 }
 
+/// This trait needed for the Vec wrapper. It is usually more convenient to implement
+/// [`byte_store::Ordered`][super::byte_store::Ordered] instead.
 pub trait Ordered: DataStore {
     fn get_lt<K, V>(&self, key: &K) -> Result<Option<(K, V)>, Self::Error>
     where
