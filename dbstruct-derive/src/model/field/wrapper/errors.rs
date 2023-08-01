@@ -8,6 +8,8 @@ use crate::GetSpan;
 pub enum ErrorVariant {
     #[error("Can only have a single dbstruct attribute on a struct field")]
     MultipleAttributes,
+    #[error("Attribute must not be empty")]
+    EmptyAttribute,
     #[error("Invalid token tree expected Group")]
     InvalidTokenTree,
     #[error("Not a dbstruct wrapper annotation (try DefaultTrait or DefaultValue)")]
