@@ -24,6 +24,7 @@ fn as_len_field(field: &Field) -> syn::Field {
         ident: Some(as_len_ident(&field.ident)),
         colon_token: None,
         ty: parse_quote!(std::sync::Arc<std::sync::atomic::AtomicUsize>),
+        mutability: syn::FieldMutability::None,
     }
 }
 
@@ -50,6 +51,7 @@ impl From<&Model> for Struct {
             ident: Some(syn::Ident::new("ds", proc_macro2::Span::call_site())),
             colon_token: None,
             ty,
+            mutability: syn::FieldMutability::None,
         };
 
         Struct {

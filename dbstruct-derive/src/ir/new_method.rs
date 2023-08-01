@@ -1,6 +1,6 @@
 use proc_macro2::Span;
 use syn::punctuated::Punctuated;
-use syn::{parse_quote, Pat, PathArguments, Token};
+use syn::{parse_quote, LocalInit, Pat, PathArguments, Token};
 
 use crate::model::backend::Backend;
 use crate::model::{Field, Model, Wrapper};
@@ -63,7 +63,11 @@ fn len_init(field: &Field) -> Option<syn::Local> {
         attrs: Vec::new(),
         let_token: Token![let](Span::call_site()),
         pat: Pat::Path(ident),
-        init: Some((eq_token, expr)),
+        init: Some(LocalInit {
+            eq_token,
+            expr,
+            diverge: None,
+        }),
         semi_token: Token![;](Span::call_site()),
     })
 }

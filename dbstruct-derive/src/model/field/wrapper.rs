@@ -37,7 +37,7 @@ pub enum Attribute {
 }
 
 fn is_relevant(att: &syn::Attribute) -> bool {
-    let ident = match att.path.segments.first().map(|s| &s.ident) {
+    let ident = match att.path().segments.first().map(|s| &s.ident) {
         Some(ident) => ident.to_string(),
         None => return false,
     };
@@ -102,14 +102,10 @@ fn parse(tokens: &mut Peekable<impl Iterator<Item = TokenTree>>) -> Result<Attri
 
 fn as_wrapper(att: syn::Attribute) -> Result<Option<Attribute>, Error> {
     use ErrorVariant::*;
-    let tokens = match att.tokens.into_iter().nth(0) {
-        Some(tokens) => tokens,
-        None => return Ok(None),
-    };
-
-    let tokens = match tokens {
-        TokenTree::Group(group) => group.stream(),
-        _other => return Err(InvalidTokenTree.with_span(_other)),
+    let tokens = match att.meta {
+        syn::Meta::Path(_) => return Err(EmptyAttribute.with_span(att)),
+        syn::Meta::List(list) => list.tokens,
+        syn::Meta::NameValue(_) => return Err(InvalidTokenTree.with_span(att)),
     };
 
     let mut res = None;
@@ -254,7 +250,8 @@ fn generic_types<'a>(
             return Err(ErrorVariant::TooFewGenerics {
                 ty: outer_ty,
                 n_needed,
-            }.with_span(ty))
+            }
+            .with_span(ty))
         }
     }
     .map(move |generic| match generic {
