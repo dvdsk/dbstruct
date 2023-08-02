@@ -10,6 +10,8 @@ use tracing::debug;
 use crate::traits::DataStore;
 use crate::Error;
 
+mod iterator;
+
 /// mimics the API of [`Vec`]
 pub struct Vec<T, DS>
 where
@@ -54,6 +56,19 @@ where
             prefix,
             len,
         }
+    }
+
+    pub fn get(&self, index: usize) -> Result<Option<T>, Error<E>> {
+        let len = self.len();
+        if index >= len {
+            return Ok(None);
+        }
+
+        let key = Prefixed {
+            prefix: self.prefix,
+            index,
+        };
+        Ok(self.ds.get(&key)?)
     }
 
     pub fn push(&self, value: T) -> Result<(), Error<E>> {
@@ -102,8 +117,8 @@ mod tests {
     use super::*;
     use crate::stores;
 
-    type TestVec<T> = Vec<T, stores::HashMap>;
-    fn empty<T: Clone + Serialize + DeserializeOwned>() -> TestVec<T> {
+    pub(crate) type TestVec<T> = Vec<T, stores::HashMap>;
+    pub(crate) fn empty<T: Clone + Serialize + DeserializeOwned>() -> TestVec<T> {
         let ds = stores::HashMap::new();
         let len = Arc::new(AtomicUsize::new(0));
         let vec = Vec::new(ds, 1, len);
