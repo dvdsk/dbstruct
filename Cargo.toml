@@ -20,7 +20,7 @@ exclude = [
 default = ["sled"]
 
 [dependencies]
-dbstruct-derive = "0.1.0"
+dbstruct-derive = "0.1.1"
 thiserror = "1"
 serde = { version = "1", features = ["derive"] }
 bincode = "1.3"
