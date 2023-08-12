@@ -1,6 +1,6 @@
 [package]
 name = "dbstruct"
-version = "0.2.1" 
+version = "0.3.0" 
 resolver = "2"
 edition = "2021"
 rust-version = "1.60" # using `dep:` in features
@@ -20,7 +20,8 @@ exclude = [
 default = ["sled"]
 
 [dependencies]
-dbstruct-derive = "0.1.1"
+dbstruct-derive = { path = "dbstruct-derive" }
+# dbstruct-derive = "0.1.1"
 thiserror = "1"
 serde = { version = "1", features = ["derive"] }
 bincode = "1.3"

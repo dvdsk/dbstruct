@@ -7,6 +7,11 @@ mod rocksdb;
 
 mod hashmap;
 mod btreemap;
+
+#[deprecated(
+    since = "0.3",
+    note = "Use BTreeMap test backend instead"
+)]
 pub use hashmap::HashMap;
 pub use hashmap::Error as HashMapError;
 pub use btreemap::BTreeMap;
