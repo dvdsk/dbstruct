@@ -6,34 +6,34 @@
 //! ## How to use `derive(dbstruct)`
 //! Lets go through an example, there are many more [here](https://github.com/dvdsk/dbstruct/tree/main/examples):
 //!
-//! ```rust
-//! use std::path::Path;
+//!```rust
+//!use std::path::Path;
 //!
-//! #[dbstruct::dbstruct(db=sled)]
-//! pub struct Test {
-//!     #[dbstruct(Default)]
-//! 	the_awnser: u8,
-//! 	primes: Vec<u32>,
-//! 	#[dbstruct(Default="format!(\"{}\", 20+2+20)")]
-//! 	the_result: String,
-//! }
+//!#[dbstruct::dbstruct(db=sled)]
+//!pub struct Test {
+//!    #[dbstruct(Default)]
+//!    the_awnser: u8,
+//!    primes: Vec<u32>,
+//!    #[dbstruct(Default="format!(\"{}\", 20+2+20)")]
+//!    the_result: String,
+//!}
 //!
-//! fn main() {
-//! 	// a wrapper around a HashMap that implements the
-//! 	// `DataStore` trait
-//! 	let db = Test::new(&Path::new("the_db2")).unwrap();
+//!fn main() {
+//!    // a wrapper around a HashMap that implements the
+//!    // `DataStore` trait
+//!    let db = Test::new(&Path::new("the_db2")).unwrap();
 //!
-//! 	db.the_awnser().set(&42).unwrap();
-//! 	assert_eq!(42u8, db.the_awnser().get().unwrap());
+//!    db.the_awnser().set(&42).unwrap();
+//!	   assert_eq!(42u8, db.the_awnser().get().unwrap());
 //!
-//! 	db.primes().push(2).unwrap();
-//! 	db.primes().push(3).unwrap();
-//! 	db.primes().push(5).unwrap();
-//! 	db.primes().push(7).unwrap();
-//! 	assert_eq!(Some(7), db.primes().pop().unwrap());
+//!    db.primes().push(2).unwrap();
+//!    db.primes().push(3).unwrap();
+//!    db.primes().push(5).unwrap();
+//!	   db.primes().push(7).unwrap();
+//!	   assert_eq!(Some(7), db.primes().pop().unwrap());
 //!
-//! 	assert_eq!(String::from("42"), db.the_result().get().unwrap());
-//! }
+//!	   assert_eq!(String::from("42"), db.the_result().get().unwrap());
+//!}
 //!```
 //!
 //! Here `derive(dbstruct)` instructs Rust to transform the input struct to a typed database. Every

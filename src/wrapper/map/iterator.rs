@@ -36,14 +36,17 @@ where
             return None;
         };
 
+        let key = key.as_ref();
         self.prev_key_bytes.clear();
-        self.prev_key_bytes.extend_from_slice(key.as_ref());
-        let key = match bincode::deserialize(key.as_ref()).map_err(Error::DeSerializingKey) {
+        self.prev_key_bytes.extend_from_slice(key);
+
+        let key = &key[1..]; // strip prefix
+        let key = match bincode::deserialize(key).map_err(Error::DeSerializingKey) {
             Ok(key) => key,
             Err(e) => return Some(Err(e)),
         };
         let val = match bincode::deserialize(val.as_ref()).map_err(Error::DeSerializingVal) {
-            Ok(key) => key,
+            Ok(val) => val,
             Err(e) => return Some(Err(e)),
         };
         Some(Ok((key, val)))
@@ -124,5 +127,22 @@ where
             phantom_key: PhantomData,
             ds: &self.tree,
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn iterator_visits_all_elements() {
+        use super::super::tests::*;
+        let map = empty();
+        map.insert(&1, &11).unwrap();
+        map.insert(&2, &12).unwrap();
+        map.insert(&3, &13).unwrap();
+
+        let pairs: Vec<(u8, u8)> = map.iter().map(Result::unwrap).collect();
+        assert!(dbg!(&pairs).contains(&(1,11)));
+        assert!(pairs.contains(&(2,12)));
+        assert!(pairs.contains(&(3,13)));
     }
 }

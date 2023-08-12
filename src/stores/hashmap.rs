@@ -15,6 +15,10 @@ pub enum Error {
 /// ### ALL CHANGES ARE LOST WHEN THE OBJECT IS DROPPED
 /// again: use for testing the api only
 ///
+#[deprecated(
+    since = "0.3",
+    note = "Use BTreeMap test backend, it also implements Orderd"
+)]
 #[derive(Default, Clone)]
 pub struct HashMap(Arc<RwLock<collections::HashMap<Vec<u8>, Vec<u8>>>>);
 

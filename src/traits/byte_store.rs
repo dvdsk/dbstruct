@@ -39,7 +39,9 @@ pub trait Atomic: ByteStore {
 /// A helper trait, implementing this automatically implements
 /// [`data_store::Ordered`][super::data_store::Ordered]
 pub trait Ordered: ByteStore {
+    /// returns the previous key value pair before key
     fn get_lt(&self, key: &[u8]) -> Result<Option<(Self::Bytes, Self::Bytes)>, Self::Error>;
+    /// returns the next key value pair after key
     fn get_gt(&self, key: &[u8]) -> Result<Option<(Self::Bytes, Self::Bytes)>, Self::Error>;
 }
 

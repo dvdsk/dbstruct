@@ -1,7 +1,7 @@
 use core::fmt;
-use std::marker::PhantomData;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
+use std::marker::PhantomData;
 use tracing::{instrument, trace};
 
 use crate::traits::DataStore;
@@ -67,5 +67,22 @@ where
         let key = self.prefix(key);
         let value = self.tree.get(&key).unwrap();
         Ok(value)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::stores;
+
+    pub(crate) type TestMap<'a, K, V> = Map<'a, K, V, stores::BTreeMap>;
+    pub(crate) fn empty<'a, K, V>() -> TestMap<'a, K, V>
+    where
+        K: Clone + Serialize + DeserializeOwned,
+        V: Clone + Serialize + DeserializeOwned,
+    {
+        let ds = stores::BTreeMap::new();
+        let map = Map::new(ds, 1);
+        map
     }
 }
