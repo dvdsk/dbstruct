@@ -80,6 +80,7 @@ pub enum ExtraBound {
 pub enum Backend {
     Sled,
     HashMap,
+    BTreeMap,
     Trait {
         bounds: Vec<ExtraBound>,
     },
@@ -92,6 +93,7 @@ impl fmt::Display for Backend {
         match self {
             Backend::Sled => write!(f, "sled"),
             Backend::HashMap => write!(f, "hashmap"),
+            Backend::BTreeMap => write!(f, "btreemap"),
             Backend::Trait { .. } => write!(f, "trait"),
             #[cfg(test)]
             Backend::Test => unreachable!(),
@@ -129,6 +131,7 @@ impl Backend {
                 })
             }
             HashMap => Backend::HashMap,
+            BTreeMap => Backend::BTreeMap,
             Sled => Backend::Sled,
             #[cfg(test)]
             Test => Backend::Test,
@@ -150,6 +153,7 @@ impl Backend {
         match self {
             Backend::Sled => vec![Atomic, Ordered].into_iter(),
             Backend::HashMap => vec![].into_iter(),
+            Backend::BTreeMap => vec![].into_iter(),
             Backend::Trait { .. } => unreachable!("should never be called when backend is Trait"),
             #[cfg(test)]
             Backend::Test => vec![].into_iter(),

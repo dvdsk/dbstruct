@@ -13,6 +13,7 @@ use proc_macro2::TokenTree;
 pub enum BackendOptionVariant {
     Sled,
     HashMap,
+    BTreeMap,
     Trait,
     #[cfg(test)]
     Test,
@@ -70,6 +71,7 @@ fn parse_db(
                     let backend = match ident.to_string().as_str() {
                         "sled" => Sled,
                         "hashmap" => HashMap,
+                        "btreemap" => BTreeMap,
                         "trait" => Trait,
                         #[cfg(test)]
                         "test" => Test,
@@ -109,13 +111,26 @@ mod tests {
     use std::str::FromStr;
 
     #[test]
-    fn parse_db_option() {
+    fn parse_db_option_sled() {
         let attr = proc_macro2::TokenStream::from_str("db=sled").unwrap();
         let attribute = parse(attr).unwrap().pop().unwrap();
         assert!(matches!(
             attribute,
             Options::Backend(BackendOption {
                 backend: BackendOptionVariant::Sled,
+                span: _span
+            })
+        ));
+    }
+
+    #[test]
+    fn parse_db_option_btreemap() {
+        let attr = proc_macro2::TokenStream::from_str("db=btreemap").unwrap();
+        let attribute = parse(attr).unwrap().pop().unwrap();
+        assert!(matches!(
+            attribute,
+            Options::Backend(BackendOption {
+                backend: BackendOptionVariant::BTreeMap,
                 span: _span
             })
         ));
