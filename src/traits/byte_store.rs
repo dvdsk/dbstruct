@@ -39,7 +39,10 @@ pub trait Atomic: ByteStore {
 /// A helper trait, implementing this automatically implements
 /// [`data_store::Ordered`][super::data_store::Ordered]
 pub trait Ordered: ByteStore {
+    /// returns the previous key value pair before key
     fn get_lt(&self, key: &[u8]) -> Result<Option<(Self::Bytes, Self::Bytes)>, Self::Error>;
+    /// returns the next key value pair after key
+    fn get_gt(&self, key: &[u8]) -> Result<Option<(Self::Bytes, Self::Bytes)>, Self::Error>;
 }
 
 impl<E, B, BS> DataStore for BS
@@ -175,10 +178,14 @@ where
     BS: byte_store::Ordered<Error = E, Bytes = B>,
 {
     #[instrument(skip_all, level = "trace", err)]
-    fn get_lt<K, V>(&self, key: &K) -> Result<Option<(K, V)>, Self::Error>
+    fn get_lt<InKey, OutKey, Value>(
+        &self,
+        key: &InKey,
+    ) -> Result<Option<(OutKey, Value)>, Self::Error>
     where
-        K: Serialize + DeserializeOwned,
-        V: Serialize + DeserializeOwned,
+        InKey: Serialize,
+        OutKey: Serialize + DeserializeOwned,
+        Value: Serialize + DeserializeOwned,
     {
         let key = bincode::serialize(key).map_err(Error::SerializingKey)?;
         trace!("getting less then key: {key:?}");
@@ -187,13 +194,42 @@ where
             Some((key, val)) => {
                 trace!(
                     "key ({}): {:?}, val ({}): {:?}",
-                    std::any::type_name::<K>(),
+                    std::any::type_name::<OutKey>(),
                     key.as_ref(),
-                    std::any::type_name::<V>(),
+                    std::any::type_name::<dyn Value>(),
                     val.as_ref()
                 );
                 let key = bincode::deserialize(key.as_ref()).map_err(Error::DeSerializingKey)?;
-                let val = bincode::deserialize(val.as_ref()).map_err(Error::DeSerializingKey)?;
+                let val = bincode::deserialize(val.as_ref()).map_err(Error::DeSerializingVal)?;
+                Some((key, val))
+            }
+        })
+    }
+
+    #[instrument(skip_all, level = "trace", err)]
+    fn get_gt<InKey, OutKey, Value>(
+        &self,
+        key: &InKey,
+    ) -> Result<Option<(OutKey, Value)>, Self::Error>
+    where
+        InKey: Serialize,
+        OutKey: Serialize + DeserializeOwned,
+        Value: Serialize + DeserializeOwned,
+    {
+        let key = bincode::serialize(key).map_err(Error::SerializingKey)?;
+        trace!("getting greater then key: {key:?}");
+        Ok(match byte_store::Ordered::get_gt(self, &key)? {
+            None => None,
+            Some((key, val)) => {
+                trace!(
+                    "key ({}): {:?}, val ({}): {:?}",
+                    std::any::type_name::<OutKey>(),
+                    key.as_ref(),
+                    std::any::type_name::<dyn Value>(),
+                    val.as_ref()
+                );
+                let key = bincode::deserialize(key.as_ref()).map_err(Error::DeSerializingKey)?;
+                let val = bincode::deserialize(val.as_ref()).map_err(Error::DeSerializingVal)?;
                 Some((key, val))
             }
         })

@@ -1,12 +1,13 @@
 use core::fmt;
-use std::marker::PhantomData;
-
 use serde::de::DeserializeOwned;
 use serde::Serialize;
-use tracing::{trace, instrument};
+use std::marker::PhantomData;
+use tracing::{instrument, trace};
 
 use crate::traits::DataStore;
 use crate::Error;
+
+mod iterator;
 
 /// mimics the API of [`HashMap`][std::collections::HashMap]
 pub struct Map<'a, Key, Value, DS>
@@ -22,10 +23,7 @@ where
 }
 
 #[derive(Serialize)]
-pub struct Prefixed<'a, K>
-where
-    K: Serialize,
-{
+pub struct Prefixed<'a, K> {
     prefix: u8,
     key: &'a K,
 }
@@ -33,12 +31,12 @@ where
 impl<'a, Key, Value, E, DS> Map<'a, Key, Value, DS>
 where
     E: fmt::Debug,
-    Key: Serialize,
+    Key: Serialize + DeserializeOwned,
     Value: Serialize + DeserializeOwned,
     DS: DataStore<Error = E>,
 {
     #[doc(hidden)]
-    #[instrument(skip(tree), level="debug")]
+    #[instrument(skip(tree), level = "debug")]
     pub fn new(tree: DS, prefix: u8) -> Self {
         Self {
             phantom_key: PhantomData,
@@ -57,17 +55,34 @@ where
     }
 
     /// returns existing value if any was set
-    #[instrument(skip_all, level="debug")]
+    #[instrument(skip_all, level = "debug")]
     pub fn insert(&self, key: &'a Key, value: &'a Value) -> Result<Option<Value>, Error<E>> {
         let key = self.prefix(key);
         let existing = self.tree.insert(&key, value).unwrap();
         Ok(existing)
     }
 
-    #[instrument(skip_all, level="debug")]
+    #[instrument(skip_all, level = "debug")]
     pub fn get(&self, key: &'a Key) -> Result<Option<Value>, Error<E>> {
         let key = self.prefix(key);
         let value = self.tree.get(&key).unwrap();
         Ok(value)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::stores;
+
+    pub(crate) type TestMap<'a, K, V> = Map<'a, K, V, stores::BTreeMap>;
+    pub(crate) fn empty<'a, K, V>() -> TestMap<'a, K, V>
+    where
+        K: Clone + Serialize + DeserializeOwned,
+        V: Clone + Serialize + DeserializeOwned,
+    {
+        let ds = stores::BTreeMap::new();
+        let map = Map::new(ds, 1);
+        map
     }
 }

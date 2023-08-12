@@ -38,6 +38,7 @@ fn backend_type(backend: &Backend) -> syn::Type {
     match backend {
         Backend::Sled => parse_quote!(::dbstruct::sled::Tree),
         Backend::HashMap => parse_quote!(::dbstruct::stores::HashMap),
+        Backend::BTreeMap => parse_quote!(::dbstruct::stores::BTreeMap),
         Backend::Trait { .. } => parse_quote!(DS),
         #[cfg(test)]
         Backend::Test => unreachable!("Test backend is not supported for codegen"),

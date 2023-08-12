@@ -95,6 +95,16 @@ fn hashmap() -> syn::Local {
     }
 }
 
+fn btreemap() -> syn::Local {
+    let stmt: syn::Stmt = parse_quote!(
+    let ds = ::dbstruct::stores::BTreeMap::new();
+    );
+    match stmt {
+        syn::Stmt::Local(local) => local,
+        _ => unreachable!(),
+    }
+}
+
 impl NewMethod {
     pub fn from(model: &Model, struct_def: &Struct) -> Self {
         let fields: Vec<_> = struct_def
@@ -119,6 +129,11 @@ impl NewMethod {
                 locals.push(hashmap());
                 arg = None;
                 error_ty = parse_quote!(::dbstruct::stores::HashMapError);
+            }
+            Backend::BTreeMap => {
+                locals.push(btreemap());
+                arg = None;
+                error_ty = parse_quote!(::dbstruct::stores::BTreeMapError);
             }
             Backend::Trait { .. } => {
                 arg = Some(parse_quote!(ds: DS));

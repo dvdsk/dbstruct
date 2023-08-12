@@ -22,7 +22,7 @@ pub trait DataStore {
         V: Serialize + DeserializeOwned;
 }
 
-/// This trait enables wrapper to provide `update` and `conditional` update. 
+/// This trait enables wrapper to provide `update` and `conditional` update.
 /// It is usually more convenient to implement
 /// [`byte_store::Atomic`][super::byte_store::Atomic] instead.
 pub trait Atomic: DataStore {
@@ -43,9 +43,25 @@ pub trait Atomic: DataStore {
 
 /// This trait needed for the Vec wrapper. It is usually more convenient to implement
 /// [`byte_store::Ordered`][super::byte_store::Ordered] instead.
+///
+/// You can deserialize to a different key then you serialize too.
+/// This is usefull when using get_lt a InKey that borrows data. As
+/// you need to deserialize to a type owning all its data.
 pub trait Ordered: DataStore {
-    fn get_lt<K, V>(&self, key: &K) -> Result<Option<(K, V)>, Self::Error>
+    fn get_lt<InKey, OutKey, Value>(
+        &self,
+        key: &InKey,
+    ) -> Result<Option<(OutKey, Value)>, Self::Error>
     where
-        K: Serialize + DeserializeOwned,
-        V: Serialize + DeserializeOwned;
+        InKey: Serialize,
+        OutKey: Serialize + DeserializeOwned,
+        Value: Serialize + DeserializeOwned;
+    fn get_gt<InKey, OutKey, Value>(
+        &self,
+        key: &InKey,
+    ) -> Result<Option<(OutKey, Value)>, Self::Error>
+    where
+        InKey: Serialize,
+        OutKey: Serialize + DeserializeOwned,
+        Value: Serialize + DeserializeOwned;
 }

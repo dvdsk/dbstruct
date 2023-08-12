@@ -54,6 +54,7 @@ fn main() {
 | Name                                    | advantage | attribute option |
 |-----------------------------------------|-----------|------------------|
 | [Sled](https://crates.io/crates/sled)   | pure Rust | `db=sled`        |
+| BTreeMap, does not store anything!      | testing   | `db=btreemap`    |
 
 work in progress: rocksdb
 

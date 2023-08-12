@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1] - 2023-08-12
+
+### Added
+ - adds iterator methods to the map wrapper
+ - adds BTreeMap backend
+
+### Changed
+ - deprecates HashMap test backend
+
 ## [0.2.1] - 2023-08-02
 
 ### Changed
