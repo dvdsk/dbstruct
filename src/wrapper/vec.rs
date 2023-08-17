@@ -11,6 +11,7 @@ use crate::traits::DataStore;
 use crate::Error;
 
 mod iterator;
+mod extend;
 
 /// mimics the API of [`Vec`]
 pub struct Vec<T, DS>
@@ -71,14 +72,14 @@ where
         Ok(self.ds.get(&key)?)
     }
 
-    pub fn push(&self, value: T) -> Result<(), Error<E>> {
+    pub fn push(&self, value: &T) -> Result<(), Error<E>> {
         let prev_len = self.len.fetch_add(1, Ordering::SeqCst);
         let key = Prefixed {
             prefix: self.prefix,
             index: prev_len,
         };
         debug!("pushing onto vector (index: {prev_len})");
-        self.ds.insert(&key, &value)?;
+        self.ds.insert(&key, value)?;
         Ok(())
     }
 
@@ -117,9 +118,9 @@ mod tests {
     use super::*;
     use crate::stores;
 
-    pub(crate) type TestVec<T> = Vec<T, stores::HashMap>;
+    pub(crate) type TestVec<T> = Vec<T, stores::BTreeMap>;
     pub(crate) fn empty<T: Clone + Serialize + DeserializeOwned>() -> TestVec<T> {
-        let ds = stores::HashMap::new();
+        let ds = stores::BTreeMap::new();
         let len = Arc::new(AtomicUsize::new(0));
         let vec = Vec::new(ds, 1, len);
         vec
@@ -137,7 +138,7 @@ mod tests {
         #[test]
         fn push_increases_the_len() {
             let vec = empty();
-            vec.push(42).unwrap();
+            vec.push(&42).unwrap();
             assert_eq!(vec.len(), 1)
         }
 
@@ -155,8 +156,8 @@ mod tests {
         #[test]
         fn element_pop_in_the_right_order() {
             let vec = empty();
-            vec.push(42).unwrap();
-            vec.push(43).unwrap();
+            vec.push(&42).unwrap();
+            vec.push(&43).unwrap();
 
             assert_eq!(vec.pop().unwrap(), Some(43));
             assert_eq!(vec.pop().unwrap(), Some(42));
@@ -165,8 +166,8 @@ mod tests {
         #[test]
         fn third_pop_is_none() {
             let vec = empty();
-            vec.push(42).unwrap();
-            vec.push(43).unwrap();
+            vec.push(&42).unwrap();
+            vec.push(&43).unwrap();
 
             vec.pop().unwrap();
             vec.pop().unwrap();

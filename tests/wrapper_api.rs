@@ -84,7 +84,7 @@ pub fn main() -> Result<(), Box<dyn Error>> {
 
     let last = db.queue().pop()?;
     assert_eq!(last, None);
-    db.queue().push(Song {})?;
+    db.queue().push(&Song {})?;
     let last = db.queue().pop()?;
     assert_eq!(last, Some(Song {}));
 

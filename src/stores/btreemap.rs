@@ -44,6 +44,21 @@ impl ByteStore for BTreeMap {
     }
 }
 
+#[cfg(test)]
+impl BTreeMap {
+    pub(crate) fn force_error(&self) {
+        // poison the lock such that we get an error on the next use of self
+        let map = self.0.clone();
+        let handle = std::thread::spawn(move || {
+            let _lock = map.write().unwrap();
+            panic!("panicking here to poinson the lock")
+        });
+
+        let res = handle.join();
+        assert!(res.is_err());
+    }
+}
+
 impl crate::traits::byte_store::Ordered for BTreeMap {
     fn get_lt(&self, key: &[u8]) -> Result<Option<(Self::Bytes, Self::Bytes)>, Self::Error> {
         let map = self.0.write().map_err(|_| Self::Error::Poisoned)?;

@@ -40,10 +40,10 @@ fn main() {
 	db.the_awnser().set(&42).unwrap();
 	assert_eq!(42u8, db.the_awnser().get().unwrap());
 
-	db.primes().push(2).unwrap();
-	db.primes().push(3).unwrap();
-	db.primes().push(5).unwrap();
-	db.primes().push(7).unwrap();
+	db.primes().push(&2).unwrap();
+	db.primes().push(&3).unwrap();
+	db.primes().push(&5).unwrap();
+	db.primes().push(&7).unwrap();
 	assert_eq!(Some(7), db.primes().pop().unwrap());
 
 	assert_eq!(String::from("42"), db.the_result().get().unwrap());

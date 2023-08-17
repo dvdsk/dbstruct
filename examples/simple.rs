@@ -30,9 +30,9 @@ fn main() {
     assert_eq!(None, db.questions().pop().unwrap());
 
     // we push some elements
-    db.questions().push("What is Life".to_owned()).unwrap();
-    db.questions().push("What is the Universe".to_owned()).unwrap();
-    db.questions().push("What is Everything".to_owned()).unwrap();
+    db.questions().push(&"What is Life".to_owned()).unwrap();
+    db.questions().push(&"What is the Universe".to_owned()).unwrap();
+    db.questions().push(&"What is Everything".to_owned()).unwrap();
 
     // check the second element
     db.questions().pop().unwrap();
