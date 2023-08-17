@@ -8,6 +8,7 @@ use crate::traits::DataStore;
 use crate::Error;
 
 mod iterator;
+mod extend;
 
 /// mimics the API of [`HashMap`][std::collections::HashMap]
 pub struct Map<'a, Key, Value, DS>

@@ -59,9 +59,9 @@ mod tests {
     #[test]
     fn trivial() {
         let vec = empty();
-        vec.push(42).unwrap();
-        vec.push(13).unwrap();
-        vec.push(7).unwrap();
+        vec.push(&42).unwrap();
+        vec.push(&13).unwrap();
+        vec.push(&7).unwrap();
 
         let mut sum = 0;
         for elem in &vec {
@@ -73,11 +73,11 @@ mod tests {
     #[test]
     fn push_post_iter() {
         let vec = empty();
-        vec.push(42).unwrap();
-        vec.push(13).unwrap();
+        vec.push(&42).unwrap();
+        vec.push(&13).unwrap();
 
         let iter = vec.into_iter();
-        vec.push(7).unwrap();
+        vec.push(&7).unwrap();
 
         let mut sum = 0;
         for elem in iter {
@@ -89,8 +89,8 @@ mod tests {
     #[test]
     fn pop_post_iter_is_seen() {
         let vec = empty();
-        vec.push(42).unwrap();
-        vec.push(13).unwrap();
+        vec.push(&42).unwrap();
+        vec.push(&13).unwrap();
 
         let mut sum = 0;
         let iter = vec.into_iter();
@@ -105,8 +105,8 @@ mod tests {
     #[test]
     fn pop_during_iter() {
         let vec = empty();
-        vec.push(42).unwrap();
-        vec.push(13).unwrap();
+        vec.push(&42).unwrap();
+        vec.push(&13).unwrap();
 
         let mut iter = vec.into_iter();
         iter.next();

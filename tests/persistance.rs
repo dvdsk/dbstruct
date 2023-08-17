@@ -14,10 +14,10 @@ fn persistance() {
 
     db.the_field().set(&8).unwrap();
 
-	db.primes().push(2).unwrap();
-	db.primes().push(3).unwrap();
-	db.primes().push(5).unwrap();
-	db.primes().push(7).unwrap();
+	db.primes().push(&2).unwrap();
+	db.primes().push(&3).unwrap();
+	db.primes().push(&5).unwrap();
+	db.primes().push(&7).unwrap();
 
 
     std::mem::drop(db);
