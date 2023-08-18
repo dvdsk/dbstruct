@@ -7,8 +7,8 @@ use tracing::{instrument, trace};
 use crate::traits::DataStore;
 use crate::Error;
 
-mod iterator;
 mod extend;
+mod iterator;
 
 /// mimics the API of [`HashMap`][std::collections::HashMap]
 pub struct Map<'a, Key, Value, DS>
@@ -59,14 +59,14 @@ where
     #[instrument(skip_all, level = "debug")]
     pub fn insert(&self, key: &'a Key, value: &'a Value) -> Result<Option<Value>, Error<E>> {
         let key = self.prefix(key);
-        let existing = self.tree.insert(&key, value).unwrap();
+        let existing = self.tree.insert(&key, value)?;
         Ok(existing)
     }
 
     #[instrument(skip_all, level = "debug")]
     pub fn get(&self, key: &'a Key) -> Result<Option<Value>, Error<E>> {
         let key = self.prefix(key);
-        let value = self.tree.get(&key).unwrap();
+        let value = self.tree.get(&key)?;
         Ok(value)
     }
 }

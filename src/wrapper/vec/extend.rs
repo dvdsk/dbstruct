@@ -39,6 +39,40 @@ where
     }
 }
 
+/// Pushes the values from the iterator onto the vec.
+///
+/// # Note
+/// Does not guarentee the content of the iterator is pushed 
+/// atomically. Parallel access could intersperse items.
+impl<'a, T, DS> TryExtend<&'a T> for Vec<T, DS>
+where
+    DS: DataStore,
+    T: Serialize + DeserializeOwned,
+{
+    type Error = crate::Error<DS::Error>;
+
+    fn try_extend<I>(&mut self, iter: I) -> Result<(), ExtendError<I::Item, I::IntoIter, Self::Error>>
+    where
+        I: IntoIterator<Item = &'a T>,
+    {
+        let mut iter = iter.into_iter();
+        loop {
+            let Some(item) = iter.next() else {
+                return Ok(());
+            };
+
+            if let Err(error) = self.push(&item) {
+                return Err(ExtendError {
+                    unadded: item,
+                    iter,
+                    error,
+                });
+            }
+        }
+    }
+}
+
+
 #[cfg(test)]
 mod tests {
     use super::*;
