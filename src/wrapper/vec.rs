@@ -88,8 +88,7 @@ where
             .len
             .fetch_update(Ordering::SeqCst, Ordering::SeqCst, |len| {
                 Some(len.saturating_sub(1))
-            })
-            .unwrap();
+            }).expect("closure never returns None");
 
         let index = match old_len.checked_sub(1) {
             Some(idx) => idx,
