@@ -70,6 +70,7 @@ These are some features I am planning to work on, in no particular order. If you
 ## Similar Crates
 - [SQLx](https://crates.io/crates/sqlx)
 - [cornucopia](https://crates.io/crates/cornucopia) Generate type-checked Rust from your PostgreSQL.
-- [losfair/RefineDB](git@github.com:losfair/RefineDB.git) A strongly-typed document database that runs on any transactional key-value store
+- [losfair/RefineDB](https://github.com/losfair/RefineDB) A strongly-typed document database that runs on any transactional key-value store
 - [chronicl/typed-sled](https://crates.io/crates/typed-sled) builds on top of sled and offers an API that is similar to a `BTreeMap<K, V>`
 - [sea-orm](https://crates.io/crates/sea-orm) a relational ORM to help you build web services in Rust with the familiarity of dynamic languages
+- [native_db](https://github.com/vincent-herlemont/native_db) embedded database for multi-platform apps. Sync Rust types effortlessly.
