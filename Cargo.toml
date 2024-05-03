@@ -22,7 +22,7 @@ default = ["sled"]
 [dependencies]
 dbstruct-derive = "0.2.0"
 thiserror = "1"
-serde = { version = "1", features = ["derive"] }
+serde = { version = "1.0.200", features = ["derive"] }
 bincode = "1.3"
 tracing = "0.1"
 
