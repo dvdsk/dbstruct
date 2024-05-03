@@ -27,7 +27,7 @@ bincode = "1.3"
 tracing = "0.1"
 
 # these create implicit dependencies called `sled` and `rocksdb`
-sled = { version = "0.34", optional = true }
+sled = { version = "0.34.7", optional = true }
 rocksdb = { version = "0.21", optional = true }
 
 [dev-dependencies]
