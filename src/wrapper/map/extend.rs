@@ -14,7 +14,7 @@ where
     Key: Serialize + DeserializeOwned,
     Value: Serialize + DeserializeOwned,
 {
-    type Error = crate::Error<DS::Error>;
+    type Error = DS::Error;
 
     fn try_extend<I>(
         &mut self,
@@ -48,7 +48,7 @@ where
     Key: Serialize + DeserializeOwned,
     Value: Serialize + DeserializeOwned,
 {
-    type Error = crate::Error<DS::Error>;
+    type Error = DS::Error;
 
     fn try_extend<I>(
         &mut self,
