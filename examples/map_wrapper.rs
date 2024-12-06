@@ -11,6 +11,4 @@ fn main() {
     let db = Test::new(&path).unwrap();
     db.computers().insert(&"Deep Thought".to_owned(), &42).unwrap();
     db.computers().remove(&"Deep Thought".to_owned()).unwrap();
-
-    let clone = db.clone();
 }
