@@ -5,7 +5,6 @@ use std::marker::PhantomData;
 use tracing::{instrument, trace};
 
 use crate::traits::DataStore;
-use crate::Error;
 
 mod extend;
 mod iterator;
@@ -57,16 +56,27 @@ where
 
     /// returns existing value if any was set
     #[instrument(skip_all, level = "debug")]
-    pub fn insert(&self, key: &'a Key, value: &'a Value) -> Result<Option<Value>, Error<E>> {
+    pub fn insert(
+        &self,
+        key: &'a Key,
+        value: &'a Value,
+    ) -> Result<Option<Value>, E> {
         let key = self.prefix(key);
         let existing = self.tree.insert(&key, value)?;
         Ok(existing)
     }
 
     #[instrument(skip_all, level = "debug")]
-    pub fn get(&self, key: &'a Key) -> Result<Option<Value>, Error<E>> {
+    pub fn get(&self, key: &'a Key) -> Result<Option<Value>, E> {
         let key = self.prefix(key);
         let value = self.tree.get(&key)?;
+        Ok(value)
+    }
+
+    #[instrument(skip_all, level = "debug")]
+    pub fn remove(&self, key: &'a Key) -> Result<Option<Value>, E> {
+        let key = self.prefix(key);
+        let value = self.tree.remove(&key)?;
         Ok(value)
     }
 }
