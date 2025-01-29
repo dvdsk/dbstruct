@@ -10,8 +10,8 @@ use tracing::debug;
 use crate::traits::DataStore;
 use crate::Error;
 
-mod iterator;
 mod extend;
+mod iterator;
 
 /// mimics the API of [`Vec`]
 pub struct Vec<T, DS>
@@ -88,7 +88,8 @@ where
             .len
             .fetch_update(Ordering::SeqCst, Ordering::SeqCst, |len| {
                 Some(len.saturating_sub(1))
-            }).expect("closure never returns None");
+            })
+            .expect("closure never returns None");
 
         let index = match old_len.checked_sub(1) {
             Some(idx) => idx,
@@ -101,6 +102,13 @@ where
 
         debug!("popping from vector (index: {index})");
         Ok(self.ds.remove(&key)?)
+    }
+
+    pub fn clear(&self) -> Result<(), Error<E>> {
+        for _ in 0..self.len() {
+            self.pop()?;
+        }
+        Ok(())
     }
 
     pub fn len(&self) -> usize {

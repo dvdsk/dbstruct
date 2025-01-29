@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
  - the map wrapper (HashMap like structure) now supports `remove`
+ - the vec wrapper now supports `clear`
 
 ## [0.4.1] - 2023-08-18
 

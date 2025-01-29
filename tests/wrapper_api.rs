@@ -45,8 +45,12 @@ where
     DS: DataStore + data_store::Ordered + Clone,
 {
     pub fn new(ds: DS) -> Result<Self, dbstruct::Error<<DS as DataStore>::Error>> {
-        let queue_len = data_store::Ordered::get_lt(&ds, &(1+1))?
-            .map(|(len, _): (usize, Song)| len)
+        // 1+1 means given the prefix for the queue (one) go to the next prefix then
+        // get the element in the database one less. That is the last element of the Vec
+        // the key being the index
+        let queue_len = data_store::Ordered::get_lt(&ds, &(1 + 1))?
+            .map(|(key, _): (usize, Song)| key)
+            .map(|key| key + 1)
             .unwrap_or(0);
         tracing::debug!("opening vector queue with len: {queue_len}");
         Ok(Self {
