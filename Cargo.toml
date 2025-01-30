@@ -28,7 +28,7 @@ tracing = "0.1"
 
 # these create implicit dependencies called `sled` and `rocksdb`
 sled = { version = "0.34", optional = true }
-rocksdb = { version = "0.21", optional = true }
+rocksdb = { version = "0.23", optional = true }
 
 [dev-dependencies]
 trybuild = "1"
