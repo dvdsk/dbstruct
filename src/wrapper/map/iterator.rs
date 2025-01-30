@@ -16,6 +16,7 @@ where
     E: fmt::Debug,
     DS: DataStore<Error = E> + byte_store::Ordered,
 {
+    prefix: u8,
     prev_key_bytes: Vec<u8>,
     phantom_val: PhantomData<V>,
     phantom_key: PhantomData<K>,
@@ -32,11 +33,16 @@ where
     type Item = Result<(K, V), Error<E>>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let Some((key, val)) = byte_store::Ordered::get_gt(self.ds, &self.prev_key_bytes).unwrap() else {
+        let Some((key, val)) = byte_store::Ordered::get_gt(self.ds, &self.prev_key_bytes).unwrap()
+        else {
             return None;
         };
 
         let key = key.as_ref();
+        if key[0] != self.prefix {
+            return None;
+        }
+
         self.prev_key_bytes.clear();
         self.prev_key_bytes.extend_from_slice(key);
 
@@ -104,6 +110,7 @@ where
 {
     pub fn iter(&self) -> Iter<Key, Value, E, DS> {
         Iter {
+            prefix: self.prefix,
             prev_key_bytes: vec![self.prefix],
             phantom_val: PhantomData,
             phantom_key: PhantomData,
@@ -113,6 +120,7 @@ where
 
     pub fn values(&self) -> Values<Key, Value, E, DS> {
         Values(Iter {
+            prefix: self.prefix,
             prev_key_bytes: vec![self.prefix],
             phantom_val: PhantomData,
             phantom_key: PhantomData,
@@ -122,6 +130,7 @@ where
 
     pub fn keys(&self) -> Keys<Key, Value, E, DS> {
         Keys(Iter {
+            prefix: self.prefix,
             prev_key_bytes: vec![self.prefix],
             phantom_val: PhantomData,
             phantom_key: PhantomData,
@@ -141,8 +150,8 @@ mod tests {
         map.insert(&3, &13).unwrap();
 
         let pairs: Vec<(u8, u8)> = map.iter().map(Result::unwrap).collect();
-        assert!(dbg!(&pairs).contains(&(1,11)));
-        assert!(pairs.contains(&(2,12)));
-        assert!(pairs.contains(&(3,13)));
+        assert!(dbg!(&pairs).contains(&(1, 11)));
+        assert!(pairs.contains(&(2, 12)));
+        assert!(pairs.contains(&(3, 13)));
     }
 }

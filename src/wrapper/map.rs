@@ -4,6 +4,7 @@ use serde::Serialize;
 use std::marker::PhantomData;
 use tracing::{instrument, trace};
 
+use crate::traits::data_store::Ranged;
 use crate::traits::DataStore;
 
 mod extend;
@@ -56,11 +57,7 @@ where
 
     /// returns existing value if any was set
     #[instrument(skip_all, level = "debug")]
-    pub fn insert(
-        &self,
-        key: &'a Key,
-        value: &'a Value,
-    ) -> Result<Option<Value>, E> {
+    pub fn insert(&self, key: &'a Key, value: &'a Value) -> Result<Option<Value>, E> {
         let key = self.prefix(key);
         let existing = self.tree.insert(&key, value)?;
         Ok(existing)
@@ -78,6 +75,26 @@ where
         let key = self.prefix(key);
         let value = self.tree.remove(&key)?;
         Ok(value)
+    }
+}
+
+impl<'a, Key, Value, E, DS> Map<'a, Key, Value, DS>
+where
+    E: fmt::Debug,
+    Key: Serialize + DeserializeOwned,
+    Value: Serialize + DeserializeOwned,
+    DS: Ranged<Error = E>,
+{
+    pub fn clear(&self) -> Result<(), E> {
+        let first = self.prefix;
+        let after_last = self.prefix + 1;
+        let iter = self.tree.range::<_, _, Value>(first..after_last)?;
+        for res in iter {
+            let (key, _) = res?;
+            self.remove(&key)?;
+        }
+
+        Ok(())
     }
 }
 

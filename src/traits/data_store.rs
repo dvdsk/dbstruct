@@ -1,5 +1,6 @@
 //! The traits used by the wrapper to operate on the database.
 use core::fmt;
+use std::ops::RangeBounds;
 
 use serde::de::DeserializeOwned;
 use serde::Serialize;
@@ -45,7 +46,7 @@ pub trait Atomic: DataStore {
 /// [`byte_store::Ordered`][super::byte_store::Ordered] instead.
 ///
 /// You can deserialize to a different key then you serialize too.
-/// This is usefull when using get_lt a InKey that borrows data. As
+/// This is useful when using get_lt a InKey that borrows data. As
 /// you need to deserialize to a type owning all its data.
 pub trait Ordered: DataStore {
     fn get_lt<InKey, OutKey, Value>(
@@ -60,6 +61,24 @@ pub trait Ordered: DataStore {
         &self,
         key: &InKey,
     ) -> Result<Option<(OutKey, Value)>, Self::Error>
+    where
+        InKey: Serialize,
+        OutKey: Serialize + DeserializeOwned,
+        Value: Serialize + DeserializeOwned;
+}
+
+/// This trait expand the functionality of the Map wrapper. It is usually more
+/// convenient to implement [`byte_store::Ranged`][super::byte_store::Ranged]
+/// instead.
+///
+/// You can deserialize to a different key then you serialize too. This is
+/// useful when using range an InKey that borrows data. As you need to
+/// deserialize to a type owning all its data.
+pub trait Ranged: DataStore {
+    fn range<InKey, OutKey, Value>(
+        &self,
+        range: impl RangeBounds<InKey>,
+    ) -> Result<impl Iterator<Item = Result<(OutKey, Value), Self::Error>>, Self::Error>
     where
         InKey: Serialize,
         OutKey: Serialize + DeserializeOwned,

@@ -3,6 +3,8 @@
 
 use core::fmt;
 use serde::{de::DeserializeOwned, Serialize};
+use std::marker::PhantomData;
+use std::ops::RangeBounds;
 use tracing::{instrument, trace};
 
 use super::byte_store;
@@ -43,6 +45,15 @@ pub trait Ordered: ByteStore {
     fn get_lt(&self, key: &[u8]) -> Result<Option<(Self::Bytes, Self::Bytes)>, Self::Error>;
     /// returns the next key value pair after key
     fn get_gt(&self, key: &[u8]) -> Result<Option<(Self::Bytes, Self::Bytes)>, Self::Error>;
+}
+
+/// A helper trait, implementing this automatically implements
+/// [`data_store::Ranged`][super::data_store::Ranged]
+pub trait Ranged: Ordered {
+    type Key: AsRef<[u8]>;
+    type Iter: Iterator<Item = Result<(Self::Bytes, Self::Bytes), Self::Error>>;
+    /// returns the previous key value pair before key
+    fn range<'a>(&self, range: impl RangeBounds<Self::Key>) -> Self::Iter;
 }
 
 impl<E, B, BS> DataStore for BS
@@ -232,6 +243,84 @@ where
                 let val = bincode::deserialize(val.as_ref()).map_err(Error::DeSerializingVal)?;
                 Some((key, val))
             }
+        })
+    }
+}
+
+struct IterWrapper<I, OutKey, Value, Bytes, Error> {
+    iter: I,
+    key_phantom: PhantomData<OutKey>,
+    val_phantom: PhantomData<Value>,
+    bytes_phantom: PhantomData<Bytes>,
+    error_phantom: PhantomData<Error>,
+}
+
+impl<OutKey, Value, Bytes, E, I> Iterator for IterWrapper<I, OutKey, Value, Bytes, E>
+where
+    E: fmt::Debug,
+    Bytes: AsRef<[u8]>,
+    OutKey: Serialize + DeserializeOwned,
+    Value: Serialize + DeserializeOwned,
+    I: Iterator<Item = Result<(Bytes, Bytes), E>>,
+{
+    type Item = Result<(OutKey, Value), Error<E>>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.iter.next().map(|res| match res {
+            Ok((key, val)) => bincode::deserialize(key.as_ref())
+                .map_err(Error::DeSerializingKey)
+                .and_then(|key| {
+                    bincode::deserialize(val.as_ref())
+                        .map_err(Error::DeSerializingVal)
+                        .map(|val| (key, val))
+                }),
+            Err(e) => Err(Error::Database(e)),
+        })
+    }
+}
+
+impl<E, B, BS> data_store::Ranged for BS
+where
+    E: fmt::Debug,
+    B: AsRef<[u8]>,
+    BS: byte_store::Ranged<Error = E, Bytes = B, Key = Vec<u8>>,
+{
+    fn range<InKey, OutKey, Value>(
+        &self,
+        range: impl RangeBounds<InKey>,
+    ) -> Result<impl Iterator<Item = Result<(OutKey, Value), Self::Error>>, Self::Error>
+    where
+        InKey: Serialize,
+        OutKey: Serialize + DeserializeOwned,
+        Value: Serialize + DeserializeOwned,
+    {
+        use std::ops::Bound;
+        let start_bound = match range.start_bound() {
+            Bound::Included(key) => {
+                Bound::Included(bincode::serialize(key).map_err(Error::SerializingKey)?)
+            }
+            Bound::Excluded(key) => {
+                Bound::Excluded(bincode::serialize(key).map_err(Error::SerializingKey)?)
+            }
+            Bound::Unbounded => Bound::Unbounded,
+        };
+        let end_bound = match range.end_bound() {
+            Bound::Included(key) => {
+                Bound::Included(bincode::serialize(key).map_err(Error::SerializingKey)?)
+            }
+            Bound::Excluded(key) => {
+                Bound::Excluded(bincode::serialize(key).map_err(Error::SerializingKey)?)
+            }
+            Bound::Unbounded => Bound::Unbounded,
+        };
+
+        let iter = byte_store::Ranged::range(self, (start_bound, end_bound));
+        Ok(IterWrapper {
+            iter,
+            key_phantom: PhantomData,
+            val_phantom: PhantomData,
+            bytes_phantom: PhantomData::<B>,
+            error_phantom: PhantomData,
         })
     }
 }

@@ -45,3 +45,12 @@ impl byte_store::Ordered for sled::Tree {
         self.get_gt(key)
     }
 }
+
+impl byte_store::Ranged for sled::Tree {
+    type Key = Vec<u8>;
+    type Iter = sled::Iter;
+
+    fn range<'a>(&self, range: impl std::ops::RangeBounds<Self::Key>) -> Self::Iter {
+        self.range(range)
+    }
+}
