@@ -25,21 +25,21 @@ impl BTreeMap {
 }
 
 impl ByteStore for BTreeMap {
-    type Error = Error;
+    type DbError = Error;
     type Bytes = Vec<u8>;
 
-    fn get(&self, key: &[u8]) -> Result<Option<Self::Bytes>, Self::Error> {
-        let map = self.0.read().map_err(|_| Self::Error::Poisoned)?;
+    fn get(&self, key: &[u8]) -> Result<Option<Self::Bytes>, Self::DbError> {
+        let map = self.0.read().map_err(|_| Self::DbError::Poisoned)?;
         Ok(map.get(key).cloned())
     }
 
-    fn remove(&self, key: &[u8]) -> Result<Option<Self::Bytes>, Self::Error> {
-        let mut map = self.0.write().map_err(|_| Self::Error::Poisoned)?;
+    fn remove(&self, key: &[u8]) -> Result<Option<Self::Bytes>, Self::DbError> {
+        let mut map = self.0.write().map_err(|_| Self::DbError::Poisoned)?;
         Ok(map.remove(key))
     }
 
-    fn insert(&self, key: &[u8], val: &[u8]) -> Result<Option<Self::Bytes>, Self::Error> {
-        let mut map = self.0.write().map_err(|_| Self::Error::Poisoned)?;
+    fn insert(&self, key: &[u8], val: &[u8]) -> Result<Option<Self::Bytes>, Self::DbError> {
+        let mut map = self.0.write().map_err(|_| Self::DbError::Poisoned)?;
         Ok(map.insert(key.to_vec(), val.to_vec()))
     }
 }
@@ -60,8 +60,8 @@ impl BTreeMap {
 }
 
 impl crate::traits::byte_store::Ordered for BTreeMap {
-    fn get_lt(&self, key: &[u8]) -> Result<Option<(Self::Bytes, Self::Bytes)>, Self::Error> {
-        let map = self.0.write().map_err(|_| Self::Error::Poisoned)?;
+    fn get_lt(&self, key: &[u8]) -> Result<Option<(Self::Bytes, Self::Bytes)>, Self::DbError> {
+        let map = self.0.write().map_err(|_| Self::DbError::Poisoned)?;
         let zero = vec![0];
         let range = zero..=key.to_vec();
         let Some((k,v)) = map.range(range).next_back() else {
@@ -69,9 +69,9 @@ impl crate::traits::byte_store::Ordered for BTreeMap {
         };
         Ok(Some((k.to_vec(), v.to_vec())))
     }
-    fn get_gt(&self, key: &[u8]) -> Result<Option<(Self::Bytes, Self::Bytes)>, Self::Error> {
+    fn get_gt(&self, key: &[u8]) -> Result<Option<(Self::Bytes, Self::Bytes)>, Self::DbError> {
         use std::ops::Bound::*;
-        let map = self.0.write().map_err(|_| Self::Error::Poisoned)?;
+        let map = self.0.write().map_err(|_| Self::DbError::Poisoned)?;
         let range = (Excluded(key.to_vec()), Unbounded);
         let Some((k,v)) = map.range(range).next() else {
             return Ok(None);

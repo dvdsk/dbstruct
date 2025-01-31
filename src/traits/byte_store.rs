@@ -16,11 +16,11 @@ use crate::Error;
 /// A helper trait, implementing this automatically implements
 /// [`DataStore`][super::data_store::DataStore]
 pub trait ByteStore {
-    type Error: fmt::Debug;
+    type DbError: fmt::Debug;
     type Bytes: AsRef<[u8]>;
-    fn get(&self, key: &[u8]) -> Result<Option<Self::Bytes>, Self::Error>;
-    fn remove(&self, key: &[u8]) -> Result<Option<Self::Bytes>, Self::Error>;
-    fn insert(&self, key: &[u8], val: &[u8]) -> Result<Option<Self::Bytes>, Self::Error>;
+    fn get(&self, key: &[u8]) -> Result<Option<Self::Bytes>, Self::DbError>;
+    fn remove(&self, key: &[u8]) -> Result<Option<Self::Bytes>, Self::DbError>;
+    fn insert(&self, key: &[u8], val: &[u8]) -> Result<Option<Self::Bytes>, Self::DbError>;
 }
 
 /// A helper trait, implementing this automatically implements
@@ -30,29 +30,29 @@ pub trait Atomic: ByteStore {
         &self,
         key: &[u8],
         op: impl FnMut(Option<&[u8]>) -> Option<Vec<u8>>,
-    ) -> Result<(), Self::Error>;
+    ) -> Result<(), Self::DbError>;
     fn conditional_update(
         &self,
         key: &[u8],
         new: &[u8],
         expected: &[u8],
-    ) -> Result<(), Self::Error>;
+    ) -> Result<(), Self::DbError>;
 }
 
 /// A helper trait, implementing this automatically implements
 /// [`data_store::Ordered`][super::data_store::Ordered]
 pub trait Ordered: ByteStore {
     /// returns the previous key value pair before key
-    fn get_lt(&self, key: &[u8]) -> Result<Option<(Self::Bytes, Self::Bytes)>, Self::Error>;
+    fn get_lt(&self, key: &[u8]) -> Result<Option<(Self::Bytes, Self::Bytes)>, Self::DbError>;
     /// returns the next key value pair after key
-    fn get_gt(&self, key: &[u8]) -> Result<Option<(Self::Bytes, Self::Bytes)>, Self::Error>;
+    fn get_gt(&self, key: &[u8]) -> Result<Option<(Self::Bytes, Self::Bytes)>, Self::DbError>;
 }
 
 /// A helper trait, implementing this automatically implements
 /// [`data_store::Ranged`][super::data_store::Ranged]
 pub trait Ranged: Ordered {
     type Key: AsRef<[u8]>;
-    type Iter: Iterator<Item = Result<(Self::Bytes, Self::Bytes), Self::Error>>;
+    type Iter: Iterator<Item = Result<(Self::Bytes, Self::Bytes), Self::DbError>>;
     /// returns the previous key value pair before key
     fn range(&self, range: impl RangeBounds<Self::Key>) -> Self::Iter;
 }
@@ -61,7 +61,7 @@ impl<E, B, BS> DataStore for BS
 where
     E: fmt::Debug,
     B: AsRef<[u8]>,
-    BS: ByteStore<Error = E, Bytes = B>,
+    BS: ByteStore<DbError = E, Bytes = B>,
 {
     type DbError = Error<E>;
 
@@ -133,7 +133,7 @@ impl<E, B, BS> data_store::Atomic for BS
 where
     E: fmt::Debug,
     B: AsRef<[u8]>,
-    BS: Atomic<Error = E, Bytes = B>,
+    BS: Atomic<DbError = E, Bytes = B>,
 {
     #[instrument(skip_all, level = "trace", err)]
     fn atomic_update<K, V>(
@@ -192,7 +192,7 @@ impl<E, B, BS> data_store::Ordered for BS
 where
     E: fmt::Debug,
     B: AsRef<[u8]>,
-    BS: byte_store::Ordered<Error = E, Bytes = B>,
+    BS: byte_store::Ordered<DbError = E, Bytes = B>,
 {
     #[instrument(skip_all, level = "trace", err)]
     fn get_lt<InKey, OutKey, Value>(
@@ -289,7 +289,7 @@ impl<E, B, BS> data_store::Ranged for BS
 where
     E: fmt::Debug,
     B: AsRef<[u8]>,
-    BS: byte_store::Ranged<Error = E, Bytes = B, Key = Vec<u8>>,
+    BS: byte_store::Ranged<DbError = E, Bytes = B, Key = Vec<u8>>,
 {
     fn range<InKey, OutKey, Value>(
         &self,

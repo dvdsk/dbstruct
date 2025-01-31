@@ -14,7 +14,7 @@ where
     K: Serialize + DeserializeOwned,
     V: Serialize + DeserializeOwned,
     E: fmt::Debug,
-    DS: byte_store::Ordered<Error = E>,
+    DS: byte_store::Ordered<DbError = E>,
 {
     prefix: u8,
     prev_key_bytes: Vec<u8>,
@@ -28,7 +28,7 @@ where
     E: fmt::Debug,
     K: Serialize + DeserializeOwned,
     V: Serialize + DeserializeOwned,
-    DS: byte_store::Ordered<Error = E>,
+    DS: byte_store::Ordered<DbError = E>,
 {
     type Item = Result<(K, V), Error<E>>;
 
@@ -65,14 +65,14 @@ where
     K: Serialize + DeserializeOwned,
     V: Serialize + DeserializeOwned,
     E: fmt::Debug,
-    DS: byte_store::Ordered<Error = E>;
+    DS: byte_store::Ordered<DbError = E>;
 
 impl<K, V, E, DS> Iterator for Values<'_, K, V, E, DS>
 where
     K: Serialize + DeserializeOwned,
     V: Serialize + DeserializeOwned,
     E: fmt::Debug,
-    DS: byte_store::Ordered<Error = E>,
+    DS: byte_store::Ordered<DbError = E>,
 {
     type Item = Result<V, Error<E>>;
 
@@ -86,14 +86,14 @@ where
     K: Serialize + DeserializeOwned,
     V: Serialize + DeserializeOwned,
     E: fmt::Debug,
-    DS: byte_store::Ordered<Error = E>;
+    DS: byte_store::Ordered<DbError = E>;
 
 impl<K, V, E, DS> Iterator for Keys<'_, K, V, E, DS>
 where
     K: Serialize + DeserializeOwned,
     V: Serialize + DeserializeOwned,
     E: fmt::Debug,
-    DS: byte_store::Ordered<Error = E>,
+    DS: byte_store::Ordered<DbError = E>,
 {
     type Item = Result<K, Error<E>>;
 
@@ -107,7 +107,7 @@ where
     E: fmt::Debug,
     Key: Serialize + DeserializeOwned,
     Value: Serialize + DeserializeOwned,
-    DS: byte_store::Ordered<Error = E>,
+    DS: byte_store::Ordered<DbError = E>,
 {
     pub fn iter(&self) -> Iter<Key, Value, E, DS> {
         Iter {

@@ -25,21 +25,21 @@ impl HashMap {
 }
 
 impl ByteStore for HashMap {
-    type Error = Error;
+    type DbError = Error;
     type Bytes = Vec<u8>;
 
-    fn get(&self, key: &[u8]) -> Result<Option<Self::Bytes>, Self::Error> {
-        let map = self.0.read().map_err(|_| Self::Error::Poisoned)?;
+    fn get(&self, key: &[u8]) -> Result<Option<Self::Bytes>, Self::DbError> {
+        let map = self.0.read().map_err(|_| Self::DbError::Poisoned)?;
         Ok(map.get(key).cloned())
     }
 
-    fn remove(&self, key: &[u8]) -> Result<Option<Self::Bytes>, Self::Error> {
-        let mut map = self.0.write().map_err(|_| Self::Error::Poisoned)?;
+    fn remove(&self, key: &[u8]) -> Result<Option<Self::Bytes>, Self::DbError> {
+        let mut map = self.0.write().map_err(|_| Self::DbError::Poisoned)?;
         Ok(map.remove(key))
     }
 
-    fn insert(&self, key: &[u8], val: &[u8]) -> Result<Option<Self::Bytes>, Self::Error> {
-        let mut map = self.0.write().map_err(|_| Self::Error::Poisoned)?;
+    fn insert(&self, key: &[u8], val: &[u8]) -> Result<Option<Self::Bytes>, Self::DbError> {
+        let mut map = self.0.write().map_err(|_| Self::DbError::Poisoned)?;
         Ok(map.insert(key.to_vec(), val.to_vec()))
     }
 }

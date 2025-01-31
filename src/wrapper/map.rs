@@ -83,8 +83,28 @@ where
     E: fmt::Debug,
     Key: Serialize + DeserializeOwned,
     Value: Serialize + DeserializeOwned,
-    DS: DataStore<DbError = E> + byte_store::Ordered,
+    DS: DataStore<DbError = E> + byte_store::Ordered<DbError = E>,
 {
+    /// Clears the map, removing all key-value pairs.
+    ///
+    /// # Errors
+    /// This can fail if the underlying database ran into a problem
+    /// or if serialization failed.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use dbstruct::DataStore;
+    /// #[dbstruct::dbstruct(db=btreemap)]
+    /// pub struct Test {
+    ///	    map: HashMap<u16, String>,
+    ///	}
+    ///
+    /// let db = Test::new().unwrap();
+    /// db.map().insert(&1, &"a".to_owned());
+    /// db.map().clear();
+    /// assert!(db.map().is_empty());
+    /// ```
     pub fn clear(&self) -> Result<(), Error<E>> {
         for key in self.keys() {
             let key = key?;
@@ -92,6 +112,30 @@ where
         }
 
         Ok(())
+    }
+
+    /// Returns true if the map contains no elements.
+    ///
+    /// # Errors
+    /// This can fail if the underlying database ran into a problem
+    /// or if serialization failed.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use dbstruct::DataStore;
+    /// #[dbstruct::dbstruct(db=btreemap)]
+    /// pub struct Test {
+    ///	    map: HashMap<u16, String>,
+    ///	}
+    ///
+    /// let db = Test::new().unwrap();
+    /// db.map().insert(&1, &"a".to_owned());
+    /// db.map().clear();
+    /// assert!(db.map().is_empty());
+    /// ```
+    pub fn is_empty(&self) -> Result<bool, Error<E>> {
+        Ok(self.iter().next().is_none())
     }
 }
 

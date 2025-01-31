@@ -43,10 +43,10 @@ fn main() {
 	db.primes().push(&2).unwrap();
 	db.primes().push(&3).unwrap();
 	db.primes().push(&5).unwrap();
-	db.primes().push(&7).unwrap();
-	assert_eq!(Some(7), db.primes().pop().unwrap());
+    db.primes().push(&7).unwrap();
+    assert_eq!(Some(7), db.primes().pop().unwrap());
 
-	assert_eq!(String::from("42"), db.the_result().get().unwrap());
+    assert_eq!(String::from("42"), db.the_result().get().unwrap());
 }
 ```
 

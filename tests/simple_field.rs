@@ -21,7 +21,6 @@ pub struct BtreeMapTest {
     the_field: u8,
 }
 
-
 #[test]
 fn btreemap_backend() {
     let db = BtreeMapTest::new().unwrap();

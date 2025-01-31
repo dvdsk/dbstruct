@@ -1,18 +1,18 @@
 use crate::traits::{byte_store, ByteStore};
 
 impl ByteStore for sled::Tree {
-    type Error = sled::Error;
+    type DbError = sled::Error;
     type Bytes = sled::IVec;
 
-    fn get(&self, key: &[u8]) -> Result<Option<Self::Bytes>, Self::Error> {
+    fn get(&self, key: &[u8]) -> Result<Option<Self::Bytes>, Self::DbError> {
         self.get(key)
     }
 
-    fn remove(&self, key: &[u8]) -> Result<Option<Self::Bytes>, Self::Error> {
+    fn remove(&self, key: &[u8]) -> Result<Option<Self::Bytes>, Self::DbError> {
         self.remove(key)
     }
 
-    fn insert(&self, key: &[u8], val: &[u8]) -> Result<Option<Self::Bytes>, Self::Error> {
+    fn insert(&self, key: &[u8], val: &[u8]) -> Result<Option<Self::Bytes>, Self::DbError> {
         self.insert(key, val)
     }
 }
@@ -22,7 +22,7 @@ impl byte_store::Atomic for sled::Tree {
         &self,
         key: &[u8],
         op: impl FnMut(Option<&[u8]>) -> Option<Vec<u8>>,
-    ) -> Result<(), Self::Error> {
+    ) -> Result<(), Self::DbError> {
         self.fetch_and_update(key, op).map(|_| ())
     }
 
@@ -31,17 +31,17 @@ impl byte_store::Atomic for sled::Tree {
         key: &[u8],
         new: &[u8],
         expected: &[u8],
-    ) -> Result<(), Self::Error> {
+    ) -> Result<(), Self::DbError> {
         let _ignore_compare_and_swap_res = self.compare_and_swap(key, Some(expected), Some(new))?;
         Ok(())
     }
 }
 
 impl byte_store::Ordered for sled::Tree {
-    fn get_lt(&self, key: &[u8]) -> Result<Option<(Self::Bytes, Self::Bytes)>, Self::Error> {
+    fn get_lt(&self, key: &[u8]) -> Result<Option<(Self::Bytes, Self::Bytes)>, Self::DbError> {
         self.get_lt(key)
     }
-    fn get_gt(&self, key: &[u8]) -> Result<Option<(Self::Bytes, Self::Bytes)>, Self::Error> {
+    fn get_gt(&self, key: &[u8]) -> Result<Option<(Self::Bytes, Self::Bytes)>, Self::DbError> {
         self.get_gt(key)
     }
 }
