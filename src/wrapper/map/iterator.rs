@@ -2,7 +2,7 @@ use crate::Error;
 use core::marker::PhantomData;
 use std::fmt;
 
-use crate::traits::{byte_store, DataStore};
+use crate::traits::byte_store;
 
 use serde::de::DeserializeOwned;
 use serde::Serialize;
@@ -14,7 +14,7 @@ where
     K: Serialize + DeserializeOwned,
     V: Serialize + DeserializeOwned,
     E: fmt::Debug,
-    DS: DataStore<DbError = E> + byte_store::Ordered,
+    DS: byte_store::Ordered<Error = E>,
 {
     prefix: u8,
     prev_key_bytes: Vec<u8>,
@@ -28,12 +28,16 @@ where
     E: fmt::Debug,
     K: Serialize + DeserializeOwned,
     V: Serialize + DeserializeOwned,
-    DS: DataStore<DbError = E> + byte_store::Ordered,
+    DS: byte_store::Ordered<Error = E>,
 {
     type Item = Result<(K, V), Error<E>>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let (key, val) = byte_store::Ordered::get_gt(self.ds, &self.prev_key_bytes).unwrap()?;
+        let (key, val) = match byte_store::Ordered::get_gt(self.ds, &self.prev_key_bytes) {
+            Ok(Some((key, val))) => (key, val),
+            Ok(None) => return None,
+            Err(e) => return Some(Err(Error::Database(e))),
+        };
 
         let key = key.as_ref();
         if key[0] != self.prefix {
@@ -61,14 +65,14 @@ where
     K: Serialize + DeserializeOwned,
     V: Serialize + DeserializeOwned,
     E: fmt::Debug,
-    DS: DataStore<DbError = E> + byte_store::Ordered;
+    DS: byte_store::Ordered<Error = E>;
 
 impl<K, V, E, DS> Iterator for Values<'_, K, V, E, DS>
 where
     K: Serialize + DeserializeOwned,
     V: Serialize + DeserializeOwned,
     E: fmt::Debug,
-    DS: DataStore<DbError = E> + byte_store::Ordered,
+    DS: byte_store::Ordered<Error = E>,
 {
     type Item = Result<V, Error<E>>;
 
@@ -82,14 +86,14 @@ where
     K: Serialize + DeserializeOwned,
     V: Serialize + DeserializeOwned,
     E: fmt::Debug,
-    DS: DataStore<DbError = E> + byte_store::Ordered;
+    DS: byte_store::Ordered<Error = E>;
 
 impl<K, V, E, DS> Iterator for Keys<'_, K, V, E, DS>
 where
     K: Serialize + DeserializeOwned,
     V: Serialize + DeserializeOwned,
     E: fmt::Debug,
-    DS: DataStore<DbError = E> + byte_store::Ordered,
+    DS: byte_store::Ordered<Error = E>,
 {
     type Item = Result<K, Error<E>>;
 
@@ -103,7 +107,7 @@ where
     E: fmt::Debug,
     Key: Serialize + DeserializeOwned,
     Value: Serialize + DeserializeOwned,
-    DS: DataStore<DbError = E> + byte_store::Ordered,
+    DS: byte_store::Ordered<Error = E>,
 {
     pub fn iter(&self) -> Iter<Key, Value, E, DS> {
         Iter {
