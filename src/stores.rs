@@ -1,4 +1,4 @@
-//! provides a non peristant store for testing
+//! provides a non persistent store for testing
 
 #[cfg(feature = "sled")]
 mod sled;

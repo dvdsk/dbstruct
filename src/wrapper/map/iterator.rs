@@ -109,6 +109,35 @@ where
     Value: Serialize + DeserializeOwned,
     DS: byte_store::Ordered<DbError = E>,
 {
+    /// An iterator visiting all key-value pairs in fixed though arbitrary order. The
+    /// order depending on the underlying database implementation. The iterator element
+    /// type is `Result<(Key, Value), dbstruct::Error<E>>`.
+    ///
+    /// # Errors
+    /// This can fail if the underlying database ran into a problem
+    /// or if serialization failed.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// #[dbstruct::dbstruct(db=btreemap)]
+    /// struct Test {
+    ///	    map: HashMap<u16, String>,
+    ///	}
+    ///
+    ///	# fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// let db = Test::new()?;
+    /// db.map().insert(&1, &"a".to_owned())?;
+    /// db.map().insert(&2, &"b".to_owned())?;
+    /// db.map().insert(&3, &"c".to_owned())?;
+    ///
+    /// for res in db.map().iter() {
+    ///     let (key, val) = res?;
+    ///     println!("key: {key} val: {val}");
+    /// }
+    /// # Ok(())
+    /// # }
+    /// ```
     pub fn iter(&self) -> Iter<Key, Value, E, DS> {
         Iter {
             prefix: self.prefix,
@@ -119,6 +148,35 @@ where
         }
     }
 
+    /// An iterator visiting all key in fixed though arbitrary order. The
+    /// order depending on the underlying database implementation. The iterator element
+    /// type is `Result<Key, dbstruct::Error<E>>`.
+    ///
+    /// # Errors
+    /// This can fail if the underlying database ran into a problem
+    /// or if serialization failed.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// #[dbstruct::dbstruct(db=btreemap)]
+    /// struct Test {
+    ///	    map: HashMap<u16, String>,
+    ///	}
+    ///
+    ///	# fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// let db = Test::new()?;
+    /// db.map().insert(&1, &"a".to_owned())?;
+    /// db.map().insert(&2, &"b".to_owned())?;
+    /// db.map().insert(&3, &"c".to_owned())?;
+    ///
+    /// for key in db.map().keys() {
+    ///     let key = key?;
+    ///     println!("key: {key}");
+    /// }
+    /// # Ok(())
+    /// # }
+    /// ```
     pub fn values(&self) -> Values<Key, Value, E, DS> {
         Values(Iter {
             prefix: self.prefix,
@@ -129,6 +187,35 @@ where
         })
     }
 
+    /// An iterator visiting all values in fixed though arbitrary order. The
+    /// order depending on the underlying database implementation. The iterator element
+    /// type is `Result<Value, dbstruct::Error<E>>`.
+    ///
+    /// # Errors
+    /// This can fail if the underlying database ran into a problem
+    /// or if serialization failed.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// #[dbstruct::dbstruct(db=btreemap)]
+    /// struct Test {
+    ///	    map: HashMap<u16, String>,
+    ///	}
+    ///
+    ///	# fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// let db = Test::new()?;
+    /// db.map().insert(&1, &"a".to_owned())?;
+    /// db.map().insert(&2, &"b".to_owned())?;
+    /// db.map().insert(&3, &"c".to_owned())?;
+    ///
+    /// for val in db.map().values() {
+    ///     let val = val?;
+    ///     println!("val: {val}");
+    /// }
+    /// # Ok(())
+    /// # }
+    /// ```
     pub fn keys(&self) -> Keys<Key, Value, E, DS> {
         Keys(Iter {
             prefix: self.prefix,

@@ -55,7 +55,36 @@ where
         }
     }
 
-    /// returns existing value if any was set
+    /// Inserts a key-value pair into the map.
+    ///
+    /// If the map did not have this key present, [`None`] is returned.
+    ///
+    /// If the map did have this key present, the value is updated, and the old
+    /// value is returned. The key is not updated, though.
+    ///
+    /// # Errors
+    /// This can fail if the underlying database ran into a problem
+    /// or if serialization failed.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// #[dbstruct::dbstruct(db=btreemap)]
+    /// struct Test {
+    ///	    map: HashMap<u16, String>,
+    ///	}
+    ///
+    ///	# fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// let db = Test::new()?;
+    /// assert_eq!(db.map().insert(&37, &"a".to_owned())?, None);
+    /// assert_eq!(db.map().is_empty()?, false);
+    ///
+    /// db.map().insert(&37, &"b".to_owned())?;
+    /// assert_eq!(db.map().insert(&37, &"c".to_owned())?, Some("b".to_owned()));
+    /// assert_eq!(db.map().get(&37)?, Some("c".to_owned()));
+    /// # Ok(())
+    /// # }
+    /// ```
     #[instrument(skip_all, level = "debug")]
     pub fn insert(&self, key: &'a Key, value: &'a Value) -> Result<Option<Value>, Error<E>> {
         let key = self.prefix(key);
@@ -63,6 +92,28 @@ where
         Ok(existing)
     }
 
+    /// Returns a copy of the value corresponding to the key.
+    ///
+    /// # Errors
+    /// This can fail if the underlying database ran into a problem
+    /// or if serialization failed.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// #[dbstruct::dbstruct(db=btreemap)]
+    /// struct Test {
+    ///	    map: HashMap<u16, String>,
+    ///	}
+    ///
+    ///	# fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// let db = Test::new()?;
+    /// db.map().insert(&1, &"a".to_owned())?;
+    /// assert_eq!(db.map().get(&1)?, Some("a".to_owned()));
+    /// assert_eq!(db.map().get(&2)?, None);
+    /// # Ok(())
+    /// # }
+    /// ```
     #[instrument(skip_all, level = "debug")]
     pub fn get(&self, key: &'a Key) -> Result<Option<Value>, Error<E>> {
         let key = self.prefix(key);
@@ -70,6 +121,29 @@ where
         Ok(value)
     }
 
+    /// Returns a key from the map, returning the value at the key if the key
+    /// was previously in the map.
+    ///
+    /// # Errors
+    /// This can fail if the underlying database ran into a problem
+    /// or if serialization failed.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// #[dbstruct::dbstruct(db=btreemap)]
+    /// struct Test {
+    ///	    map: HashMap<u16, String>,
+    ///	}
+    ///
+    ///	# fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// let db = Test::new()?;
+    /// db.map().insert(&1, &"a".to_owned())?;
+    /// assert_eq!(db.map().remove(&1)?, Some("a".to_owned()));
+    /// assert_eq!(db.map().remove(&2)?, None);
+    /// # Ok(())
+    /// # }
+    /// ```
     #[instrument(skip_all, level = "debug")]
     pub fn remove(&self, key: &'a Key) -> Result<Option<Value>, Error<E>> {
         let key = self.prefix(key);
@@ -83,7 +157,8 @@ where
     E: fmt::Debug,
     Key: Serialize + DeserializeOwned,
     Value: Serialize + DeserializeOwned,
-    DS: DataStore<DbError = E> + byte_store::Ordered<DbError = E>,
+    DS: DataStore<DbError = E> + byte_store::Ordered,
+    Error<E>: From<Error<<DS as crate::ByteStore>::DbError>>,
 {
     /// Clears the map, removing all key-value pairs.
     ///
@@ -94,16 +169,18 @@ where
     /// # Examples
     ///
     /// ```
-    /// use dbstruct::DataStore;
     /// #[dbstruct::dbstruct(db=btreemap)]
-    /// pub struct Test {
+    /// struct Test {
     ///	    map: HashMap<u16, String>,
     ///	}
     ///
-    /// let db = Test::new().unwrap();
-    /// db.map().insert(&1, &"a".to_owned());
-    /// db.map().clear();
-    /// assert!(db.map().is_empty());
+    ///	# fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// let db = Test::new()?;
+    /// db.map().insert(&1, &"a".to_owned())?;
+    /// db.map().clear()?;
+    /// assert!(db.map().is_empty()?);
+    /// # Ok(())
+    /// # }
     /// ```
     pub fn clear(&self) -> Result<(), Error<E>> {
         for key in self.keys() {
@@ -123,16 +200,18 @@ where
     /// # Examples
     ///
     /// ```
-    /// use dbstruct::DataStore;
     /// #[dbstruct::dbstruct(db=btreemap)]
-    /// pub struct Test {
+    /// struct Test {
     ///	    map: HashMap<u16, String>,
     ///	}
     ///
-    /// let db = Test::new().unwrap();
-    /// db.map().insert(&1, &"a".to_owned());
-    /// db.map().clear();
-    /// assert!(db.map().is_empty());
+    ///	# fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// let db = Test::new()?;
+    /// assert!(db.map().is_empty()?);
+    /// db.map().insert(&1, &"a".to_owned())?;
+    /// assert!(!db.map().is_empty()?);
+    /// # Ok(())
+    /// # }
     /// ```
     pub fn is_empty(&self) -> Result<bool, Error<E>> {
         Ok(self.iter().next().is_none())

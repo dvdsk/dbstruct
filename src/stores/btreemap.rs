@@ -1,7 +1,7 @@
 use std::collections;
 use std::sync::{Arc, RwLock};
 
-use crate::traits::ByteStore;
+use crate::traits::{byte_store, ByteStore};
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
@@ -9,11 +9,11 @@ pub enum Error {
     Poisoned,
 }
 
-/// This is a very simple backend that offers no persistance but also needs no path argument. It only
-/// supports some wrapper. Use it for testing.
+/// This is a very simple backend that offers no persistence but also needs no
+/// path argument. It only supports some wrapper. Use it for testing.
 ///
 /// ### ALL CHANGES ARE LOST WHEN THE OBJECT IS DROPPED
-/// again: use for testing the api only
+/// again: use for testing the API only
 ///
 #[derive(Default, Clone)]
 pub struct BTreeMap(Arc<RwLock<collections::BTreeMap<Vec<u8>, Vec<u8>>>>);
@@ -44,6 +44,27 @@ impl ByteStore for BTreeMap {
     }
 }
 
+impl byte_store::Ordered for BTreeMap {
+    fn get_lt(&self, key: &[u8]) -> Result<Option<(Self::Bytes, Self::Bytes)>, Self::DbError> {
+        let map = self.0.write().map_err(|_| Self::DbError::Poisoned)?;
+        let zero = vec![0];
+        let range = zero..=key.to_vec();
+        let Some((k, v)) = map.range(range).next_back() else {
+            return Ok(None);
+        };
+        Ok(Some((k.to_vec(), v.to_vec())))
+    }
+    fn get_gt(&self, key: &[u8]) -> Result<Option<(Self::Bytes, Self::Bytes)>, Self::DbError> {
+        use std::ops::Bound::*;
+        let map = self.0.write().map_err(|_| Self::DbError::Poisoned)?;
+        let range = (Excluded(key.to_vec()), Unbounded);
+        let Some((k, v)) = map.range(range).next() else {
+            return Ok(None);
+        };
+        Ok(Some((k.to_vec(), v.to_vec())))
+    }
+}
+
 #[cfg(test)]
 impl BTreeMap {
     pub(crate) fn force_error(&self) {
@@ -56,27 +77,6 @@ impl BTreeMap {
 
         let res = handle.join();
         assert!(res.is_err());
-    }
-}
-
-impl crate::traits::byte_store::Ordered for BTreeMap {
-    fn get_lt(&self, key: &[u8]) -> Result<Option<(Self::Bytes, Self::Bytes)>, Self::DbError> {
-        let map = self.0.write().map_err(|_| Self::DbError::Poisoned)?;
-        let zero = vec![0];
-        let range = zero..=key.to_vec();
-        let Some((k,v)) = map.range(range).next_back() else {
-            return Ok(None);
-        };
-        Ok(Some((k.to_vec(), v.to_vec())))
-    }
-    fn get_gt(&self, key: &[u8]) -> Result<Option<(Self::Bytes, Self::Bytes)>, Self::DbError> {
-        use std::ops::Bound::*;
-        let map = self.0.write().map_err(|_| Self::DbError::Poisoned)?;
-        let range = (Excluded(key.to_vec()), Unbounded);
-        let Some((k,v)) = map.range(range).next() else {
-            return Ok(None);
-        };
-        Ok(Some((k.to_vec(), v.to_vec())))
     }
 }
 
