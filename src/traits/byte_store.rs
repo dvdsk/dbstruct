@@ -1,3 +1,4 @@
+#![allow(clippy::type_complexity)]
 //! Helper traits that are easier to implement. These implement the similarly named trait in
 //! [`data_store`].
 
@@ -53,7 +54,7 @@ pub trait Ranged: Ordered {
     type Key: AsRef<[u8]>;
     type Iter: Iterator<Item = Result<(Self::Bytes, Self::Bytes), Self::Error>>;
     /// returns the previous key value pair before key
-    fn range<'a>(&self, range: impl RangeBounds<Self::Key>) -> Self::Iter;
+    fn range(&self, range: impl RangeBounds<Self::Key>) -> Self::Iter;
 }
 
 impl<E, B, BS> DataStore for BS

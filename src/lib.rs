@@ -1,4 +1,4 @@
-//! Create a typed embedded database by defining a struct. Interact with the database through getters and setters. Choose how values missing in the database are represented. Standard library types `Vec`, `HashMap` and `Option` have special getters and setters to mimic their standard library functionality. You can push and pop from vecs.
+//! Create a typed embedded database by defining a struct. Interact with the database through getters and setters. Choose how values missing in the database are represented. Standard library types `Vec`, `HashMap` and `Option` have special getters and setters to mimic their standard library functionality. You can push and pop from Vecs.
 //!
 //! Choose out of various popular key-value databases then instantiate the struct providing only the db path. Alternatively pass any object that implements `dbstruct::DataStore`.
 //!
@@ -18,22 +18,20 @@
 //!    the_result: String,
 //!}
 //!
-//!fn main() {
-//!    // a wrapper around a HashMap that implements the
-//!    // `DataStore` trait
-//!    let db = Test::new(&Path::new("the_db2")).unwrap();
+//!// a wrapper around a HashMap that implements the
+//!// `DataStore` trait
+//!let db = Test::new(&Path::new("the_db2")).unwrap();
 //!
-//!    db.the_awnser().set(&42).unwrap();
-//!	   assert_eq!(42u8, db.the_awnser().get().unwrap());
+//!db.the_awnser().set(&42).unwrap();
+//!assert_eq!(42u8, db.the_awnser().get().unwrap());
 //!
-//!    db.primes().push(&2).unwrap();
-//!    db.primes().push(&3).unwrap();
-//!    db.primes().push(&5).unwrap();
-//!	   db.primes().push(&7).unwrap();
-//!	   assert_eq!(Some(7), db.primes().pop().unwrap());
+//!db.primes().push(&2).unwrap();
+//!db.primes().push(&3).unwrap();
+//!db.primes().push(&5).unwrap();
+//!db.primes().push(&7).unwrap();
+//!assert_eq!(Some(7), db.primes().pop().unwrap());
 //!
-//!	   assert_eq!(String::from("42"), db.the_result().get().unwrap());
-//!}
+//!assert_eq!(String::from("42"), db.the_result().get().unwrap());
 //!```
 //!
 //! Here `derive(dbstruct)` instructs Rust to transform the input struct to a typed database. Every

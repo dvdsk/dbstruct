@@ -1,3 +1,4 @@
+#![allow(clippy::type_complexity)]
 //! The traits used by the wrapper to operate on the database.
 use core::fmt;
 use std::ops::RangeBounds;
@@ -46,7 +47,7 @@ pub trait Atomic: DataStore {
 /// [`byte_store::Ordered`][super::byte_store::Ordered] instead.
 ///
 /// You can deserialize to a different key then you serialize too.
-/// This is useful when using get_lt a InKey that borrows data. As
+/// This is useful when using get_lt an InKey that borrows data. As
 /// you need to deserialize to a type owning all its data.
 pub trait Ordered: DataStore {
     fn get_lt<InKey, OutKey, Value>(

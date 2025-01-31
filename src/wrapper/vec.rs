@@ -38,7 +38,7 @@ impl Prefixed {
     pub fn max(prefix: u8) -> Self {
         Self {
             prefix,
-            index: usize::max_value(),
+            index: usize::MAX,
         }
     }
 }

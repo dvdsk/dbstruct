@@ -30,6 +30,7 @@ pub trait TryExtend<T> {
     /// [`Extend`](https://doc.rust-lang.org/std/iter/trait.Extend.html) trait.
     /// Stops on the first error encountered and returns the iterator and the
     /// item we failed to insert.
+    #[allow(clippy::type_complexity)]
     fn try_extend<I>(
         &mut self,
         iter: I,

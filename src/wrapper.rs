@@ -1,11 +1,13 @@
-//! Wrapper are how *dbstruct* reads and writes to the database. They handle serializing and
-//! deserializing, provide the API and determine how to handle missing data. 
+//! Wrapper are how *dbstruct* reads and writes to the database. They handle
+//! serializing and deserializing, provide the API and determine how to handle
+//! missing data. 
 //!
 //! There are two types of wrapper: 
-//! - Those describing how to handle missing values. These at the minimum offer you `get` and
-//! `set`. Depending on the [`traits`][crate::traits::data_store] the database you chose
-//! implements they may also support `update` and `conditional_update`.
-//! - Wrapper that mimic the api of a standard library type.
+//! - Those describing how to handle missing values. These at the minimum offer 
+//!   you `get` and `set`. Depending on the [`traits`][crate::traits::data_store] the 
+//!   database you chose implements they may also support `update` and 
+//!   `conditional_update`.
+//! - Wrapper that mimic the API of a standard library type.
 
 mod option;
 mod default_val;

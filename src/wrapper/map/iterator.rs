@@ -33,10 +33,7 @@ where
     type Item = Result<(K, V), Error<E>>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let Some((key, val)) = byte_store::Ordered::get_gt(self.ds, &self.prev_key_bytes).unwrap()
-        else {
-            return None;
-        };
+        let (key, val) = byte_store::Ordered::get_gt(self.ds, &self.prev_key_bytes).unwrap()?;
 
         let key = key.as_ref();
         if key[0] != self.prefix {
