@@ -137,7 +137,7 @@ impl NewMethod {
             }
             Backend::Trait { .. } => {
                 arg = Some(parse_quote!(ds: DS));
-                error_ty = parse_quote!(DS::Error);
+                error_ty = parse_quote!(DS::DbError);
             }
             #[cfg(test)]
             Backend::Test => unreachable!("test not used in new method"),

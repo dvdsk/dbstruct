@@ -2,11 +2,8 @@ mod errors;
 pub use errors::{Error, ErrorVariant};
 use proc_macro2::Span;
 
-pub use super::field::Field;
-pub use super::field::Wrapper;
 use std::iter::Peekable;
 
-pub use super::key::DbKey;
 use proc_macro2::TokenTree;
 
 #[derive(Debug, Clone, Copy)]
@@ -31,7 +28,7 @@ pub enum Options {
     Async,
 }
 
-/// attrs is the tokenstream returned by Attribute::parse_args();
+/// attrs is the TokenStream returned by Attribute::parse_args();
 pub fn parse(attrs: proc_macro2::TokenStream) -> Result<Vec<Options>, Error> {
     let mut attributes = Vec::new();
     let mut tokens = attrs.into_iter().peekable();

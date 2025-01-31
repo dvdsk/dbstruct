@@ -21,7 +21,7 @@ impl<T, E, DS> OptionValue<T, DS>
 where
     E: fmt::Debug,
     T: Serialize + DeserializeOwned,
-    DS: DataStore<Error = E>,
+    DS: DataStore<DbError = E>,
 {
     #[doc(hidden)]
     pub fn new(ds: DS, key: u8) -> Self {
@@ -46,7 +46,7 @@ impl<T, E, DS> OptionValue<T, DS>
 where
     E: fmt::Debug,
     T: Serialize + DeserializeOwned,
-    DS: data_store::Atomic<Error = E>,
+    DS: data_store::Atomic<DbError = E>,
 {
     pub fn update(&self, op: impl FnMut(T) -> T + Clone) -> Result<(), Error<E>> {
         self.ds.atomic_update(&self.key, op)?;

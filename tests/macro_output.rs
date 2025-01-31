@@ -44,7 +44,7 @@ impl<DS> MacroOutput<DS>
 where
     DS: DataStore + data_store::Ordered + Clone,
 {
-    pub fn new(ds: DS) -> Result<Self, dbstruct::Error<<DS as DataStore>::Error>> {
+    pub fn new(ds: DS) -> Result<Self, dbstruct::Error<<DS as DataStore>::DbError>> {
         // 1+1 means given the prefix for the queue (one) go to the next prefix then
         // get the element in the database one less. That is the last element of the Vec
         // the key being the index

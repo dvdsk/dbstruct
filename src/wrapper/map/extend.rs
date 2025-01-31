@@ -14,12 +14,12 @@ where
     Key: Serialize + DeserializeOwned,
     Value: Serialize + DeserializeOwned,
 {
-    type Error = DS::Error;
+    type DbError = DS::DbError;
 
     fn try_extend<I>(
         &mut self,
         iter: I,
-    ) -> Result<(), ExtendError<I::Item, I::IntoIter, Self::Error>>
+    ) -> Result<(), ExtendError<I::Item, I::IntoIter, crate::Error<DS::DbError>>>
     where
         I: IntoIterator<Item = (Key, Value)>,
     {
@@ -48,12 +48,12 @@ where
     Key: Serialize + DeserializeOwned,
     Value: Serialize + DeserializeOwned,
 {
-    type Error = DS::Error;
+    type DbError = DS::DbError;
 
     fn try_extend<I>(
         &mut self,
         iter: I,
-    ) -> Result<(), ExtendError<I::Item, I::IntoIter, Self::Error>>
+    ) -> Result<(), ExtendError<I::Item, I::IntoIter, crate::Error<Self::DbError>>>
     where
         I: IntoIterator<Item = (&'a Key, &'a Value)>,
     {

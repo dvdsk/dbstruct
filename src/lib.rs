@@ -38,7 +38,7 @@
 //!
 //! Here `derive(dbstruct)` instructs Rust to transform the input struct to a typed database. Every
 //! field is replaced with a *method* with the *same name* that returns a [`wrapper`]. The various attributes used to
-//! customise the generated method.
+//! customize the generated method.
 //!
 //! First, define a struct, whatever its name. This will become your database object. Its fields
 //! will become keys or prefixes in the database. Now add the dbstruct attribute and choose a
@@ -80,14 +80,14 @@ pub use dbstruct_derive::*;
 
 pub mod stores;
 pub mod traits;
+pub use traits::TryExtend;
 pub use traits::{ByteStore, DataStore};
-pub use traits::{TryExtend};
 pub mod wrapper;
 
 pub use sled;
 
-/// An Error type encapulating various issues that may come up during database operation or
-/// (de)serializing
+/// An Error type encapsulating various issues that may come up during
+/// database operation or (de)serializing
 #[derive(Debug, thiserror::Error)]
 pub enum Error<DbError: fmt::Debug> {
     #[error("value could not be deserialized using bincode")]

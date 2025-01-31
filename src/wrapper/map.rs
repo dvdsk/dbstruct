@@ -4,8 +4,8 @@ use serde::Serialize;
 use std::marker::PhantomData;
 use tracing::{instrument, trace};
 
-use crate::traits::data_store::Ranged;
-use crate::traits::DataStore;
+use crate::traits::{byte_store, DataStore};
+use crate::Error;
 
 mod extend;
 mod iterator;
@@ -34,7 +34,7 @@ where
     E: fmt::Debug,
     Key: Serialize + DeserializeOwned,
     Value: Serialize + DeserializeOwned,
-    DS: DataStore<Error = E>,
+    DS: DataStore<DbError = E>,
 {
     #[doc(hidden)]
     #[instrument(skip(tree), level = "debug")]
@@ -57,21 +57,21 @@ where
 
     /// returns existing value if any was set
     #[instrument(skip_all, level = "debug")]
-    pub fn insert(&self, key: &'a Key, value: &'a Value) -> Result<Option<Value>, E> {
+    pub fn insert(&self, key: &'a Key, value: &'a Value) -> Result<Option<Value>, Error<E>> {
         let key = self.prefix(key);
         let existing = self.tree.insert(&key, value)?;
         Ok(existing)
     }
 
     #[instrument(skip_all, level = "debug")]
-    pub fn get(&self, key: &'a Key) -> Result<Option<Value>, E> {
+    pub fn get(&self, key: &'a Key) -> Result<Option<Value>, Error<E>> {
         let key = self.prefix(key);
         let value = self.tree.get(&key)?;
         Ok(value)
     }
 
     #[instrument(skip_all, level = "debug")]
-    pub fn remove(&self, key: &'a Key) -> Result<Option<Value>, E> {
+    pub fn remove(&self, key: &'a Key) -> Result<Option<Value>, Error<E>> {
         let key = self.prefix(key);
         let value = self.tree.remove(&key)?;
         Ok(value)
@@ -83,14 +83,11 @@ where
     E: fmt::Debug,
     Key: Serialize + DeserializeOwned,
     Value: Serialize + DeserializeOwned,
-    DS: Ranged<Error = E>,
+    DS: DataStore<DbError = E> + byte_store::Ordered,
 {
-    pub fn clear(&self) -> Result<(), E> {
-        let first = self.prefix;
-        let after_last = self.prefix + 1;
-        let iter = self.tree.range::<_, _, Value>(first..after_last)?;
-        for res in iter {
-            let (key, _) = res?;
+    pub fn clear(&self) -> Result<(), Error<E>> {
+        for key in self.keys() {
+            let key = key?;
             self.remove(&key)?;
         }
 

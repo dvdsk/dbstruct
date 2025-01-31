@@ -47,7 +47,7 @@ impl<T, E, DS> Vec<T, DS>
 where
     E: fmt::Debug,
     T: Serialize + DeserializeOwned,
-    DS: DataStore<Error = E>,
+    DS: DataStore<DbError = E>,
 {
     #[doc(hidden)]
     pub fn new(ds: DS, prefix: u8, len: Arc<AtomicUsize>) -> Self {

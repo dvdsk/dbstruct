@@ -2,10 +2,10 @@ use std::collections::HashMap;
 
 #[dbstruct::dbstruct(db=trait)]
 pub struct Test {
-    /// a small list that we dont want structdb to wrap for us
+    /// a small list that we want structdb to store as a single db entry 
     #[dbstruct(Default)]
     small_list: Vec<u8>,
-    /// a small list that we dont want structdb to wrap for us
+    /// a small map that we want structdb to store as a single db entry 
     #[dbstruct(Default)]
     small_map: HashMap<usize, u32>,
 }

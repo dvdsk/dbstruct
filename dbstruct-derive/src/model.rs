@@ -30,7 +30,6 @@ pub struct Model {
     pub ident: Ident,
     pub vis: Visibility,
     pub fields: Vec<Field>,
-    pub keys: DbKey,
     pub backend: Backend,
 }
 
@@ -54,7 +53,6 @@ impl Model {
         Ok(Self {
             vis: input.vis,
             ident: input.ident,
-            keys,
             fields,
             backend,
         })

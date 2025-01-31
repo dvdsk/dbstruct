@@ -40,7 +40,7 @@ fn new_impl(new: NewMethod) -> TokenStream {
         error_ty,
     } = new;
     quote!(
-        #vis fn new(#arg) -> Result<Self, dbstruct::Error<#error_ty>> {
+        #vis fn new(#arg) -> Result<Self, ::dbstruct::Error<#error_ty>> {
             #(#locals)*
             Ok(Self {
                 ds,

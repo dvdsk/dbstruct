@@ -22,7 +22,7 @@ impl<T, E, DS> DefaultTrait<T, DS>
 where
     E: fmt::Debug,
     T: Serialize + DeserializeOwned + Default,
-    DS: DataStore<Error = E>,
+    DS: DataStore<DbError = E>,
 
 {
     #[doc(hidden)]

@@ -8,16 +8,16 @@ use serde::Serialize;
 /// Base trait needed by every wrapper. It is usually more convenient to implement
 /// [`ByteStore`][super::byte_store::ByteStore] instead.
 pub trait DataStore {
-    type Error: fmt::Debug;
-    fn get<K, V>(&self, key: &K) -> Result<Option<V>, Self::Error>
+    type DbError: fmt::Debug;
+    fn get<K, V>(&self, key: &K) -> Result<Option<V>, crate::Error<Self::DbError>>
     where
         K: Serialize,
         V: DeserializeOwned;
-    fn remove<K, V>(&self, key: &K) -> Result<Option<V>, Self::Error>
+    fn remove<K, V>(&self, key: &K) -> Result<Option<V>, crate::Error<Self::DbError>>
     where
         K: Serialize,
         V: DeserializeOwned;
-    fn insert<'a, K, V>(&self, key: &'a K, val: &'a V) -> Result<Option<V>, Self::Error>
+    fn insert<'a, K, V>(&self, key: &'a K, val: &'a V) -> Result<Option<V>, crate::Error<Self::DbError>>
     where
         K: Serialize,
         V: Serialize + DeserializeOwned;
@@ -31,12 +31,12 @@ pub trait Atomic: DataStore {
         &self,
         key: &K,
         op: impl FnMut(V) -> V + Clone,
-    ) -> Result<(), Self::Error>
+    ) -> Result<(), Self::DbError>
     where
         K: Serialize,
         V: Serialize + DeserializeOwned;
     /// on error the update is aborted
-    fn conditional_update<K, V>(&self, key: &K, new: &V, expected: &V) -> Result<(), Self::Error>
+    fn conditional_update<K, V>(&self, key: &K, new: &V, expected: &V) -> Result<(), Self::DbError>
     where
         K: Serialize,
         V: Serialize + DeserializeOwned;
@@ -52,7 +52,7 @@ pub trait Ordered: DataStore {
     fn get_lt<InKey, OutKey, Value>(
         &self,
         key: &InKey,
-    ) -> Result<Option<(OutKey, Value)>, Self::Error>
+    ) -> Result<Option<(OutKey, Value)>, Self::DbError>
     where
         InKey: Serialize,
         OutKey: Serialize + DeserializeOwned,
@@ -60,7 +60,7 @@ pub trait Ordered: DataStore {
     fn get_gt<InKey, OutKey, Value>(
         &self,
         key: &InKey,
-    ) -> Result<Option<(OutKey, Value)>, Self::Error>
+    ) -> Result<Option<(OutKey, Value)>, Self::DbError>
     where
         InKey: Serialize,
         OutKey: Serialize + DeserializeOwned,
@@ -78,7 +78,7 @@ pub trait Ranged: DataStore {
     fn range<InKey, OutKey, Value>(
         &self,
         range: impl RangeBounds<InKey>,
-    ) -> Result<impl Iterator<Item = Result<(OutKey, Value), Self::Error>>, Self::Error>
+    ) -> Result<impl Iterator<Item = Result<(OutKey, Value), Self::DbError>>, Self::DbError>
     where
         InKey: Serialize,
         OutKey: Serialize + DeserializeOwned,

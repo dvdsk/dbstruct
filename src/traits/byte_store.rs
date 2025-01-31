@@ -62,21 +62,22 @@ where
     B: AsRef<[u8]>,
     BS: ByteStore<Error = E, Bytes = B>,
 {
-    type Error = Error<E>;
+    type DbError = Error<E>;
 
     #[instrument(skip_all, level = "trace", err)]
-    fn get<K, V>(&self, key: &K) -> Result<Option<V>, Self::Error>
+    fn get<K, V>(&self, key: &K) -> Result<Option<V>, Error<Self::DbError>>
     where
         K: Serialize,
         V: DeserializeOwned,
     {
-        let key = bincode::serialize(key).map_err(Error::SerializingKey)?;
+        let key = bincode::serialize(key).map_err(Error::<Self::DbError>::SerializingKey)?;
         trace!("getting value for key: {key:?}");
-        let val = BS::get(self, &key)?;
+        let val = BS::get(self, &key).map_err(Error::Database)?;
         Ok(match val {
             Some(bytes) => {
                 trace!("bytes of value: {:?}", bytes.as_ref());
-                let val = bincode::deserialize(bytes.as_ref()).map_err(Error::DeSerializingVal)?;
+                let val = bincode::deserialize(bytes.as_ref())
+                    .map_err(Error::<Self::DbError>::DeSerializingVal)?;
                 Some(val)
             }
             None => None,
@@ -84,18 +85,19 @@ where
     }
 
     #[instrument(skip_all, level = "trace", err)]
-    fn remove<K, V>(&self, key: &K) -> Result<Option<V>, Self::Error>
+    fn remove<K, V>(&self, key: &K) -> Result<Option<V>, Error<Self::DbError>>
     where
         K: Serialize,
         V: DeserializeOwned,
     {
-        let key = bincode::serialize(key).map_err(Error::SerializingKey)?;
+        let key = bincode::serialize(key).map_err(Error::<Self::DbError>::SerializingKey)?;
         trace!("removing at key: {key:?}");
-        let val = BS::remove(self, &key)?;
+        let val = BS::remove(self, &key).map_err(Error::Database)?;
         Ok(match val {
             Some(bytes) => {
                 trace!("bytes of current value: {:?}", bytes.as_ref());
-                let val = bincode::deserialize(bytes.as_ref()).map_err(Error::DeSerializingVal)?;
+                let val = bincode::deserialize(bytes.as_ref())
+                    .map_err(Error::<Self::DbError>::DeSerializingVal)?;
                 Some(val)
             }
             None => None,
@@ -103,20 +105,23 @@ where
     }
 
     #[instrument(skip_all, level = "trace", err)]
-    fn insert<K, V>(&self, key: &K, val: &V) -> Result<Option<V>, Self::Error>
+    fn insert<K, V>(&self, key: &K, val: &V) -> Result<Option<V>, Error<Self::DbError>>
     where
         K: Serialize,
         V: Serialize + DeserializeOwned,
     {
-        let key = bincode::serialize(key).map_err(Error::SerializingKey)?;
-        let val = bincode::serialize(val).map_err(Error::SerializingValue)?;
+        let key = bincode::serialize(key).map_err(Error::<Self::DbError>::SerializingKey)?;
+        let val = bincode::serialize(val).map_err(Error::<Self::DbError>::SerializingValue)?;
         trace!("inserting key: {key:?}, val: {val:?}");
-        let existing = BS::insert(self, &key, &val)?;
+        let existing = BS::insert(self, &key, &val).map_err(Error::Database)?;
         Ok(match existing {
             Some(bytes) => {
                 trace!("bytes of previous value: {:?}", bytes.as_ref());
                 trace!("deserializing to: {}", std::any::type_name::<V>());
-                Some(bincode::deserialize(bytes.as_ref()).map_err(Error::DeSerializingVal)?)
+                Some(
+                    bincode::deserialize(bytes.as_ref())
+                        .map_err(Error::<Self::DbError>::DeSerializingVal)?,
+                )
             }
             None => None,
         })
@@ -134,7 +139,7 @@ where
         &self,
         key: &K,
         mut op: impl FnMut(V) -> V + Clone,
-    ) -> Result<(), Self::Error>
+    ) -> Result<(), Self::DbError>
     where
         K: Serialize,
         V: Serialize + DeserializeOwned,
@@ -169,7 +174,7 @@ where
     }
 
     #[instrument(skip_all, level = "trace", err)]
-    fn conditional_update<K, V>(&self, key: &K, new: &V, expected: &V) -> Result<(), Self::Error>
+    fn conditional_update<K, V>(&self, key: &K, new: &V, expected: &V) -> Result<(), Self::DbError>
     where
         K: Serialize,
         V: Serialize + DeserializeOwned,
@@ -192,7 +197,7 @@ where
     fn get_lt<InKey, OutKey, Value>(
         &self,
         key: &InKey,
-    ) -> Result<Option<(OutKey, Value)>, Self::Error>
+    ) -> Result<Option<(OutKey, Value)>, Self::DbError>
     where
         InKey: Serialize,
         OutKey: Serialize + DeserializeOwned,
@@ -221,7 +226,7 @@ where
     fn get_gt<InKey, OutKey, Value>(
         &self,
         key: &InKey,
-    ) -> Result<Option<(OutKey, Value)>, Self::Error>
+    ) -> Result<Option<(OutKey, Value)>, Self::DbError>
     where
         InKey: Serialize,
         OutKey: Serialize + DeserializeOwned,
@@ -288,7 +293,7 @@ where
     fn range<InKey, OutKey, Value>(
         &self,
         range: impl RangeBounds<InKey>,
-    ) -> Result<impl Iterator<Item = Result<(OutKey, Value), Self::Error>>, Self::Error>
+    ) -> Result<impl Iterator<Item = Result<(OutKey, Value), Self::DbError>>, Self::DbError>
     where
         InKey: Serialize,
         OutKey: Serialize + DeserializeOwned,

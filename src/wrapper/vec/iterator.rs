@@ -11,7 +11,7 @@ pub struct VecIter<'a, T, E, DS>
 where
     E: fmt::Debug,
     T: Serialize + DeserializeOwned,
-    DS: DataStore<Error = E>,
+    DS: DataStore<DbError = E>,
 {
     pub(crate) current: usize,
     pub(crate) vec: &'a Vec<T, DS>,
@@ -21,7 +21,7 @@ impl<'a, T, E, DS> Iterator for VecIter<'a, T, E, DS>
 where
     E: fmt::Debug,
     T: Serialize + DeserializeOwned,
-    DS: DataStore<Error = E>,
+    DS: DataStore<DbError = E>,
 {
     type Item = Result<T, Error<E>>;
 
@@ -39,7 +39,7 @@ impl<'a, T, E, DS> IntoIterator for &'a Vec<T, DS>
 where
     E: fmt::Debug,
     T: Serialize + DeserializeOwned,
-    DS: DataStore<Error = E>,
+    DS: DataStore<DbError = E>,
 {
     type IntoIter = VecIter<'a, T, E, DS>;
     type Item = Result<T, Error<E>>;
