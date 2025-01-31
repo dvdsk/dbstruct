@@ -1,6 +1,7 @@
 use core::fmt;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
+use std::borrow::Borrow;
 use std::marker::PhantomData;
 use tracing::{instrument, trace};
 
@@ -24,7 +25,7 @@ where
 }
 
 #[derive(Serialize)]
-pub struct Prefixed<'a, K> {
+pub struct Prefixed<'a, K: ?Sized> {
     prefix: u8,
     key: &'a K,
 }
@@ -47,7 +48,11 @@ where
         }
     }
 
-    fn prefix(&self, key: &'a Key) -> Prefixed<'a, Key> {
+    fn prefix<Q>(&self, key: &'a Q) -> Prefixed<'a, Q>
+    where
+        Key: Borrow<Q>,
+        Q: Serialize + ?Sized,
+    {
         trace!("prefixing key with: {}", self.prefix);
         Prefixed {
             prefix: self.prefix,
@@ -67,7 +72,6 @@ where
     /// or if serialization failed.
     ///
     /// # Examples
-    ///
     /// ```
     /// #[dbstruct::dbstruct(db=btreemap)]
     /// struct Test {
@@ -86,7 +90,11 @@ where
     /// # }
     /// ```
     #[instrument(skip_all, level = "debug")]
-    pub fn insert(&self, key: &'a Key, value: &'a Value) -> Result<Option<Value>, Error<E>> {
+    pub fn insert<K>(&self, key: &'a K, value: &'a Value) -> Result<Option<Value>, Error<E>>
+    where
+        Key: std::borrow::Borrow<K>,
+        K: Serialize + ?Sized,
+    {
         let key = self.prefix(key);
         let existing = self.tree.insert(&key, value)?;
         Ok(existing)
@@ -99,7 +107,6 @@ where
     /// or if serialization failed.
     ///
     /// # Examples
-    ///
     /// ```
     /// #[dbstruct::dbstruct(db=btreemap)]
     /// struct Test {
@@ -115,7 +122,11 @@ where
     /// # }
     /// ```
     #[instrument(skip_all, level = "debug")]
-    pub fn get(&self, key: &'a Key) -> Result<Option<Value>, Error<E>> {
+    pub fn get<K>(&self, key: &'a K) -> Result<Option<Value>, Error<E>>
+    where
+        Key: std::borrow::Borrow<K>,
+        K: Serialize + ?Sized,
+    {
         let key = self.prefix(key);
         let value = self.tree.get(&key)?;
         Ok(value)
@@ -145,7 +156,11 @@ where
     /// # }
     /// ```
     #[instrument(skip_all, level = "debug")]
-    pub fn remove(&self, key: &'a Key) -> Result<Option<Value>, Error<E>> {
+    pub fn remove<K>(&self, key: &'a K) -> Result<Option<Value>, Error<E>>
+    where
+        Key: std::borrow::Borrow<K>,
+        K: Serialize + ?Sized,
+    {
         let key = self.prefix(key);
         let value = self.tree.remove(&key)?;
         Ok(value)
