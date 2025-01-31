@@ -20,7 +20,7 @@ syn = { version = "2", features = ["full", "extra-traits"] }
 quote = "1"
 proc-macro2 = "1" 
 proc-macro-error = "1"
-thiserror = "1"
+thiserror = "2"
 itertools = "0.12"
 
 [lib]
