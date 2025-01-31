@@ -63,7 +63,7 @@ where
                 return Ok(());
             };
 
-            if let Err(error) = self.insert(&key, &value) {
+            if let Err(error) = self.insert(key, value) {
                 return Err(ExtendError {
                     unadded: (key, value),
                     iter,

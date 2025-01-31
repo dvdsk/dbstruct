@@ -67,7 +67,7 @@ where
                 return Ok(());
             };
 
-            if let Err(error) = self.push(&item) {
+            if let Err(error) = self.push(item) {
                 return Err(ExtendError {
                     unadded: item,
                     iter,

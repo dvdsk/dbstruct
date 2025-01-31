@@ -22,7 +22,7 @@ fn main() {
     db.small_list().set(&list).unwrap();
     assert_eq!(list, db.small_list().get().unwrap());
 
-    let map: HashMap<_,_> = (4..8).into_iter().enumerate().collect();
+    let map: HashMap<_,_> = (4..8).enumerate().collect();
     db.small_map().set(&map).unwrap();
     assert_eq!(map, db.small_map().get().unwrap());
 }

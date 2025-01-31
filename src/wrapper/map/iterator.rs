@@ -23,7 +23,7 @@ where
     ds: &'a DS,
 }
 
-impl<'a, K, V, E, DS> Iterator for Iter<'a, K, V, E, DS>
+impl<K, V, E, DS> Iterator for Iter<'_, K, V, E, DS>
 where
     E: fmt::Debug,
     K: Serialize + DeserializeOwned,
@@ -66,7 +66,7 @@ where
     E: fmt::Debug,
     DS: DataStore<DbError = E> + byte_store::Ordered;
 
-impl<'a, K, V, E, DS> Iterator for Values<'a, K, V, E, DS>
+impl<K, V, E, DS> Iterator for Values<'_, K, V, E, DS>
 where
     K: Serialize + DeserializeOwned,
     V: Serialize + DeserializeOwned,
@@ -87,7 +87,7 @@ where
     E: fmt::Debug,
     DS: DataStore<DbError = E> + byte_store::Ordered;
 
-impl<'a, K, V, E, DS> Iterator for Keys<'a, K, V, E, DS>
+impl<K, V, E, DS> Iterator for Keys<'_, K, V, E, DS>
 where
     K: Serialize + DeserializeOwned,
     V: Serialize + DeserializeOwned,
@@ -101,7 +101,7 @@ where
     }
 }
 
-impl<'a, Key, Value, E, DS> Map<'a, Key, Value, DS>
+impl<Key, Value, E, DS> Map<'_, Key, Value, DS>
 where
     E: fmt::Debug,
     Key: Serialize + DeserializeOwned,

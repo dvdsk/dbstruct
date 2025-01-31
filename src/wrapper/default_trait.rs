@@ -28,7 +28,7 @@ where
     #[doc(hidden)]
     pub fn new(ds: DS, key: u8) -> Self {
         Self {
-            phantom: PhantomData::default(),
+            phantom: PhantomData,
             ds,
             key,
         }

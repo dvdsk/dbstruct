@@ -69,7 +69,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let computers = db.computers().get().unwrap();
     let earth = computers.get(&"Earth".to_owned());
-    assert_eq!(earth.unwrap().secret, true);
+    assert!(earth.unwrap().secret);
 
     Ok(())
 }

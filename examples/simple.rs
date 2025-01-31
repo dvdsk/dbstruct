@@ -59,5 +59,5 @@ fn main() {
     db.computers().insert(&"Earth".to_owned(), &a_planet).unwrap();
 
     let earth = db.computers().get(&"Earth".to_owned()).unwrap();
-    assert_eq!(earth.unwrap().secret, true);
+    assert!(earth.unwrap().secret);
 }

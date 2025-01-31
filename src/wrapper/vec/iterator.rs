@@ -17,7 +17,7 @@ where
     pub(crate) vec: &'a Vec<T, DS>,
 }
 
-impl<'a, T, E, DS> Iterator for VecIter<'a, T, E, DS>
+impl<T, E, DS> Iterator for VecIter<'_, T, E, DS>
 where
     E: fmt::Debug,
     T: Serialize + DeserializeOwned,

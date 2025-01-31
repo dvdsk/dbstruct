@@ -78,7 +78,7 @@ where
     }
 }
 
-impl<'a, Key, Value, E, DS> Map<'a, Key, Value, DS>
+impl<Key, Value, E, DS> Map<'_, Key, Value, DS>
 where
     E: fmt::Debug,
     Key: Serialize + DeserializeOwned,

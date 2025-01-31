@@ -26,7 +26,7 @@ where
     #[doc(hidden)]
     pub fn new(ds: DS, key: u8) -> Self {
         Self {
-            phantom: PhantomData::default(),
+            phantom: PhantomData,
             ds,
             key,
         }
@@ -38,7 +38,7 @@ where
     }
 
     pub fn get(&self) -> Result<Option<T>, Error<E>> {
-        Ok(self.ds.get(&self.key)?)
+        self.ds.get(&self.key)
     }
 }
 

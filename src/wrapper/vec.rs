@@ -69,7 +69,7 @@ where
             prefix: self.prefix,
             index,
         };
-        Ok(self.ds.get(&key)?)
+        self.ds.get(&key)
     }
 
     pub fn push(&self, value: &T) -> Result<(), Error<E>> {
@@ -101,7 +101,7 @@ where
         };
 
         debug!("popping from vector (index: {index})");
-        Ok(self.ds.remove(&key)?)
+        self.ds.remove(&key)
     }
 
     pub fn clear(&self) -> Result<(), Error<E>> {
@@ -129,8 +129,8 @@ mod tests {
     pub(crate) fn empty<T: Clone + Serialize + DeserializeOwned>() -> TestVec<T> {
         let ds = stores::BTreeMap::new();
         let len = Arc::new(AtomicUsize::new(0));
-        let vec = Vec::new(ds, 1, len);
-        vec
+        
+        Vec::new(ds, 1, len)
     }
 
     mod given_empty_vec {
