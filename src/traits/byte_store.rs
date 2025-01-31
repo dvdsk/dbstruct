@@ -106,10 +106,11 @@ where
     }
 
     #[instrument(skip_all, level = "trace", err)]
-    fn insert<K, V>(&self, key: &K, val: &V) -> Result<Option<V>, Error<Self::DbError>>
+    fn insert<K, V, OwnedV>(&self, key: &K, val: &V) -> Result<Option<OwnedV>, Error<Self::DbError>>
     where
         K: Serialize,
-        V: Serialize + DeserializeOwned,
+        V: Serialize + ?Sized,
+        OwnedV: std::borrow::Borrow<V> + DeserializeOwned,
     {
         let key = bincode::serialize(key).map_err(Error::<Self::DbError>::SerializingKey)?;
         let val = bincode::serialize(val).map_err(Error::<Self::DbError>::SerializingValue)?;

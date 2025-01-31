@@ -52,7 +52,7 @@ mod tests {
     #[test]
     fn get_then_insert() {
         let ds = HashMap::new();
-        let existing = ds.insert(&1, &2).unwrap();
+        let existing: Option<u16> = ds.insert(&1, &2).unwrap();
         assert_eq!(existing, None);
         let val: u8 = ds.remove(&1).unwrap().unwrap();
         assert_eq!(val, 2);

@@ -18,10 +18,11 @@ pub trait DataStore {
     where
         K: Serialize,
         V: DeserializeOwned;
-    fn insert<'a, K, V>(&self, key: &'a K, val: &'a V) -> Result<Option<V>, crate::Error<Self::DbError>>
+    fn insert<'a, K, V, OwnedV>(&self, key: &'a K, val: &'a V) -> Result<Option<OwnedV>, crate::Error<Self::DbError>>
     where
         K: Serialize,
-        V: Serialize + DeserializeOwned;
+        V: Serialize + ?Sized,
+        OwnedV: std::borrow::Borrow<V> + DeserializeOwned;
 }
 
 /// This trait enables wrapper to provide `update` and `conditional` update.

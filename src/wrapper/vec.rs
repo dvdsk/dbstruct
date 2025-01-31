@@ -79,7 +79,7 @@ where
             index: prev_len,
         };
         debug!("pushing onto vector (index: {prev_len})");
-        self.ds.insert(&key, value)?;
+        self.ds.insert::<Prefixed, T, T>(&key, value)?;
         Ok(())
     }
 
@@ -129,7 +129,7 @@ mod tests {
     pub(crate) fn empty<T: Clone + Serialize + DeserializeOwned>() -> TestVec<T> {
         let ds = stores::BTreeMap::new();
         let len = Arc::new(AtomicUsize::new(0));
-        
+
         Vec::new(ds, 1, len)
     }
 

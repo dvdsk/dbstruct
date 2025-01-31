@@ -33,7 +33,7 @@ where
     }
 
     pub fn set(&mut self, value: &T) -> Result<(), Error<E>> {
-        self.ds.insert(&self.key, value)?;
+        self.ds.insert::<_, T, T>(&self.key, value)?;
         Ok(())
     }
 

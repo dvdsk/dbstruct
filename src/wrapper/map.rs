@@ -80,20 +80,22 @@ where
     ///
     ///	# fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// let db = Test::new()?;
-    /// assert_eq!(db.map().insert(&37, &"a".to_owned())?, None);
+    /// assert_eq!(db.map().insert(&37, "a")?, None);
     /// assert_eq!(db.map().is_empty()?, false);
     ///
-    /// db.map().insert(&37, &"b".to_owned())?;
-    /// assert_eq!(db.map().insert(&37, &"c".to_owned())?, Some("b".to_owned()));
+    /// db.map().insert(&37, "b")?;
+    /// assert_eq!(db.map().insert(&37, "c")?, Some("b".to_owned()));
     /// assert_eq!(db.map().get(&37)?, Some("c".to_owned()));
     /// # Ok(())
     /// # }
     /// ```
     #[instrument(skip_all, level = "debug")]
-    pub fn insert<K>(&self, key: &'a K, value: &'a Value) -> Result<Option<Value>, Error<E>>
+    pub fn insert<K, V>(&self, key: &'a K, value: &'a V) -> Result<Option<Value>, Error<E>>
     where
         Key: std::borrow::Borrow<K>,
         K: Serialize + ?Sized,
+        Value: std::borrow::Borrow<V>,
+        V: Serialize + ?Sized,
     {
         let key = self.prefix(key);
         let existing = self.tree.insert(&key, value)?;

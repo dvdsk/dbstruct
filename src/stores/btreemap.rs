@@ -89,7 +89,7 @@ mod tests {
     #[test]
     fn get_then_insert() {
         let ds = BTreeMap::new();
-        let existing = ds.insert(&1, &2).unwrap();
+        let existing: Option<u16> = ds.insert(&1, &2).unwrap();
         assert_eq!(existing, None);
         let val: u8 = ds.remove(&1).unwrap().unwrap();
         assert_eq!(val, 2);
@@ -98,9 +98,9 @@ mod tests {
     #[test]
     fn get_lt() {
         let ds = BTreeMap::new();
-        ds.insert(&1, &2).unwrap();
-        ds.insert(&10, &4).unwrap();
-        ds.insert(&20, &8).unwrap();
+        ds.insert::<_, u16, u16>(&1, &2).unwrap();
+        ds.insert::<_, u16, u16>(&10, &4).unwrap();
+        ds.insert::<_, u16, u16>(&20, &8).unwrap();
         let (key, val): (u8, u8) = ds.get_lt(&11).unwrap().unwrap();
         assert_eq!(key, 10);
         assert_eq!(val, 4);
@@ -109,9 +109,9 @@ mod tests {
     #[test]
     fn get_gt() {
         let ds = BTreeMap::new();
-        ds.insert(&1, &2).unwrap();
-        ds.insert(&10, &4).unwrap();
-        ds.insert(&20, &8).unwrap();
+        ds.insert::<_, u16, u16>(&1, &2).unwrap();
+        ds.insert::<_, u16, u16>(&10, &4).unwrap();
+        ds.insert::<_, u16, u16>(&20, &8).unwrap();
         let (key, val): (u8, u8) = ds.get_gt(&10).unwrap().unwrap();
         assert_eq!(key, 20);
         assert_eq!(val, 8);
