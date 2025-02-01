@@ -8,8 +8,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
- - the map wrapper (HashMap like structure) now supports `remove`
+ - examples added to the documentation of all wrapper member functions
+ - the map wrapper (`HashMap` like structure) now supports `remove`
  - the vec wrapper now supports `clear`
+
+### Changed
+ - **Breaking:** `TryExtend` trait removed in favor of member functions `try_extend`
+ - **Breaking:** `try_extend` now works on borrowed values instead of owned.
+ - most wrapper functions now accept borrowed items similar to how std
+   `HashMap` does
+ - returned errors are now clearly generic over the underlying database error
+   type
+
+### Fixed
+ - can no longer panic in vec/map iterator.
 
 ## [0.4.1] - 2023-08-18
 
