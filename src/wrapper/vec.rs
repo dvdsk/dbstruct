@@ -59,6 +59,28 @@ where
         }
     }
 
+    /// Returns the element at `index` if there is one.
+    ///
+    /// # Errors
+    /// This can fail if the underlying database ran into a problem
+    /// or if serialization failed.
+    ///
+    /// # Examples
+    /// ```
+    /// #[dbstruct::dbstruct(db=btreemap)]
+    /// struct Test {
+    ///	    list: Vec<String>,
+    ///	}
+    ///
+    ///	# fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// let db = Test::new()?;
+    /// assert_eq!(db.list().get(0)?, None);
+    /// db.list().push("a")?;
+    /// db.list().push("b")?;
+    /// assert_eq!(db.list().get(0)?, Some("a".to_owned()));
+    /// # Ok(())
+    /// # }
+    /// ```
     pub fn get(&self, index: usize) -> Result<Option<T>, Error<E>> {
         let len = self.len();
         if index >= len {
@@ -72,17 +94,65 @@ where
         self.ds.get(&key)
     }
 
-    pub fn push(&self, value: &T) -> Result<(), Error<E>> {
+    /// Appends an element to the back of the collection.
+    ///
+    /// The item may be any borrowed form of the lists item type, but the
+    /// serialized form must match the not borrowed serialized form.
+    ///
+    /// # Errors
+    /// This can fail if the underlying database ran into a problem
+    /// or if serialization failed.
+    ///
+    /// # Examples
+    /// ```
+    /// #[dbstruct::dbstruct(db=btreemap)]
+    /// struct Test {
+    ///	    list: Vec<String>,
+    ///	}
+    ///
+    ///	# fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// let db = Test::new()?;
+    /// db.list().push("a")?;
+    /// db.list().push("b")?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn push<Q>(&self, value: &Q) -> Result<(), Error<E>>
+    where
+        T: std::borrow::Borrow<Q>,
+        Q: Serialize + ?Sized,
+    {
         let prev_len = self.len.fetch_add(1, Ordering::SeqCst);
         let key = Prefixed {
             prefix: self.prefix,
             index: prev_len,
         };
         debug!("pushing onto vector (index: {prev_len})");
-        self.ds.insert::<Prefixed, T, T>(&key, value)?;
+        self.ds.insert::<Prefixed, Q, T>(&key, value)?;
         Ok(())
     }
 
+    /// Removes the last element from this database vector and returns it,
+    /// or `None` if it is empty
+    ///
+    /// # Errors
+    /// This can fail if the underlying database ran into a problem
+    /// or if serialization failed.
+    ///
+    /// # Examples
+    /// ```
+    /// #[dbstruct::dbstruct(db=btreemap)]
+    /// struct Test {
+    ///	    list: Vec<String>,
+    ///	}
+    ///
+    ///	# fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// let db = Test::new()?;
+    /// db.list().extend(["a", "b", "c"])?;
+    /// assert_eq!(db.list().pop()?, Some("c".to_owned()));
+    /// # Ok(())
+    /// # }
+    /// ```
     pub fn pop(&self) -> Result<Option<T>, Error<E>> {
         let old_len = self
             .len
@@ -126,7 +196,7 @@ mod tests {
     use crate::stores;
 
     pub(crate) type TestVec<T> = Vec<T, stores::BTreeMap>;
-    pub(crate) fn empty<T: Clone + Serialize + DeserializeOwned>() -> TestVec<T> {
+    pub(crate) fn empty<T: Serialize + DeserializeOwned>() -> TestVec<T> {
         let ds = stores::BTreeMap::new();
         let len = Arc::new(AtomicUsize::new(0));
 
@@ -144,7 +214,7 @@ mod tests {
 
         #[test]
         fn push_increases_the_len() {
-            let vec = empty();
+            let vec: Vec<u16, _> = empty();
             vec.push(&42).unwrap();
             assert_eq!(vec.len(), 1)
         }
@@ -172,7 +242,7 @@ mod tests {
 
         #[test]
         fn third_pop_is_none() {
-            let vec = empty();
+            let vec: Vec<u16, stores::BTreeMap> = empty();
             vec.push(&42).unwrap();
             vec.push(&43).unwrap();
 

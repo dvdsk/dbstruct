@@ -55,10 +55,11 @@ where
 #[cfg(test)]
 mod tests {
     use super::super::tests::*;
+    use crate::wrapper::Vec;
 
     #[test]
     fn trivial() {
-        let vec = empty();
+        let vec: Vec<u16, _> = empty();
         vec.push(&42).unwrap();
         vec.push(&13).unwrap();
         vec.push(&7).unwrap();
@@ -72,7 +73,7 @@ mod tests {
 
     #[test]
     fn push_post_iter() {
-        let vec = empty();
+        let vec: Vec<u16, _> = empty();
         vec.push(&42).unwrap();
         vec.push(&13).unwrap();
 
@@ -88,7 +89,7 @@ mod tests {
 
     #[test]
     fn pop_post_iter_is_seen() {
-        let vec = empty();
+        let vec: Vec<u16, _> = empty();
         vec.push(&42).unwrap();
         vec.push(&13).unwrap();
 
@@ -104,7 +105,7 @@ mod tests {
 
     #[test]
     fn pop_during_iter() {
-        let vec = empty();
+        let vec: Vec<u16, _> = empty();
         vec.push(&42).unwrap();
         vec.push(&13).unwrap();
 

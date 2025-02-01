@@ -9,11 +9,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .temporary(true)
         .open()?
         .open_tree("MacroInput")?;
-    let db = Test::new(ds).unwrap();
-    db.the_awnser().set(&42).unwrap();
-    db.the_question()
-        .set(&"The Ultimate Question".to_owned())
-        .unwrap();
+    let db = Test::new(ds)?;
+    db.the_awnser().set(&42)?;
+    db.the_question().set("The Ultimate Question")?;
 
     Ok(())
 }

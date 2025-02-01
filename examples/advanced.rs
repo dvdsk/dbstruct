@@ -21,10 +21,10 @@ pub struct Test {
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let dir = tempdir::TempDir::new("dbstruct_examples").unwrap();
+    let dir = tempdir::TempDir::new("dbstruct_examples")?;
     let path = dir.path().join("advanced");
 
-    let db = Test::new(&path).unwrap();
+    let db = Test::new(&path)?;
 
     // we get the `Default` value for u8
     assert_eq!(0, db.the_awnser().get()?);
@@ -50,26 +50,26 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let a_planet = Computer {
         secret: true,
         question: "What is The Ultimate Question".to_owned(),
-        awnser: None, // unknown .... (go read: `The Restaurant at the End of the Universe`)
+        awnser: None, // unknown ... (read: `The Restaurant at the End of the Universe`)
     };
     let mut computers = HashMap::new();
     computers.insert("Deep Thought".to_owned(), deep_thought);
     computers.insert("Earth".to_owned(), a_planet);
     db.computers().set(&computers)?;
 
-    // dropping the db here simulates the program 
+    // dropping the db here simulates the program
     // stopping and restarting
     std::mem::drop(db); // this closes the db
-    let db = Test::new(&path).unwrap();
+    let db = Test::new(&path)?;
 
     assert_eq!(42u8, db.the_awnser().get()?);
 
     let second = &db.questions().get()?[1];
     assert_eq!(&"What is the Universe".to_owned(), second);
 
-    let computers = db.computers().get().unwrap();
+    let computers = db.computers().get()?;
     let earth = computers.get(&"Earth".to_owned());
-    assert!(earth.unwrap().secret);
+    assert_eq!(earth.map(|c| c.secret), Some(true));
 
     Ok(())
 }

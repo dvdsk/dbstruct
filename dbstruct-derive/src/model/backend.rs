@@ -153,7 +153,7 @@ impl Backend {
         match self {
             Backend::Sled => vec![Atomic, Ordered].into_iter(),
             Backend::HashMap => vec![].into_iter(),
-            Backend::BTreeMap => vec![].into_iter(),
+            Backend::BTreeMap => vec![Atomic, Ordered].into_iter(),
             Backend::Trait { .. } => unreachable!("should never be called when backend is Trait"),
             #[cfg(test)]
             Backend::Test => vec![].into_iter(),

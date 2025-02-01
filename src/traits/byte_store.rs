@@ -14,7 +14,7 @@ use super::data_store::DataStore;
 use crate::Error;
 
 /// A helper trait, implementing this automatically implements
-/// [`DataStore`][super::data_store::DataStore]
+/// [`DataStore`]
 pub trait ByteStore {
     type DbError: fmt::Debug;
     type Bytes: AsRef<[u8]>;
@@ -24,7 +24,7 @@ pub trait ByteStore {
 }
 
 /// A helper trait, implementing this automatically implements
-/// [`data_store::Atomic`][super::data_store::Atomic]
+/// [`data_store::Atomic`]
 pub trait Atomic: ByteStore {
     /// returns the old value
     fn atomic_update(
@@ -41,7 +41,7 @@ pub trait Atomic: ByteStore {
 }
 
 /// A helper trait, implementing this automatically implements
-/// [`data_store::Ordered`][super::data_store::Ordered]
+/// [`data_store::Ordered`]
 pub trait Ordered: ByteStore {
     /// returns the previous key value pair before key
     fn get_lt(&self, key: &[u8]) -> Result<Option<(Self::Bytes, Self::Bytes)>, Self::DbError>;
@@ -50,7 +50,7 @@ pub trait Ordered: ByteStore {
 }
 
 /// A helper trait, implementing this automatically implements
-/// [`data_store::Ranged`][super::data_store::Ranged]
+/// [`data_store::Ranged`]
 pub trait Ranged: Ordered {
     type Key: AsRef<[u8]>;
     type Iter: Iterator<Item = Result<(Self::Bytes, Self::Bytes), Self::DbError>>;

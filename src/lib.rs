@@ -78,7 +78,6 @@ pub use dbstruct_derive::*;
 
 pub mod stores;
 pub mod traits;
-pub use traits::TryExtend;
 pub use traits::{ByteStore, DataStore};
 pub mod wrapper;
 
