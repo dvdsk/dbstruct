@@ -92,6 +92,7 @@ mod tests {
 
         let iter = ["1", "2", "3", "4"];
         vec.extend(iter).unwrap();
+        assert_eq!(vec.len(), 4);
     }
 
     #[test]

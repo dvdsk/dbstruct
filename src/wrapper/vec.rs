@@ -174,6 +174,28 @@ where
         self.ds.remove(&key)
     }
 
+    /// Clears the list, removing all values.
+    ///
+    /// # Errors
+    /// This can fail if the underlying database ran into a problem
+    /// or if serialization failed.
+    ///
+    /// # Examples
+    /// ```
+    /// #[dbstruct::dbstruct(db=btreemap)]
+    /// struct Test {
+    ///	    list: Vec<String>,
+    ///	}
+    ///
+    ///	# fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// let db = Test::new()?;
+    /// db.list().extend(["a", "b", "c"])?;
+    /// assert!(!db.list().is_empty());
+    /// db.list().clear();
+    /// assert!(db.list().is_empty());
+    /// # Ok(())
+    /// # }
+    /// ```
     pub fn clear(&self) -> Result<(), Error<E>> {
         for _ in 0..self.len() {
             self.pop()?;
@@ -181,10 +203,44 @@ where
         Ok(())
     }
 
+    /// Returns the number of elements in the list, also referred to as its 'length'.
+    ///
+    /// # Examples
+    /// ```
+    /// #[dbstruct::dbstruct(db=btreemap)]
+    /// struct Test {
+    ///	    list: Vec<String>,
+    ///	}
+    ///
+    ///	# fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// let db = Test::new()?;
+    /// db.list().extend(["a", "b", "c"])?;
+    /// assert_eq!(db.list().len(), 3);
+    /// # Ok(())
+    /// # }
+    /// ```
     pub fn len(&self) -> usize {
         self.len.load(Ordering::SeqCst)
     }
 
+    /// Returns `true` if the list has a length of 0.
+    ///
+    /// # Examples
+    /// ```
+    /// #[dbstruct::dbstruct(db=btreemap)]
+    /// struct Test {
+    ///	    list_a: Vec<String>,
+    ///	    list_b: Vec<String>,
+    ///	}
+    ///
+    ///	# fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// let db = Test::new()?;
+    /// db.list_a().extend(["a", "b", "c"])?;
+    /// assert!(!db.list_a().is_empty());
+    /// assert!(db.list_b().is_empty());
+    /// # Ok(())
+    /// # }
+    /// ```
     pub fn is_empty(&self) -> bool {
         self.len() == 0
     }
