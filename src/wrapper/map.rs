@@ -67,6 +67,10 @@ where
     /// If the map did have this key present, the value is updated, and the old
     /// value is returned. The key is not updated, though.
     ///
+    /// The key and or value may be any borrowed form of the map’s key and or
+    /// value type, but the serialized form must match those for the key and
+    /// or value type.
+    ///
     /// # Errors
     /// This can fail if the underlying database ran into a problem
     /// or if serialization failed.
@@ -104,6 +108,9 @@ where
 
     /// Returns a copy of the value corresponding to the key.
     ///
+    /// The key may be any borrowed form of the map’s key type, but the
+    /// serialized form must match those for the key type.
+    ///
     /// # Errors
     /// This can fail if the underlying database ran into a problem
     /// or if serialization failed.
@@ -136,6 +143,9 @@ where
 
     /// Returns a key from the map, returning the value at the key if the key
     /// was previously in the map.
+    ///
+    /// The key may be any borrowed form of the map’s key type, but the
+    /// serialized form must match those for the key type.
     ///
     /// # Errors
     /// This can fail if the underlying database ran into a problem

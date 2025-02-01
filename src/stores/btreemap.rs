@@ -65,6 +65,38 @@ impl byte_store::Ordered for BTreeMap {
     }
 }
 
+impl byte_store::Atomic for BTreeMap {
+    fn atomic_update(
+        &self,
+        key: &[u8],
+        mut op: impl FnMut(Option<&[u8]>) -> Option<Vec<u8>>,
+    ) -> Result<(), Self::DbError> {
+        let mut map = self.0.write().map_err(|_| Self::DbError::Poisoned)?;
+        let curr = map.get(key).map(|c| c.as_slice());
+        if let Some(new) = op(curr) {
+            map.insert(key.to_vec(), new);
+        }
+        Ok(())
+    }
+
+    fn conditional_update(
+        &self,
+        key: &[u8],
+        new: &[u8],
+        expected: &[u8],
+    ) -> Result<(), Self::DbError> {
+        let mut map = self.0.write().map_err(|_| Self::DbError::Poisoned)?;
+        let curr = map.get(key).map(|c| c.as_slice());
+        if let Some(curr) = curr {
+            if curr == expected {
+                map.insert(key.to_vec(), new.to_vec());
+            }
+        }
+
+        Ok(())
+    }
+}
+
 #[cfg(test)]
 impl BTreeMap {
     pub(crate) fn force_error(&self) {

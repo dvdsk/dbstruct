@@ -26,6 +26,7 @@ pub trait ByteStore {
 /// A helper trait, implementing this automatically implements
 /// [`data_store::Atomic`][super::data_store::Atomic]
 pub trait Atomic: ByteStore {
+    /// returns the old value
     fn atomic_update(
         &self,
         key: &[u8],
@@ -178,8 +179,8 @@ where
     #[instrument(skip_all, level = "trace", err)]
     fn conditional_update<K, V>(&self, key: &K, new: &V, expected: &V) -> Result<(), Self::DbError>
     where
-        K: Serialize,
-        V: Serialize + DeserializeOwned,
+        K: Serialize + ?Sized,
+        V: Serialize + ?Sized,
     {
         let key = bincode::serialize(key).map_err(Error::SerializingKey)?;
         let new = bincode::serialize(new).map_err(Error::SerializingValue)?;

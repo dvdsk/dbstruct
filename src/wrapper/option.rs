@@ -1,13 +1,14 @@
 use core::fmt;
+use std::borrow::Borrow;
 use std::marker::PhantomData;
 
-use serde::Serialize;
 use serde::de::DeserializeOwned;
+use serde::Serialize;
 
 use crate::traits::{data_store, DataStore};
 use crate::Error;
 
-/// here missing values are represented by [`Option::None`]. 
+/// here missing values are represented by [`Option::None`].
 pub struct OptionValue<T, DS>
 where
     DS: DataStore,
@@ -32,11 +33,59 @@ where
         }
     }
 
-    pub fn set(&mut self, value: &T) -> Result<(), Error<E>> {
-        self.ds.insert::<_, T, T>(&self.key, value)?;
+    /// Sets the value of this database item.
+    ///
+    /// The argument may be any borrowed form of value type, but the
+    /// serialized form must match that of the value type.
+    ///
+    /// # Errors
+    /// This can fail if the underlying database ran into a problem
+    /// or if serialization failed.
+    ///
+    /// # Examples
+    /// ```
+    /// #[dbstruct::dbstruct(db=btreemap)]
+    /// struct Test {
+    ///	    name: Option<String>,
+    ///	}
+    ///
+    ///	# fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// let db = Test::new()?;
+    /// db.name().set("Artemis")?;
+    /// assert_eq!(db.name().get()?, Some("Artemis".to_owned()));
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn set<Q>(&mut self, value: &Q) -> Result<(), Error<E>>
+    where
+        T: Borrow<Q>,
+        Q: Serialize + ?Sized,
+    {
+        self.ds.insert::<_, Q, T>(&self.key, value)?;
         Ok(())
     }
 
+    /// Get the current value of this item.
+    ///
+    /// # Errors
+    /// This can fail if the underlying database ran into a problem
+    /// or if serialization failed.
+    ///
+    /// # Examples
+    /// ```
+    /// #[dbstruct::dbstruct(db=btreemap)]
+    /// struct Test {
+    ///	    name: Option<String>,
+    ///	}
+    ///
+    ///	# fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// let db = Test::new()?;
+    /// assert_eq!(db.name().get()?, None);
+    /// db.name().set("Artemis")?;
+    /// assert_eq!(db.name().get()?, Some("Artemis".to_owned()));
+    /// # Ok(())
+    /// # }
+    /// ```
     pub fn get(&self) -> Result<Option<T>, Error<E>> {
         self.ds.get(&self.key)
     }
@@ -48,12 +97,69 @@ where
     T: Serialize + DeserializeOwned,
     DS: data_store::Atomic<DbError = E>,
 {
+    /// Updates the value in the database by applying the function `op` on it.
+    ///
+    /// # Errors
+    /// This can fail if the underlying database ran into a problem
+    /// or if serialization failed.
+    ///
+    /// # Examples
+    /// ```
+    /// #[dbstruct::dbstruct(db=btreemap)]
+    /// struct Test {
+    ///	    name: Option<String>,
+    ///	}
+    ///
+    ///	fn first_name(s: String) -> String {
+    ///     s.split_once(" ")
+    ///         .map(|(first, last)| first.to_owned())
+    ///         .unwrap_or(s)
+    ///	}
+    ///
+    ///	# fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// let db = Test::new()?;
+    /// db.name().set("Elijah Baley")?;
+    /// db.name().update(first_name);
+    /// assert_eq!(db.name().get()?, Some("Elijah".to_owned()));
+    /// # Ok(())
+    /// # }
+    /// ```
     pub fn update(&self, op: impl FnMut(T) -> T + Clone) -> Result<(), Error<E>> {
         self.ds.atomic_update(&self.key, op)?;
         Ok(())
     }
-    /// if the value is None then no update is performed
-    pub fn conditional_update(&self, old: T, new: T) -> Result<(), Error<E>> {
+
+    /// Set the value in the database to new if it is currently old.
+    ///
+    /// The arguments may be any borrowed form of value type, but the
+    /// serialized form must match that of the value type.
+    ///
+    /// # Errors
+    /// This can fail if the underlying database ran into a problem
+    /// or if serialization failed.
+    ///
+    /// # Examples
+    /// ```
+    /// #[dbstruct::dbstruct(db=btreemap)]
+    /// struct Test {
+    ///	    name: Option<String>,
+    ///	}
+    ///
+    ///	# fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// let db = Test::new()?;
+    /// db.name().set("Artemis")?;
+    /// db.name().conditional_update("Artemis", "Helios");
+    /// assert_eq!(db.name().get()?, Some("Helios".to_owned()));
+    /// db.name().conditional_update("Artemis", "Zeus");
+    /// assert_eq!(db.name().get()?, Some("Helios".to_owned()));
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn conditional_update<Q>(&self, old: &Q, new: &Q) -> Result<(), Error<E>>
+    where
+        T: Borrow<Q>,
+        Q: Serialize + ?Sized,
+    {
         Ok(self.ds.conditional_update(&self.key, &new, &old)?)
     }
 }

@@ -18,7 +18,11 @@ pub trait DataStore {
     where
         K: Serialize,
         V: DeserializeOwned;
-    fn insert<'a, K, V, OwnedV>(&self, key: &'a K, val: &'a V) -> Result<Option<OwnedV>, crate::Error<Self::DbError>>
+    fn insert<'a, K, V, OwnedV>(
+        &self,
+        key: &'a K,
+        val: &'a V,
+    ) -> Result<Option<OwnedV>, crate::Error<Self::DbError>>
     where
         K: Serialize,
         V: Serialize + ?Sized,
@@ -40,8 +44,8 @@ pub trait Atomic: DataStore {
     /// on error the update is aborted
     fn conditional_update<K, V>(&self, key: &K, new: &V, expected: &V) -> Result<(), Self::DbError>
     where
-        K: Serialize,
-        V: Serialize + DeserializeOwned;
+        K: Serialize + ?Sized,
+        V: Serialize + ?Sized;
 }
 
 /// This trait needed for the Vec wrapper. It is usually more convenient to implement
