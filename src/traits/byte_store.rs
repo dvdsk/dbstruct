@@ -64,7 +64,7 @@ where
     B: AsRef<[u8]>,
     BS: ByteStore<DbError = E, Bytes = B>,
 {
-    type DbError = Error<E>;
+    type DbError = E;
 
     #[instrument(skip_all, level = "trace", err)]
     fn get<K, V>(&self, key: &K) -> Result<Option<V>, Error<Self::DbError>>
@@ -137,12 +137,11 @@ where
     B: AsRef<[u8]>,
     BS: Atomic<DbError = E, Bytes = B>,
 {
-    #[instrument(skip_all, level = "trace", err)]
     fn atomic_update<K, V>(
         &self,
         key: &K,
         mut op: impl FnMut(V) -> V + Clone,
-    ) -> Result<(), Self::DbError>
+    ) -> Result<(), crate::Error<Self::DbError>>
     where
         K: Serialize,
         V: Serialize + DeserializeOwned,
@@ -172,12 +171,16 @@ where
                 None
             }
         };
-        BS::atomic_update(self, &key, bytes_op)?;
+        BS::atomic_update(self, &key, bytes_op).map_err(Error::Database)?;
         res
     }
 
-    #[instrument(skip_all, level = "trace", err)]
-    fn conditional_update<K, V>(&self, key: &K, new: &V, expected: &V) -> Result<(), Self::DbError>
+    fn conditional_update<K, V>(
+        &self,
+        key: &K,
+        new: &V,
+        expected: &V,
+    ) -> Result<(), crate::Error<Self::DbError>>
     where
         K: Serialize + ?Sized,
         V: Serialize + ?Sized,
@@ -185,7 +188,7 @@ where
         let key = bincode::serialize(key).map_err(Error::SerializingKey)?;
         let new = bincode::serialize(new).map_err(Error::SerializingValue)?;
         let expected = bincode::serialize(expected).map_err(Error::SerializingValue)?;
-        BS::conditional_update(self, &key, &new, &expected)?;
+        BS::conditional_update(self, &key, &new, &expected).map_err(Error::Database)?;
         Ok(())
     }
 }
@@ -196,11 +199,10 @@ where
     B: AsRef<[u8]>,
     BS: byte_store::Ordered<DbError = E, Bytes = B>,
 {
-    #[instrument(skip_all, level = "trace", err)]
     fn get_lt<InKey, OutKey, Value>(
         &self,
         key: &InKey,
-    ) -> Result<Option<(OutKey, Value)>, Self::DbError>
+    ) -> Result<Option<(OutKey, Value)>, Error<Self::DbError>>
     where
         InKey: Serialize,
         OutKey: Serialize + DeserializeOwned,
@@ -208,28 +210,31 @@ where
     {
         let key = bincode::serialize(key).map_err(Error::SerializingKey)?;
         trace!("getting less then key: {key:?}");
-        Ok(match byte_store::Ordered::get_lt(self, &key)? {
-            None => None,
-            Some((key, val)) => {
-                trace!(
-                    "key ({}): {:?}, val ({}): {:?}",
-                    std::any::type_name::<OutKey>(),
-                    key.as_ref(),
-                    std::any::type_name::<dyn Value>(),
-                    val.as_ref()
-                );
-                let key = bincode::deserialize(key.as_ref()).map_err(Error::DeSerializingKey)?;
-                let val = bincode::deserialize(val.as_ref()).map_err(Error::DeSerializingVal)?;
-                Some((key, val))
-            }
-        })
+        Ok(
+            match byte_store::Ordered::get_lt(self, &key).map_err(Error::Database)? {
+                None => None,
+                Some((key, val)) => {
+                    trace!(
+                        "key ({}): {:?}, val ({}): {:?}",
+                        std::any::type_name::<OutKey>(),
+                        key.as_ref(),
+                        std::any::type_name::<dyn Value>(),
+                        val.as_ref()
+                    );
+                    let key =
+                        bincode::deserialize(key.as_ref()).map_err(Error::DeSerializingKey)?;
+                    let val =
+                        bincode::deserialize(val.as_ref()).map_err(Error::DeSerializingVal)?;
+                    Some((key, val))
+                }
+            },
+        )
     }
 
-    #[instrument(skip_all, level = "trace", err)]
     fn get_gt<InKey, OutKey, Value>(
         &self,
         key: &InKey,
-    ) -> Result<Option<(OutKey, Value)>, Self::DbError>
+    ) -> Result<Option<(OutKey, Value)>, Error<Self::DbError>>
     where
         InKey: Serialize,
         OutKey: Serialize + DeserializeOwned,
@@ -237,7 +242,7 @@ where
     {
         let key = bincode::serialize(key).map_err(Error::SerializingKey)?;
         trace!("getting greater then key: {key:?}");
-        Ok(match byte_store::Ordered::get_gt(self, &key)? {
+        Ok(match byte_store::Ordered::get_gt(self, &key).map_err(Error::Database)? {
             None => None,
             Some((key, val)) => {
                 trace!(
@@ -296,7 +301,10 @@ where
     fn range<InKey, OutKey, Value>(
         &self,
         range: impl RangeBounds<InKey>,
-    ) -> Result<impl Iterator<Item = Result<(OutKey, Value), Self::DbError>>, Self::DbError>
+    ) -> Result<
+        impl Iterator<Item = Result<(OutKey, Value), crate::Error<Self::DbError>>>,
+        crate::Error<Self::DbError>,
+    >
     where
         InKey: Serialize,
         OutKey: Serialize + DeserializeOwned,

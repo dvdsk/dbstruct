@@ -76,8 +76,8 @@ fn sled_from_path() -> syn::Local {
     let stmt: syn::Stmt = parse_quote!(
     let ds = ::dbstruct::sled::Config::default()
         .path(path)
-        .open()?
-        .open_tree("DbStruct")?;
+        .open().map_err(::dbstruct::Error::Database)?
+        .open_tree("DbStruct").map_err(::dbstruct::Error::Database)?;
     );
     match stmt {
         syn::Stmt::Local(local) => local,

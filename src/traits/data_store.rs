@@ -37,12 +37,12 @@ pub trait Atomic: DataStore {
         &self,
         key: &K,
         op: impl FnMut(V) -> V + Clone,
-    ) -> Result<(), Self::DbError>
+    ) -> Result<(), crate::Error<Self::DbError>>
     where
         K: Serialize,
         V: Serialize + DeserializeOwned;
     /// on error the update is aborted
-    fn conditional_update<K, V>(&self, key: &K, new: &V, expected: &V) -> Result<(), Self::DbError>
+    fn conditional_update<K, V>(&self, key: &K, new: &V, expected: &V) -> Result<(), crate::Error<Self::DbError>>
     where
         K: Serialize + ?Sized,
         V: Serialize + ?Sized;
@@ -58,7 +58,7 @@ pub trait Ordered: DataStore {
     fn get_lt<InKey, OutKey, Value>(
         &self,
         key: &InKey,
-    ) -> Result<Option<(OutKey, Value)>, Self::DbError>
+    ) -> Result<Option<(OutKey, Value)>, crate::Error<Self::DbError>>
     where
         InKey: Serialize,
         OutKey: Serialize + DeserializeOwned,
@@ -66,7 +66,7 @@ pub trait Ordered: DataStore {
     fn get_gt<InKey, OutKey, Value>(
         &self,
         key: &InKey,
-    ) -> Result<Option<(OutKey, Value)>, Self::DbError>
+    ) -> Result<Option<(OutKey, Value)>, crate::Error<Self::DbError>>
     where
         InKey: Serialize,
         OutKey: Serialize + DeserializeOwned,
@@ -84,7 +84,7 @@ pub trait Ranged: DataStore {
     fn range<InKey, OutKey, Value>(
         &self,
         range: impl RangeBounds<InKey>,
-    ) -> Result<impl Iterator<Item = Result<(OutKey, Value), Self::DbError>>, Self::DbError>
+    ) -> Result<impl Iterator<Item = Result<(OutKey, Value), crate::Error<Self::DbError>>>, crate::Error<Self::DbError>>
     where
         InKey: Serialize,
         OutKey: Serialize + DeserializeOwned,

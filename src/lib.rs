@@ -96,7 +96,7 @@ pub enum Error<DbError: fmt::Debug> {
     #[error("could not serialize key using bincode")]
     SerializingKey(bincode::Error),
     #[error("the database returned an error")]
-    Database(#[from] DbError),
+    Database(DbError),
 }
 
 #[doc = include_str!("../Readme.md")]
