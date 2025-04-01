@@ -21,7 +21,9 @@ where
     phantom: PhantomData<T>,
     ds: DS,
     prefix: u8,
+    // Points to the current free slot
     head: Arc<AtomicU64>,
+    // Points to the current free slot
     tail: Arc<AtomicU64>,
 }
 
@@ -56,6 +58,7 @@ where
 {
     #[doc(hidden)]
     pub fn new(ds: DS, prefix: u8, head: Arc<AtomicU64>, tail: Arc<AtomicU64>) -> Self {
+        assert_ne!(head.load(Ordering::Relaxed), tail.load(Ordering::Relaxed));
         Self {
             phantom: PhantomData,
             ds,
@@ -130,15 +133,12 @@ where
         T: std::borrow::Borrow<Q>,
         Q: Serialize + ?Sized,
     {
-        let prev_tail = self.tail.fetch_add(1, Ordering::SeqCst);
-        // At this point we have a reserved slot no one else can concurrently
-        // store something here
-
+        let free_tail = self.tail.fetch_add(1, Ordering::SeqCst);
         let key = Prefixed {
             prefix: self.prefix,
-            index: prev_tail + 1,
+            index: free_tail,
         };
-        dbg!(&key);
+
         eprintln!(
             "push_back, {:?}..{:?}, idx: {:?}",
             &self.head, &self.tail, key.index
@@ -175,11 +175,12 @@ where
         T: std::borrow::Borrow<Q>,
         Q: Serialize + ?Sized,
     {
-        let prev_head = self.head.fetch_sub(1, Ordering::SeqCst);
+        let free_head = self.head.fetch_sub(1, Ordering::SeqCst);
         let key = Prefixed {
             prefix: self.prefix,
-            index: prev_head - 1,
+            index: free_head,
         };
+
         eprintln!(
             "push_frnt, {:?}..{:?}, idx: {:?}",
             &self.head, &self.tail, key.index
@@ -210,12 +211,12 @@ where
     /// # }
     /// ```
     pub fn pop_back(&self) -> Result<Option<T>, Error<E>> {
-        let old_tail = self.tail.fetch_sub(1, Ordering::Relaxed);
-        dbg!(old_tail);
+        let free_tail = self.tail.fetch_sub(1, Ordering::Relaxed);
+        dbg!(free_tail);
 
         let key = Prefixed {
             prefix: self.prefix,
-            index: old_tail,
+            index: free_tail - 1,
         };
 
         self.ds.remove(&key)
@@ -243,10 +244,11 @@ where
     /// # }
     /// ```
     pub fn pop_front(&self) -> Result<Option<T>, Error<E>> {
-        let old_head = self.head.fetch_add(1, Ordering::Relaxed);
+        let free_head = self.head.fetch_add(1, Ordering::Relaxed);
+        dbg!(free_head);
         let key = Prefixed {
             prefix: self.prefix,
-            index: old_head,
+            index: free_head + 1,
         };
 
         self.ds.remove(&key)
@@ -301,7 +303,8 @@ where
         let head = self.head.load(Ordering::Acquire);
         let tail = self.tail.load(Ordering::Acquire);
 
-        return (tail - head) as usize;
+        dbg!(tail, head);
+        return ((tail - head) - 1) as usize;
     }
 
     /// Returns `true` if the list has a length of 0.
@@ -346,7 +349,7 @@ mod tests {
     pub(crate) type TestVecDeque<T> = VecDeque<T, stores::BTreeMap>;
     pub(crate) fn empty<T: Serialize + DeserializeOwned>() -> TestVecDeque<T> {
         let ds = stores::BTreeMap::new();
-        let head = Arc::new(AtomicU64::new(u64::MAX / 2));
+        let head = Arc::new(AtomicU64::new(u64::MAX / 2 - 1));
         let tail = Arc::new(AtomicU64::new(u64::MAX / 2));
 
         VecDeque::new(ds, 1, head, tail)
@@ -475,12 +478,13 @@ mod tests {
         }
 
         #[test]
-        fn third_pop_is_none() {
+        fn fourth_pop_is_none() {
             let vec: VecDeque<u16, stores::BTreeMap> = empty();
             vec.push_front(&42).unwrap();
             vec.push_back(&43).unwrap();
             vec.push_front(&41).unwrap();
 
+            vec.pop_front().unwrap();
             vec.pop_front().unwrap();
             vec.pop_front().unwrap();
             let elem = vec.pop_front().unwrap();
