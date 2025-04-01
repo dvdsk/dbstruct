@@ -1,51 +1,88 @@
 use proc_macro2::Span;
 use syn::punctuated::Punctuated;
-use syn::{parse_quote, LocalInit, Pat, PathArguments, Token};
+use syn::{parse_quote, Expr, Ident, LocalInit, Pat, PathArguments, Token};
 
 use crate::model::backend::Backend;
 use crate::model::{Field, Model, Wrapper};
 
-use super::struct_def::{as_len_ident, Struct};
+use super::struct_def::{deque_head_ident, deque_tail_ident, vec_len_ident, Struct};
 
 pub struct NewMethod {
     pub locals: Vec<syn::Local>,
-    pub fields: Vec<syn::FieldValue>,
+    pub members: Vec<syn::FieldValue>,
     pub vis: syn::Visibility,
     pub arg: Option<syn::FnArg>,
     pub error_ty: syn::Type,
 }
 
-fn as_len_value(ident: syn::Ident) -> syn::FieldValue {
+fn as_member(field: &syn::Field) -> syn::FieldValue {
     let colon: syn::token::Colon = syn::Token![:](Span::call_site());
+    let ident = field.ident.as_ref().expect("is Some");
     syn::FieldValue {
         attrs: Vec::new(),
         member: syn::Member::Named(ident.clone()),
         colon_token: Some(colon),
-        expr: parse_quote!(std::sync::Arc::new(std::sync::atomic::AtomicUsize::new(#ident))),
+        expr: parse_quote!(#ident),
     }
 }
 
 fn len_expr(ty: &syn::Type, prefix: u8) -> Box<syn::Expr> {
     let expr: syn::Expr = parse_quote!(
-        ::dbstruct::traits::data_store::Ordered::get_lt(
-                &ds,
-                &::dbstruct::wrapper::Prefixed::max(#prefix),
-            )?
-            .map(|(key, _): (::dbstruct::wrapper::Prefixed, #ty)| key)
-            .map(|key| key.index() + 1) // a vecs len is index + 1
-            .unwrap_or(0)
+        std::sync::Arc::new(
+            std::sync::atomic::AtomicUsize::new(
+                ::dbstruct::traits::data_store::Ordered::get_lt(
+                        &ds,
+                        &::dbstruct::wrapper::VecPrefixed::max(#prefix),
+                    )?
+                    .map(|(key, _): (::dbstruct::wrapper::VecPrefixed, #ty)| key)
+                    .map(|key| key.index() + 1) // a vecs len is index + 1
+                    .unwrap_or(0)
+            ) // atomic new
+        ) // arc new
     );
     Box::new(expr)
 }
 
-fn len_init(field: &Field) -> Option<syn::Local> {
-    let ty = match &field.wrapper {
-        Wrapper::Vec { ty } => ty,
-        _ => return None,
-    };
+fn tail_expr(ty: &syn::Type, prefix: u8) -> Box<syn::Expr> {
+    let expr: syn::Expr = parse_quote!(
+        std::sync::Arc::new(
+            std::sync::atomic::AtomicU64::new(
+                ::dbstruct::traits::data_store::Ordered::get_gt(
+                        &ds,
+                        dbg!(&::dbstruct::wrapper::DequePrefixed::min(#prefix)),
+                    )?
+                    .map(|(key, _): (::dbstruct::wrapper::DequePrefixed, #ty)| {
+                        eprintln!("tail key: {key:?}");
+                        key
+                    })
+                    .map(|key| key.index())
+                    .unwrap_or(u64::MAX / 2)
+            ) // atomic new
+        ) // arc new
+    );
+    Box::new(expr)
+}
 
+fn head_expr(ty: &syn::Type, prefix: u8) -> Box<syn::Expr> {
+    let expr: syn::Expr = parse_quote!(
+        std::sync::Arc::new(
+            std::sync::atomic::AtomicU64::new(
+                ::dbstruct::traits::data_store::Ordered::get_lt(
+                        &ds,
+                        dbg!(&::dbstruct::wrapper::DequePrefixed::max(#prefix)),
+                    )?
+                    .map(|(key, _): (::dbstruct::wrapper::DequePrefixed, #ty)| dbg!(key))
+                    .map(|key| key.index())
+                    .unwrap_or(u64::MAX / 2)
+            ) // atomic new
+        ) // arc new
+    );
+    Box::new(expr)
+}
+
+fn local_init(expr: Box<Expr>, ident: Ident) -> syn::Local {
     let ident = syn::PathSegment {
-        ident: as_len_ident(&field.ident),
+        ident,
         arguments: PathArguments::None,
     };
     let ident = syn::Path {
@@ -57,9 +94,8 @@ fn len_init(field: &Field) -> Option<syn::Local> {
         qself: None,
         path: ident,
     };
-    let expr = len_expr(ty, field.key);
     let eq_token = Token![=](Span::call_site());
-    Some(syn::Local {
+    syn::Local {
         attrs: Vec::new(),
         let_token: Token![let](Span::call_site()),
         pat: Pat::Path(ident),
@@ -69,7 +105,37 @@ fn len_init(field: &Field) -> Option<syn::Local> {
             diverge: None,
         }),
         semi_token: Token![;](Span::call_site()),
-    })
+    }
+}
+
+fn vec_len_init(field: &Field) -> syn::Local {
+    let ty = match &field.wrapper {
+        Wrapper::Vec { ty } => ty,
+        _ => unreachable!("checked by caller"),
+    };
+
+    local_init(len_expr(ty, field.key), vec_len_ident(&field.ident))
+}
+
+fn deque_head_init(field: &Field) -> syn::Local {
+    let ty = match &field.wrapper {
+        Wrapper::VecDeque { ty } => ty,
+        _ => unreachable!("checked by caller"),
+    };
+
+    local_init(
+        head_expr(ty, field.key),
+        deque_head_ident(&field.ident),
+    )
+}
+
+fn deque_tail_init(field: &Field) -> syn::Local {
+    let ty = match &field.wrapper {
+        Wrapper::VecDeque { ty } => ty,
+        _ => unreachable!("checked by caller"),
+    };
+
+    local_init(tail_expr(ty, field.key), deque_tail_ident(&field.ident))
 }
 
 fn sled_from_path() -> syn::Local {
@@ -107,14 +173,6 @@ fn btreemap() -> syn::Local {
 
 impl NewMethod {
     pub fn from(model: &Model, struct_def: &Struct) -> Self {
-        let fields: Vec<_> = struct_def
-            .len_vars
-            .iter()
-            .map(|def| def.ident.clone())
-            .map(|ident| ident.expect("ident is None"))
-            .map(as_len_value)
-            .collect();
-
         let mut locals = Vec::new();
 
         let arg;
@@ -143,12 +201,20 @@ impl NewMethod {
             Backend::Test => unreachable!("test not used in new method"),
         };
 
-        let inits = model.fields.iter().filter_map(|field| len_init(field));
+        let inits = model.fields.iter().flat_map(|field| match &field.wrapper {
+            Wrapper::Vec { .. } => [vec_len_init(&field)].to_vec(),
+            Wrapper::VecDeque { .. } => [deque_head_init(&field), deque_tail_init(&field)].to_vec(),
+            _ => Vec::new(),
+        });
         locals.extend(inits);
 
         Self {
             locals,
-            fields,
+            members: struct_def
+                .member_vars
+                .iter()
+                .map(|f| as_member(f))
+                .collect(),
             vis: model.vis.clone(),
             arg,
             error_ty,
@@ -163,11 +229,19 @@ mod tests {
     use super::*;
 
     #[test]
-    fn has_one_local() {
+    fn adds_one_local() {
         let model = Model::mock_vec();
         let struct_def = Struct::from(&model);
         let new_method = NewMethod::from(&model, &struct_def);
         assert!(new_method.locals.len() == 2);
+    }
+
+    #[test]
+    fn adds_two_local() {
+        let model = Model::mock_vecdeque();
+        let struct_def = Struct::from(&model);
+        let new_method = NewMethod::from(&model, &struct_def);
+        assert!(new_method.locals.len() == 3);
     }
 
     #[test]

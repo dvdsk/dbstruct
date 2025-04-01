@@ -88,13 +88,13 @@ pub use sled;
 #[derive(Debug, thiserror::Error)]
 pub enum Error<DbError: fmt::Debug> {
     #[error("value could not be deserialized using bincode")]
-    DeSerializingVal(bincode::Error),
+    DeSerializingVal(bincode::error::DecodeError),
     #[error("key could not be deserialized using bincode")]
-    DeSerializingKey(bincode::Error),
+    DeSerializingKey(bincode::error::DecodeError),
     #[error("value could not be serialized using bincode")]
-    SerializingValue(bincode::Error),
+    SerializingValue(bincode::error::EncodeError),
     #[error("could not serialize key using bincode")]
-    SerializingKey(bincode::Error),
+    SerializingKey(bincode::error::EncodeError),
     #[error("the database returned an error")]
     Database(DbError),
 }

@@ -34,7 +34,7 @@ pub fn codegen(ir: Ir) -> TokenStream {
 fn new_impl(new: NewMethod) -> TokenStream {
     let NewMethod {
         locals,
-        fields,
+        members,
         vis,
         arg,
         error_ty,
@@ -44,7 +44,7 @@ fn new_impl(new: NewMethod) -> TokenStream {
             #(#locals)*
             Ok(Self {
                 ds,
-                #(#fields),*
+                #(#members),*
             })
         }
     )
@@ -72,7 +72,7 @@ fn definition(definition: Struct, bounds: &Option<syn::WhereClause>) -> TokenStr
     let Struct {
         ident,
         vis,
-        len_vars: extra_vars,
+        member_vars: extra_vars,
         db,
     } = definition;
     match bounds {
@@ -108,7 +108,7 @@ mod tests {
         Struct {
             ident: parse_quote!(Test),
             vis: parse_quote!(pub),
-            len_vars: fields
+            member_vars: fields
                 .into_iter()
                 .map(|s| parser.parse_str(s))
                 .map(Result::unwrap)
@@ -153,7 +153,7 @@ mod tests {
 
     fn test_new_impl() -> NewMethod {
         NewMethod {
-            fields: vec![parse_quote!(u8field: 0)],
+            members: vec![parse_quote!(u8field: 0)],
             vis: parse_quote!(pub),
             locals: Vec::new(),
             arg: Some(parse_quote!(ds: DS)),

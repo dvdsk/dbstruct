@@ -8,7 +8,7 @@ use serde::Serialize;
 use crate::traits::{data_store, DataStore};
 use crate::Error;
 
-/// here missing values are represented by [`Option::None`].
+/// Here missing values are represented by [`Option::None`].
 pub struct OptionValue<T, DS>
 where
     DS: DataStore,
@@ -161,5 +161,16 @@ where
         Q: Serialize + ?Sized,
     {
         Ok(self.ds.conditional_update(&self.key, &new, &old)?)
+    }
+}
+
+impl<T, E, DS> fmt::Debug for OptionValue<T, DS>
+where
+    E: fmt::Debug,
+    T: Serialize + DeserializeOwned + fmt::Debug,
+    DS: DataStore<DbError = E>,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_fmt(format_args!("{:?}", self.get()))
     }
 }

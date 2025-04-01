@@ -1,9 +1,10 @@
 use proc_macro2::Span;
-use quote::format_ident;
 use syn::spanned::Spanned;
 use syn::{parse_quote, parse_quote_spanned};
 
 use crate::model::{Field, Wrapper};
+
+use super::struct_def::{deque_head_ident, deque_tail_ident, vec_len_ident};
 
 pub struct Accessor {
     pub vis: syn::Visibility,
@@ -18,11 +19,21 @@ impl Accessor {
         let (body, returns) = match field.wrapper {
             #[allow(unused_variables)]
             Wrapper::Vec { ty } => {
-                let len_ident = format_ident!("{}_len", field.ident);
+                let len_ident = vec_len_ident(&field.ident);
                 let body = parse_quote!({
                     dbstruct::wrapper::Vec::new(self.ds.clone(), #key, self.#len_ident.clone())
                 });
                 let returns = parse_quote_spanned!(ty.span()=> dbstruct::wrapper::Vec<#ty, #ds>);
+                (body, returns)
+            }
+            Wrapper::VecDeque { ty } => {
+                let head_ident = deque_head_ident(&field.ident);
+                let tail_ident = deque_tail_ident(&field.ident);
+                let body = parse_quote!({
+                    dbstruct::wrapper::VecDeque::new(self.ds.clone(), #key, self.#head_ident.clone(), self.#tail_ident.clone())
+                });
+                let returns =
+                    parse_quote_spanned!(ty.span()=> dbstruct::wrapper::VecDeque<#ty,#ds>);
                 (body, returns)
             }
             #[allow(unused_variables)]
@@ -32,7 +43,10 @@ impl Accessor {
                 });
                 // Using proc_macro2 version until
                 // https://github.com/rust-lang/rust/issues/54725 stabalizes
-                let span = key_ty.span().join(val_ty.span()).unwrap_or(Span::call_site());
+                let span = key_ty
+                    .span()
+                    .join(val_ty.span())
+                    .unwrap_or(Span::call_site());
                 let returns =
                     parse_quote_spanned!(span=> dbstruct::wrapper::Map<#key_ty, #val_ty, #ds>);
                 (body, returns)

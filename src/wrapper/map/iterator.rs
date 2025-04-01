@@ -2,7 +2,7 @@ use crate::Error;
 use core::marker::PhantomData;
 use std::fmt;
 
-use crate::traits::byte_store;
+use crate::traits::byte_store::{self, key_config, val_config};
 
 use serde::de::DeserializeOwned;
 use serde::Serialize;
@@ -48,11 +48,15 @@ where
         self.prev_key_bytes.extend_from_slice(key);
 
         let key = &key[1..]; // strip prefix
-        let key = match bincode::deserialize(key).map_err(Error::DeSerializingKey) {
+        let (key, _) = match bincode::serde::decode_from_slice(key, key_config())
+            .map_err(Error::DeSerializingKey)
+        {
             Ok(key) => key,
             Err(e) => return Some(Err(e)),
         };
-        let val = match bincode::deserialize(val.as_ref()).map_err(Error::DeSerializingVal) {
+        let (val, _) = match bincode::serde::decode_from_slice(val.as_ref(), val_config())
+            .map_err(Error::DeSerializingVal)
+        {
             Ok(val) => val,
             Err(e) => return Some(Err(e)),
         };

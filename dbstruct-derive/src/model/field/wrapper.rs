@@ -14,6 +14,9 @@ pub enum Wrapper {
     Vec {
         ty: syn::Type,
     },
+    VecDeque {
+        ty: syn::Type,
+    },
     Map {
         key_ty: syn::Type,
         val_ty: syn::Type,
@@ -121,7 +124,7 @@ fn as_wrapper(att: syn::Attribute) -> Result<Option<Attribute>, Error> {
 }
 
 impl Wrapper {
-    /// takes relevant attributes from `attributes` and determines the wrapper
+    /// Takes relevant attributes from `attributes` and determines the wrapper
     pub fn try_from(attributes: &mut Vec<syn::Attribute>, ty: syn::Type) -> Result<Self, Error> {
         use Attribute::*;
         use ErrorVariant::*;
@@ -139,6 +142,9 @@ impl Wrapper {
         Ok(match (outer_type(&ty)?.as_str(), attribute) {
             ("Vec", None) => Self::Vec {
                 ty: inner_type(&ty, "Vec")?,
+            },
+            ("VecDeque", None) => Self::VecDeque {
+                ty: inner_type(&ty, "VecDeque")?,
             },
             ("Option", None) => Self::Option {
                 ty: inner_type(&ty, "Option")?,
@@ -237,7 +243,7 @@ fn generic_types<'a>(
         _ => unreachable!("should only run in match arm when matching HashMap"),
     };
 
-    // aliasing HashMap can result in a macro panic. The person making
+    // Aliasing HashMap can result in a macro panic. The person making
     // the alias will probably understand the panic message
     let arguments = &punctuated
         .first()

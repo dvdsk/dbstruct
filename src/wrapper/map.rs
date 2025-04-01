@@ -245,6 +245,19 @@ where
     }
 }
 
+impl<Key, Value, E, DS> fmt::Debug for Map<'_, Key, Value, DS>
+where
+    E: fmt::Debug,
+    Key: Serialize + DeserializeOwned + fmt::Debug,
+    Value: Serialize + DeserializeOwned + fmt::Debug,
+    DS: DataStore<DbError = E> + byte_store::Ordered,
+    Error<E>: From<Error<<DS as crate::ByteStore>::DbError>>,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_list().entries(self.iter()).finish()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -168,11 +168,11 @@ impl Backend {
 
 #[cfg(test)]
 mod tests {
-    use attribute::Wrapper;
     use syn::parse_quote;
     use ExtraBound::*;
 
     use crate::model::attribute::{BackendOption, BackendOptionVariant};
+    use crate::model::Wrapper;
 
     use super::*;
 

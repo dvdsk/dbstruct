@@ -11,10 +11,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             dbstruct::Error::Database(other_sled_issue) => {
                 eprintln!("non io error in sled: {other_sled_issue}")
             }
-            dbstruct::Error::SerializingKey(e)
-            | dbstruct::Error::SerializingValue(e)
-            | dbstruct::Error::DeSerializingKey(e)
-            | dbstruct::Error::DeSerializingVal(e) => eprintln!("serialization issue: {e}"),
+            dbstruct::Error::SerializingKey(e) | dbstruct::Error::SerializingValue(e) => {
+                eprintln!("serialization issue: {e}")
+            }
+            dbstruct::Error::DeSerializingKey(e) | dbstruct::Error::DeSerializingVal(e) => {
+                eprintln!("serialization issue: {e}")
+            }
         }
     }
 

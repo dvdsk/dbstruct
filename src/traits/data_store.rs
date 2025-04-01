@@ -41,8 +41,13 @@ pub trait Atomic: DataStore {
     where
         K: Serialize,
         V: Serialize + DeserializeOwned;
-    /// on error the update is aborted
-    fn conditional_update<K, V>(&self, key: &K, new: &V, expected: &V) -> Result<(), crate::Error<Self::DbError>>
+    /// On error the update is aborted
+    fn conditional_update<K, V>(
+        &self,
+        key: &K,
+        new: &V,
+        expected: &V,
+    ) -> Result<(), crate::Error<Self::DbError>>
     where
         K: Serialize + ?Sized,
         V: Serialize + ?Sized;
@@ -51,10 +56,16 @@ pub trait Atomic: DataStore {
 /// This trait needed for the Vec wrapper. It is usually more convenient to implement
 /// [`byte_store::Ordered`][super::byte_store::Ordered] instead.
 ///
-/// You can deserialize to a different key then you serialize too.
-/// This is useful when using get_lt an InKey that borrows data. As
+/// You can deserialize to a different key than you serialize too.
+/// This is useful when using `get_lt` an `InKey` that borrows data. As
 /// you need to deserialize to a type owning all its data.
 pub trait Ordered: DataStore {
+    /// Retrieve the next key and value from the Tree after the provided key.
+    ///
+    /// ### Note
+    /// The order follows the `Ord` implementation for `Vec<u8>`:
+    /// [] < [0] < [255] < [255, 0] < [255, 255] ...
+    /// To retain the ordering of numerical types use big endian representation
     fn get_lt<InKey, OutKey, Value>(
         &self,
         key: &InKey,
@@ -63,6 +74,13 @@ pub trait Ordered: DataStore {
         InKey: Serialize,
         OutKey: Serialize + DeserializeOwned,
         Value: Serialize + DeserializeOwned;
+
+    /// Retrieve the previous key and value from the Tree before the provided key.
+    ///
+    /// ### Note
+    /// The order follows the `Ord` implementation for `Vec<u8>`:
+    /// [] < [0] < [255] < [255, 0] < [255, 255] ...
+    /// To retain the ordering of numerical types use big endian representation
     fn get_gt<InKey, OutKey, Value>(
         &self,
         key: &InKey,
@@ -77,14 +95,17 @@ pub trait Ordered: DataStore {
 /// convenient to implement [`byte_store::Ranged`][super::byte_store::Ranged]
 /// instead.
 ///
-/// You can deserialize to a different key then you serialize too. This is
-/// useful when using range an InKey that borrows data. As you need to
+/// You can deserialize to a different key than you serialize too. This is
+/// useful when using range an `InKey` that borrows data. As you need to
 /// deserialize to a type owning all its data.
 pub trait Ranged: DataStore {
     fn range<InKey, OutKey, Value>(
         &self,
         range: impl RangeBounds<InKey>,
-    ) -> Result<impl Iterator<Item = Result<(OutKey, Value), crate::Error<Self::DbError>>>, crate::Error<Self::DbError>>
+    ) -> Result<
+        impl Iterator<Item = Result<(OutKey, Value), crate::Error<Self::DbError>>>,
+        crate::Error<Self::DbError>,
+    >
     where
         InKey: Serialize,
         OutKey: Serialize + DeserializeOwned,

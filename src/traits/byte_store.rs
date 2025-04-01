@@ -43,9 +43,9 @@ pub trait Atomic: ByteStore {
 /// A helper trait, implementing this automatically implements
 /// [`data_store::Ordered`]
 pub trait Ordered: ByteStore {
-    /// returns the previous key value pair before key
+    /// Returns the previous key value pair before key
     fn get_lt(&self, key: &[u8]) -> Result<Option<(Self::Bytes, Self::Bytes)>, Self::DbError>;
-    /// returns the next key value pair after key
+    /// Returns the next key value pair after key
     fn get_gt(&self, key: &[u8]) -> Result<Option<(Self::Bytes, Self::Bytes)>, Self::DbError>;
 }
 
@@ -54,8 +54,19 @@ pub trait Ordered: ByteStore {
 pub trait Ranged: Ordered {
     type Key: AsRef<[u8]>;
     type Iter: Iterator<Item = Result<(Self::Bytes, Self::Bytes), Self::DbError>>;
-    /// returns the previous key value pair before key
+    /// Returns the previous key value pair before key
     fn range(&self, range: impl RangeBounds<Self::Key>) -> Self::Iter;
+}
+
+/// Bincode config used to encode and decode keys. This uses big endian fixed
+/// integer encoding to ensure the order follows that of the struct
+pub(crate) fn key_config() -> impl bincode::config::Config {
+    bincode::config::standard().with_big_endian().with_fixed_int_encoding()
+}
+
+/// Bincode config used to encode and decode values.
+pub(crate) fn val_config() -> impl bincode::config::Config {
+    bincode::config::standard()
 }
 
 impl<E, B, BS> DataStore for BS
@@ -72,13 +83,14 @@ where
         K: Serialize,
         V: DeserializeOwned,
     {
-        let key = bincode::serialize(key).map_err(Error::<Self::DbError>::SerializingKey)?;
+        let key = bincode::serde::encode_to_vec(key, key_config())
+            .map_err(Error::<Self::DbError>::SerializingKey)?;
         trace!("getting value for key: {key:?}");
         let val = BS::get(self, &key).map_err(Error::Database)?;
         Ok(match val {
             Some(bytes) => {
                 trace!("bytes of value: {:?}", bytes.as_ref());
-                let val = bincode::deserialize(bytes.as_ref())
+                let (val, _) = bincode::serde::decode_from_slice(bytes.as_ref(), val_config())
                     .map_err(Error::<Self::DbError>::DeSerializingVal)?;
                 Some(val)
             }
@@ -92,13 +104,14 @@ where
         K: Serialize,
         V: DeserializeOwned,
     {
-        let key = bincode::serialize(key).map_err(Error::<Self::DbError>::SerializingKey)?;
+        let key = bincode::serde::encode_to_vec(key, key_config())
+            .map_err(Error::<Self::DbError>::SerializingKey)?;
         trace!("removing at key: {key:?}");
         let val = BS::remove(self, &key).map_err(Error::Database)?;
         Ok(match val {
             Some(bytes) => {
                 trace!("bytes of current value: {:?}", bytes.as_ref());
-                let val = bincode::deserialize(bytes.as_ref())
+                let (val, _) = bincode::serde::decode_from_slice(bytes.as_ref(), val_config())
                     .map_err(Error::<Self::DbError>::DeSerializingVal)?;
                 Some(val)
             }
@@ -113,8 +126,10 @@ where
         V: Serialize + ?Sized,
         OwnedV: std::borrow::Borrow<V> + DeserializeOwned,
     {
-        let key = bincode::serialize(key).map_err(Error::<Self::DbError>::SerializingKey)?;
-        let val = bincode::serialize(val).map_err(Error::<Self::DbError>::SerializingValue)?;
+        let key = bincode::serde::encode_to_vec(key, key_config())
+            .map_err(Error::<Self::DbError>::SerializingKey)?;
+        let val = bincode::serde::encode_to_vec(val, val_config())
+            .map_err(Error::<Self::DbError>::SerializingValue)?;
         trace!("inserting key: {key:?}, val: {val:?}");
         let existing = BS::insert(self, &key, &val).map_err(Error::Database)?;
         Ok(match existing {
@@ -122,8 +137,9 @@ where
                 trace!("bytes of previous value: {:?}", bytes.as_ref());
                 trace!("deserializing to: {}", std::any::type_name::<V>());
                 Some(
-                    bincode::deserialize(bytes.as_ref())
-                        .map_err(Error::<Self::DbError>::DeSerializingVal)?,
+                    bincode::serde::decode_from_slice(bytes.as_ref(), val_config())
+                        .map_err(Error::<Self::DbError>::DeSerializingVal)?
+                        .0,
                 )
             }
             None => None,
@@ -146,21 +162,21 @@ where
         K: Serialize,
         V: Serialize + DeserializeOwned,
     {
-        let key = bincode::serialize(key).map_err(Error::SerializingKey)?;
+        let key = bincode::serde::encode_to_vec(key, key_config()).map_err(Error::SerializingKey)?;
         let mut res = Ok(());
         let bytes_op = |old: Option<&[u8]>| -> Option<Vec<u8>> {
             if let Some(old) = old {
                 trace!("bytes of current value: {old:?}");
-                match bincode::deserialize(old) {
+                match bincode::serde::decode_from_slice(old, val_config()) {
                     Err(e) => {
                         res = Err(Error::DeSerializingVal(e));
                         Some(old.to_vec())
                     }
-                    Ok(val) => {
+                    Ok((val, _)) => {
                         let new = op(val);
-                        match bincode::serialize(&new) {
+                        match bincode::serde::encode_to_vec(&new, val_config()) {
                             Err(e) => {
-                                res = Err(Error::DeSerializingVal(e));
+                                res = Err(Error::SerializingValue(e));
                                 Some(old.to_vec())
                             }
                             Ok(new_bytes) => Some(new_bytes),
@@ -185,9 +201,10 @@ where
         K: Serialize + ?Sized,
         V: Serialize + ?Sized,
     {
-        let key = bincode::serialize(key).map_err(Error::SerializingKey)?;
-        let new = bincode::serialize(new).map_err(Error::SerializingValue)?;
-        let expected = bincode::serialize(expected).map_err(Error::SerializingValue)?;
+        let key = bincode::serde::encode_to_vec(key, key_config()).map_err(Error::SerializingKey)?;
+        let new = bincode::serde::encode_to_vec(new, val_config()).map_err(Error::SerializingValue)?;
+        let expected =
+            bincode::serde::encode_to_vec(expected, val_config()).map_err(Error::SerializingValue)?;
         BS::conditional_update(self, &key, &new, &expected).map_err(Error::Database)?;
         Ok(())
     }
@@ -208,7 +225,7 @@ where
         OutKey: Serialize + DeserializeOwned,
         Value: Serialize + DeserializeOwned,
     {
-        let key = bincode::serialize(key).map_err(Error::SerializingKey)?;
+        let key = bincode::serde::encode_to_vec(key, key_config()).map_err(Error::SerializingKey)?;
         trace!("getting less then key: {key:?}");
         Ok(
             match byte_store::Ordered::get_lt(self, &key).map_err(Error::Database)? {
@@ -221,10 +238,10 @@ where
                         std::any::type_name::<dyn Value>(),
                         val.as_ref()
                     );
-                    let key =
-                        bincode::deserialize(key.as_ref()).map_err(Error::DeSerializingKey)?;
-                    let val =
-                        bincode::deserialize(val.as_ref()).map_err(Error::DeSerializingVal)?;
+                    let (key, _) = bincode::serde::decode_from_slice(key.as_ref(), key_config())
+                        .map_err(Error::DeSerializingKey)?;
+                    let (val, _) = bincode::serde::decode_from_slice(val.as_ref(), val_config())
+                        .map_err(Error::DeSerializingVal)?;
                     Some((key, val))
                 }
             },
@@ -240,23 +257,27 @@ where
         OutKey: Serialize + DeserializeOwned,
         Value: Serialize + DeserializeOwned,
     {
-        let key = bincode::serialize(key).map_err(Error::SerializingKey)?;
+        let key = bincode::serde::encode_to_vec(key, key_config()).map_err(Error::SerializingKey)?;
         trace!("getting greater then key: {key:?}");
-        Ok(match byte_store::Ordered::get_gt(self, &key).map_err(Error::Database)? {
-            None => None,
-            Some((key, val)) => {
-                trace!(
-                    "key ({}): {:?}, val ({}): {:?}",
-                    std::any::type_name::<OutKey>(),
-                    key.as_ref(),
-                    std::any::type_name::<dyn Value>(),
-                    val.as_ref()
-                );
-                let key = bincode::deserialize(key.as_ref()).map_err(Error::DeSerializingKey)?;
-                let val = bincode::deserialize(val.as_ref()).map_err(Error::DeSerializingVal)?;
-                Some((key, val))
-            }
-        })
+        Ok(
+            match byte_store::Ordered::get_gt(self, &key).map_err(Error::Database)? {
+                None => None,
+                Some((key, val)) => {
+                    trace!(
+                        "key ({}): {:?}, val ({}): {:?}",
+                        std::any::type_name::<OutKey>(),
+                        key.as_ref(),
+                        std::any::type_name::<dyn Value>(),
+                        val.as_ref()
+                    );
+                    let (key, _) = bincode::serde::decode_from_slice(key.as_ref(), key_config())
+                        .map_err(Error::DeSerializingKey)?;
+                    let (val, _) = bincode::serde::decode_from_slice(val.as_ref(), val_config())
+                        .map_err(Error::DeSerializingVal)?;
+                    Some((key, val))
+                }
+            },
+        )
     }
 }
 
@@ -280,12 +301,12 @@ where
 
     fn next(&mut self) -> Option<Self::Item> {
         self.iter.next().map(|res| match res {
-            Ok((key, val)) => bincode::deserialize(key.as_ref())
+            Ok((key, val)) => bincode::serde::decode_from_slice(key.as_ref(), key_config())
                 .map_err(Error::DeSerializingKey)
-                .and_then(|key| {
-                    bincode::deserialize(val.as_ref())
+                .and_then(|(key, _)| {
+                    bincode::serde::decode_from_slice(val.as_ref(), val_config())
                         .map_err(Error::DeSerializingVal)
-                        .map(|val| (key, val))
+                        .map(|(val, _)| (key, val))
                 }),
             Err(e) => Err(Error::Database(e)),
         })
@@ -312,21 +333,21 @@ where
     {
         use std::ops::Bound;
         let start_bound = match range.start_bound() {
-            Bound::Included(key) => {
-                Bound::Included(bincode::serialize(key).map_err(Error::SerializingKey)?)
-            }
-            Bound::Excluded(key) => {
-                Bound::Excluded(bincode::serialize(key).map_err(Error::SerializingKey)?)
-            }
+            Bound::Included(key) => Bound::Included(
+                bincode::serde::encode_to_vec(key, key_config()).map_err(Error::SerializingKey)?,
+            ),
+            Bound::Excluded(key) => Bound::Excluded(
+                bincode::serde::encode_to_vec(key, key_config()).map_err(Error::SerializingKey)?,
+            ),
             Bound::Unbounded => Bound::Unbounded,
         };
         let end_bound = match range.end_bound() {
-            Bound::Included(key) => {
-                Bound::Included(bincode::serialize(key).map_err(Error::SerializingKey)?)
-            }
-            Bound::Excluded(key) => {
-                Bound::Excluded(bincode::serialize(key).map_err(Error::SerializingKey)?)
-            }
+            Bound::Included(key) => Bound::Included(
+                bincode::serde::encode_to_vec(key, key_config()).map_err(Error::SerializingKey)?,
+            ),
+            Bound::Excluded(key) => Bound::Excluded(
+                bincode::serde::encode_to_vec(key, key_config()).map_err(Error::SerializingKey)?,
+            ),
             Bound::Unbounded => Bound::Unbounded,
         };
 

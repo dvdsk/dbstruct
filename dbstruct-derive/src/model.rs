@@ -77,6 +77,19 @@ pub struct Test {
         Model::try_from(input_struct, input_attr).unwrap()
     }
 
+    pub fn mock_vecdeque() -> Model {
+        let input_attr = proc_macro2::TokenStream::from_str("db=sled").unwrap();
+        let input_struct: syn::ItemStruct = syn::parse_str(
+            "        
+pub struct Test {
+    the_field: VecDeque<u8>,
+}",
+        )
+        .unwrap();
+
+        Model::try_from(input_struct, input_attr).unwrap()
+    }
+
     pub fn mock_u8field() -> Model {
         let input_attr = proc_macro2::TokenStream::from_str("db=sled").unwrap();
         let input_struct: syn::ItemStruct = syn::parse_str(

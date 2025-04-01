@@ -13,12 +13,6 @@ pub struct Field {
 }
 
 impl Field {
-    pub fn is_vec(&self) -> bool {
-        matches!(&self.wrapper, Wrapper::Vec { .. })
-    }
-}
-
-impl Field {
     pub fn analyze(mut field: syn::Field, keys: &DbKey) -> Result<Self, Error> {
         let wrapper = Wrapper::try_from(&mut field.attrs, field.ty)?;
         let ident = field

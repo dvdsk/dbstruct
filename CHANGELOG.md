@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+ - Wrappers can now be debug printed
+ - Collection wrappers now have an `iter()` method
+ - Adds VecDeque collection
+
+## Changed
+ - **Breaking:** Encoding format has changed, any data created with older
+   versions cannot be loaded by this version of `dbstruct`!
+
+
 ## [0.5.0] - 2025-02-01
 
 ### Added

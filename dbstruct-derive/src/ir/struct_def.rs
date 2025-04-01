@@ -6,36 +6,63 @@ use crate::model::{Field, Model};
 pub struct Struct {
     pub ident: syn::Ident,
     pub vis: syn::Visibility,
-    /// extra variables such as the current length
+    /// Extra variables such as the current length
     /// of the vector wrapper
-    pub len_vars: Vec<syn::Field>,
+    pub member_vars: Vec<syn::Field>,
     pub db: syn::Field,
 }
 
-pub fn as_len_ident(ident: &syn::Ident) -> syn::Ident {
+pub fn vec_len_ident(ident: &syn::Ident) -> syn::Ident {
     let name = format!("{}_len", ident);
     syn::Ident::new(&name, proc_macro2::Span::call_site())
 }
 
-fn as_len_field(field: &Field) -> syn::Field {
+fn vec_len_field(field: &Field) -> syn::Field {
     syn::Field {
         attrs: Vec::new(),
         vis: syn::Visibility::Inherited,
-        ident: Some(as_len_ident(&field.ident)),
+        ident: Some(vec_len_ident(&field.ident)),
         colon_token: None,
         ty: parse_quote!(std::sync::Arc<std::sync::atomic::AtomicUsize>),
         mutability: syn::FieldMutability::None,
     }
 }
 
+pub fn deque_head_ident(ident: &syn::Ident) -> syn::Ident {
+    let name = format!("{}_head", ident);
+    syn::Ident::new(&name, proc_macro2::Span::call_site())
+}
+
+pub fn deque_tail_ident(ident: &syn::Ident) -> syn::Ident {
+    let name = format!("{}_tail", ident);
+    syn::Ident::new(&name, proc_macro2::Span::call_site())
+}
+
+fn deque_head_field(field: &Field) -> syn::Field {
+    syn::Field {
+        attrs: Vec::new(),
+        vis: syn::Visibility::Inherited,
+        ident: Some(deque_head_ident(&field.ident)),
+        colon_token: None,
+        ty: parse_quote!(std::sync::Arc<std::sync::atomic::AtomicU64>),
+        mutability: syn::FieldMutability::None,
+    }
+}
+
+fn deque_tail_field(field: &Field) -> syn::Field {
+    syn::Field {
+        attrs: Vec::new(),
+        vis: syn::Visibility::Inherited,
+        ident: Some(deque_tail_ident(&field.ident)),
+        colon_token: None,
+        ty: parse_quote!(std::sync::Arc<std::sync::atomic::AtomicU64>),
+        mutability: syn::FieldMutability::None,
+    }
+}
+
 impl From<&Model> for Struct {
     fn from(model: &Model) -> Self {
-        let len_vars = model
-            .fields
-            .iter()
-            .filter(|f| f.is_vec())
-            .map(as_len_field)
-            .collect();
+        use crate::model::Wrapper as W;
 
         let ty = match model.backend {
             Backend::Sled => parse_quote!(::dbstruct::sled::Tree),
@@ -55,10 +82,20 @@ impl From<&Model> for Struct {
             mutability: syn::FieldMutability::None,
         };
 
+        let len_vars = model
+            .fields
+            .iter()
+            .flat_map(|field| match &field.wrapper {
+                W::Vec { .. } => [vec_len_field(&field)].to_vec(),
+                W::VecDeque { .. } => [deque_head_field(&field), deque_tail_field(&field)].to_vec(),
+                _ => Vec::new(),
+            })
+            .collect();
+
         Struct {
             ident: model.ident.clone(),
             vis: model.vis.clone(),
-            len_vars,
+            member_vars: len_vars,
             db,
         }
     }

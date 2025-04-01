@@ -246,6 +246,19 @@ where
     }
 }
 
+impl<T, E, DS> fmt::Debug for Vec<T, DS>
+where
+    E: fmt::Debug,
+    T: Serialize + DeserializeOwned + fmt::Debug,
+    DS: DataStore<DbError = E>,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_list()
+            .entries(self.iter())
+            .finish()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

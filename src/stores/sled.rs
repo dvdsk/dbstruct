@@ -13,7 +13,7 @@ impl ByteStore for sled::Tree {
     }
 
     fn insert(&self, key: &[u8], val: &[u8]) -> Result<Option<Self::Bytes>, Self::DbError> {
-        self.insert(key, val)
+        self.insert(dbg!(key), val)
     }
 }
 
@@ -39,10 +39,10 @@ impl byte_store::Atomic for sled::Tree {
 
 impl byte_store::Ordered for sled::Tree {
     fn get_lt(&self, key: &[u8]) -> Result<Option<(Self::Bytes, Self::Bytes)>, Self::DbError> {
-        self.get_lt(key)
+        self.get_lt(dbg!(key))
     }
     fn get_gt(&self, key: &[u8]) -> Result<Option<(Self::Bytes, Self::Bytes)>, Self::DbError> {
-        self.get_gt(key)
+        self.get_gt(dbg!(key))
     }
 }
 

@@ -7,7 +7,7 @@ use crate::traits::DataStore;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 
-pub struct VecIter<'a, T, E, DS>
+pub struct Iter<'a, T, E, DS>
 where
     E: fmt::Debug,
     T: Serialize + DeserializeOwned,
@@ -17,7 +17,7 @@ where
     pub(crate) vec: &'a Vec<T, DS>,
 }
 
-impl<T, E, DS> Iterator for VecIter<'_, T, E, DS>
+impl<T, E, DS> Iterator for Iter<'_, T, E, DS>
 where
     E: fmt::Debug,
     T: Serialize + DeserializeOwned,
@@ -41,11 +41,28 @@ where
     T: Serialize + DeserializeOwned,
     DS: DataStore<DbError = E>,
 {
-    type IntoIter = VecIter<'a, T, E, DS>;
+    type IntoIter = Iter<'a, T, E, DS>;
     type Item = Result<T, Error<E>>;
 
     fn into_iter(self) -> Self::IntoIter {
-        VecIter {
+        Iter {
+            current: 0,
+            vec: self,
+        }
+    }
+}
+
+/// This can be quite slow as it gets each element from
+/// the db individually. Consider using the Default wrapper
+/// instead of this if the `VecDeque` is "small" enough.
+impl<'a, T, E, DS> Vec<T, DS>
+where
+    E: fmt::Debug,
+    T: Serialize + DeserializeOwned,
+    DS: DataStore<DbError = E>,
+{
+    pub fn iter(&self) -> Iter<T, E, DS> {
+        Iter {
             current: 0,
             vec: self,
         }
