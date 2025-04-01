@@ -11,13 +11,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     db.list().push_back(&3)?;
     db.list().push_front(&1)?;
 
-    dbg!("yoyo");
-    dbg!(db.list());
     // Dropping the db here simulates the program
     // stopping and restarting
-    dbg!("yoyo");
     std::mem::drop(db);
-    let db = Test::new(dir)?;
+    let db = Test::new(&dir)?;
 
     let res: Vec<_> = db.list().into_iter().collect::<Result<_, _>>()?;
     assert_eq!(res, vec![1, 2, 3]);

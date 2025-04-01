@@ -96,7 +96,7 @@ where
         }
 
         let head = self.head.load(Ordering::Relaxed);
-        let db_index = index as u64 + head;
+        let db_index = index as u64 + head + 1;
 
         let key = Prefixed {
             prefix: self.prefix,
@@ -212,8 +212,6 @@ where
     /// ```
     pub fn pop_back(&self) -> Result<Option<T>, Error<E>> {
         let free_tail = self.tail.fetch_sub(1, Ordering::Relaxed);
-        dbg!(free_tail);
-
         let key = Prefixed {
             prefix: self.prefix,
             index: free_tail - 1,
@@ -245,7 +243,6 @@ where
     /// ```
     pub fn pop_front(&self) -> Result<Option<T>, Error<E>> {
         let free_head = self.head.fetch_add(1, Ordering::Relaxed);
-        dbg!(free_head);
         let key = Prefixed {
             prefix: self.prefix,
             index: free_head + 1,
@@ -303,7 +300,6 @@ where
         let head = self.head.load(Ordering::Acquire);
         let tail = self.tail.load(Ordering::Acquire);
 
-        dbg!(tail, head);
         return ((tail - head) - 1) as usize;
     }
 
@@ -337,7 +333,20 @@ where
     DS: DataStore<DbError = E>,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_list().entries(self.iter()).finish()
+        f.write_str("[\n")?;
+        for element in self.iter() {
+            match element {
+                Ok(val) => f.write_fmt(format_args!("    {val:?},\n"))?,
+                Err(err) => {
+                    f.write_fmt(format_args!(
+                        "ERROR while printing full list, could \
+                         not read next element from db: {err}"
+                    ))?;
+                    return Ok(());
+                }
+            }
+        }
+        f.write_str("]\n")
     }
 }
 

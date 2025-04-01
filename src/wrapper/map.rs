@@ -254,7 +254,20 @@ where
     Error<E>: From<Error<<DS as crate::ByteStore>::DbError>>,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_list().entries(self.iter()).finish()
+        f.write_str("[\n")?;
+        for element in self.iter() {
+            match element {
+                Ok((key, val)) => f.write_fmt(format_args!("    {key:?}: {val:?},\n"))?,
+                Err(err) => {
+                    f.write_fmt(format_args!(
+                        "ERROR while printing full list, could \
+                         not read next element from db: {err}"
+                    ))?;
+                    return Ok(());
+                }
+            }
+        }
+        f.write_str("]\n")
     }
 }
 
