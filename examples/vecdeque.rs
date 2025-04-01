@@ -1,0 +1,26 @@
+#[dbstruct::dbstruct(db=sled)]
+pub struct Test {
+    list: VecDeque<u8>,
+}
+
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let dir = tempdir::TempDir::new("vecdeque_example")?;
+    let db = Test::new(&dir)?;
+
+    db.list().push_front(&2)?;
+    db.list().push_back(&3)?;
+    db.list().push_front(&1)?;
+
+    dbg!("yoyo");
+    dbg!(db.list());
+    // Dropping the db here simulates the program
+    // stopping and restarting
+    dbg!("yoyo");
+    std::mem::drop(db);
+    let db = Test::new(dir)?;
+
+    let res: Vec<_> = db.list().into_iter().collect::<Result<_, _>>()?;
+    assert_eq!(res, vec![1, 2, 3]);
+
+    Ok(())
+}
