@@ -72,7 +72,7 @@ fn definition(definition: Struct, bounds: &Option<syn::WhereClause>) -> TokenStr
     let Struct {
         ident,
         vis,
-        member_vars: extra_vars,
+        member_vars,
         db,
     } = definition;
     match bounds {
@@ -81,14 +81,14 @@ fn definition(definition: Struct, bounds: &Option<syn::WhereClause>) -> TokenStr
             quote!(
                 #vis struct #ident<#predicates> {
                     ds: DS,
-                    #(#extra_vars),*
+                    #(#member_vars),*
                 }
             )
         }
         None => quote!(
         #vis struct #ident {
             #db,
-            #(#extra_vars),*
+            #(#member_vars),*
         }),
     }
     .into()

@@ -32,21 +32,23 @@ pub struct Test {
 	the_result: String,
 }
 
-fn main() {
+fn main() -> Result<(), Box<dyn std::error::Error>> {
 	// a wrapper around a HashMap that implements the 
 	// `DataStore` trait
-	let db = Test::new(&Path::new("the_db")).unwrap();
+    let path_to_dir = tempdir::TempDir::new("readme_example")?;
+	let db = Test::new(path_to_dir)?;
 
-	db.the_awnser().set(&42).unwrap();
-	assert_eq!(42u8, db.the_awnser().get().unwrap());
+	db.the_awnser().set(&42)?;
+	assert_eq!(42u8, db.the_awnser().get()?);
 
-	db.primes().push(&2).unwrap();
-	db.primes().push(&3).unwrap();
-	db.primes().push(&5).unwrap();
-    db.primes().push(&7).unwrap();
-    assert_eq!(Some(7), db.primes().pop().unwrap());
+	db.primes().push(&2)?;
+	db.primes().push(&3)?;
+	db.primes().push(&5)?;
+    db.primes().push(&7)?;
+    assert_eq!(Some(7), db.primes().pop()?);
 
-    assert_eq!(String::from("42"), db.the_result().get().unwrap());
+    assert_eq!(String::from("42"), db.the_result().get()?);
+    Ok(())
 }
 ```
 

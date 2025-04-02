@@ -5,7 +5,7 @@ use syn::{parse_quote, Expr, Ident, LocalInit, Pat, PathArguments, Token};
 use crate::model::backend::Backend;
 use crate::model::{Field, Model, Wrapper};
 
-use super::struct_def::{deque_head_ident, deque_tail_ident, vec_len_ident, Struct};
+use super::struct_def::{deque_head_ident, deque_tail_ident, no_syn_phantom_ident, vec_len_ident, Struct};
 
 pub struct NewMethod {
     pub locals: Vec<syn::Local>,
@@ -132,6 +132,34 @@ fn deque_tail_init(field: &Field) -> syn::Local {
     local_init(tail_expr(ty, field.key), deque_tail_ident(&field.ident))
 }
 
+fn no_sync_phantom_local_init() -> syn::Local {
+    let ident = syn::PathSegment {
+        ident: no_syn_phantom_ident(),
+        arguments: PathArguments::None,
+    };
+    let ident = syn::Path {
+        leading_colon: None,
+        segments: Punctuated::from_iter(std::iter::once(ident)),
+    };
+    let ident = syn::PatPath {
+        attrs: Vec::new(),
+        qself: None,
+        path: ident,
+    };
+    let eq_token = Token![=](Span::call_site());
+    syn::Local {
+        attrs: Vec::new(),
+        let_token: Token![let](Span::call_site()),
+        pat: Pat::Path(ident),
+        init: Some(LocalInit {
+            eq_token,
+            expr: parse_quote!(::std::marker::PhantomData),
+            diverge: None,
+        }),
+        semi_token: Token![;](Span::call_site()),
+    }
+}
+
 fn sled_from_path() -> syn::Local {
     let stmt: syn::Stmt = parse_quote!(
     let ds = ::dbstruct::sled::Config::default()
@@ -164,6 +192,8 @@ fn btreemap() -> syn::Local {
         _ => unreachable!(),
     }
 }
+
+
 
 impl NewMethod {
     pub fn from(model: &Model, struct_def: &Struct) -> Self {
@@ -201,6 +231,7 @@ impl NewMethod {
             _ => Vec::new(),
         });
         locals.extend(inits);
+        locals.push(no_sync_phantom_local_init());
 
         Self {
             locals,

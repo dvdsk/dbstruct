@@ -1,4 +1,6 @@
+use std::cell::Cell;
 use std::error::Error;
+use std::marker::PhantomData;
 use std::sync::atomic::AtomicUsize;
 use std::sync::Arc;
 
@@ -38,6 +40,7 @@ struct MacroInput {
 pub struct MacroOutput<DS: DataStore> {
     ds: DS,
     queue_len: Arc<AtomicUsize>,
+    phantom: PhantomData<Cell<()>>,
 }
 
 impl<DS> MacroOutput<DS>
@@ -56,6 +59,7 @@ where
         Ok(Self {
             ds,
             queue_len: Arc::new(AtomicUsize::new(queue_len)),
+            phantom: PhantomData,
         })
     }
 

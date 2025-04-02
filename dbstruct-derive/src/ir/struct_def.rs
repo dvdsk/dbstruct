@@ -38,13 +38,17 @@ pub fn deque_tail_ident(ident: &syn::Ident) -> syn::Ident {
     syn::Ident::new(&name, proc_macro2::Span::call_site())
 }
 
+pub fn no_syn_phantom_ident() -> syn::Ident {
+    syn::Ident::new("prevent_sync", proc_macro2::Span::call_site())
+}
+
 fn deque_head_field(field: &Field) -> syn::Field {
     syn::Field {
         attrs: Vec::new(),
         vis: syn::Visibility::Inherited,
         ident: Some(deque_head_ident(&field.ident)),
         colon_token: None,
-        ty: parse_quote!(std::sync::Arc<std::sync::atomic::AtomicU64>),
+        ty: parse_quote!(::std::sync::Arc<::std::sync::atomic::AtomicU64>),
         mutability: syn::FieldMutability::None,
     }
 }
@@ -55,7 +59,18 @@ fn deque_tail_field(field: &Field) -> syn::Field {
         vis: syn::Visibility::Inherited,
         ident: Some(deque_tail_ident(&field.ident)),
         colon_token: None,
-        ty: parse_quote!(std::sync::Arc<std::sync::atomic::AtomicU64>),
+        ty: parse_quote!(::std::sync::Arc<::std::sync::atomic::AtomicU64>),
+        mutability: syn::FieldMutability::None,
+    }
+}
+
+fn no_sync_phantom() -> syn::Field {
+    syn::Field {
+        attrs: Vec::new(),
+        vis: syn::Visibility::Inherited,
+        ident: Some(no_syn_phantom_ident()),
+        colon_token: None,
+        ty: parse_quote!(::std::marker::PhantomData<::std::cell::Cell<()>>),
         mutability: syn::FieldMutability::None,
     }
 }
@@ -82,7 +97,7 @@ impl From<&Model> for Struct {
             mutability: syn::FieldMutability::None,
         };
 
-        let len_vars = model
+        let mut member_vars: Vec<_> = model
             .fields
             .iter()
             .flat_map(|field| match &field.wrapper {
@@ -92,10 +107,12 @@ impl From<&Model> for Struct {
             })
             .collect();
 
+        member_vars.push(no_sync_phantom());
+
         Struct {
             ident: model.ident.clone(),
             vis: model.vis.clone(),
-            member_vars: len_vars,
+            member_vars,
             db,
         }
     }
