@@ -8,8 +8,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let db = Test::new(&dir)?;
 
     db.list().push_front(&2)?;
-    db.list().push_back(&3)?;
     db.list().push_front(&1)?;
+    db.list().push_back(&3)?;
 
     // Dropping the db here simulates the program
     // stopping and restarting

@@ -242,7 +242,7 @@ mod tests {
         map.insert(&3, &13).unwrap();
 
         let pairs: Vec<(u8, u8)> = map.iter().map(Result::unwrap).collect();
-        assert!(dbg!(&pairs).contains(&(1, 11)));
+        assert!(pairs.contains(&(1, 11)));
         assert!(pairs.contains(&(2, 12)));
         assert!(pairs.contains(&(3, 13)));
     }

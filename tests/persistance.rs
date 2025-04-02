@@ -14,10 +14,8 @@ fn push_persistance() {
 
     db.the_field().set(&8).unwrap();
 
-    db.primes().push(&2).unwrap();
-    db.primes().push(&3).unwrap();
-    db.primes().push(&5).unwrap();
-    db.primes().push(&7).unwrap();
+    let primes = [2, 3, 5, 7];
+    db.primes().extend(&primes).unwrap();
 
     std::mem::drop(db);
     let db = Test::new(&path).unwrap();
@@ -32,10 +30,8 @@ fn clear_persistence() {
     let path = dir.path().join("db");
     let db = Test::new(&path).unwrap();
 
-    db.primes().push(&2).unwrap();
-    db.primes().push(&3).unwrap();
-    db.primes().push(&5).unwrap();
-    db.primes().push(&7).unwrap();
+    let primes = [2, 3, 5, 7];
+    db.primes().extend(&primes).unwrap();
     db.primes().clear().unwrap();
 
     std::mem::drop(db);

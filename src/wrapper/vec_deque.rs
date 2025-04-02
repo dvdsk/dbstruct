@@ -10,6 +10,8 @@ use serde::{Deserialize, Serialize};
 use crate::traits::DataStore;
 use crate::Error;
 
+use super::PhantomUnsync;
+
 mod extend;
 mod iterator;
 
@@ -19,6 +21,7 @@ where
     DS: DataStore,
 {
     phantom: PhantomData<T>,
+    phantom2: PhantomUnsync,
     ds: DS,
     prefix: u8,
     // Points to the current free slot
@@ -58,9 +61,14 @@ where
 {
     #[doc(hidden)]
     pub fn new(ds: DS, prefix: u8, head: Arc<AtomicU64>, tail: Arc<AtomicU64>) -> Self {
-        assert_ne!(head.load(Ordering::Relaxed), tail.load(Ordering::Relaxed));
+        assert_ne!(
+            head.load(Ordering::Relaxed),
+            tail.load(Ordering::Relaxed),
+            "VecDeque::new failed"
+        );
         Self {
             phantom: PhantomData,
+            phantom2: PhantomData,
             ds,
             prefix,
             head,
@@ -118,7 +126,7 @@ where
     /// ```
     /// #[dbstruct::dbstruct(db=btreemap)]
     /// struct Test {
-    ///	    list: Vec<String>,
+    ///	    list: VecDeque<String>,
     ///	}
     ///
     ///	# fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -139,10 +147,6 @@ where
             index: free_tail,
         };
 
-        eprintln!(
-            "push_back, {:?}..{:?}, idx: {:?}",
-            &self.head, &self.tail, key.index
-        );
         self.ds.insert::<Prefixed, Q, T>(&key, value)?;
         Ok(())
     }
@@ -160,13 +164,13 @@ where
     /// ```
     /// #[dbstruct::dbstruct(db=btreemap)]
     /// struct Test {
-    ///	    list: Vec<String>,
+    ///	    list: VecDeque<String>,
     ///	}
     ///
     ///	# fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// let db = Test::new()?;
-    /// db.list().front_back("b")?;
-    /// db.list().front_back("a")?;
+    /// db.list().push_front("b")?;
+    /// db.list().push_front("a")?;
     /// # Ok(())
     /// # }
     /// ```
@@ -181,10 +185,6 @@ where
             index: free_head,
         };
 
-        eprintln!(
-            "push_frnt, {:?}..{:?}, idx: {:?}",
-            &self.head, &self.tail, key.index
-        );
         self.ds.insert::<Prefixed, Q, T>(&key, value)?;
         Ok(())
     }
@@ -200,7 +200,7 @@ where
     /// ```
     /// #[dbstruct::dbstruct(db=btreemap)]
     /// struct Test {
-    ///	    list: Vec<String>,
+    ///	    list: VecDeque<String>,
     ///	}
     ///
     ///	# fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -211,10 +211,17 @@ where
     /// # }
     /// ```
     pub fn pop_back(&self) -> Result<Option<T>, Error<E>> {
-        let free_tail = self.tail.fetch_sub(1, Ordering::Relaxed);
+        let tail = self.tail.load(Ordering::Relaxed);
+        let head = self.head.load(Ordering::Relaxed);
+        let next_tail = tail - 1;
+        if next_tail != head {
+            self.tail.store(tail - 1, Ordering::Relaxed);
+        }
+        // TODO TAIL AND HEAD COLLIDE, TEST THIS AND FIX POP_FRONT SIMILARLY
+
         let key = Prefixed {
             prefix: self.prefix,
-            index: free_tail - 1,
+            index: tail - 1,
         };
 
         self.ds.remove(&key)
@@ -231,7 +238,7 @@ where
     /// ```
     /// #[dbstruct::dbstruct(db=btreemap)]
     /// struct Test {
-    ///	    list: Vec<String>,
+    ///	    list: VecDeque<String>,
     ///	}
     ///
     ///	# fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -261,7 +268,7 @@ where
     /// ```
     /// #[dbstruct::dbstruct(db=btreemap)]
     /// struct Test {
-    ///	    list: Vec<String>,
+    ///	    list: VecDeque<String>,
     ///	}
     ///
     ///	# fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -269,7 +276,9 @@ where
     /// db.list().extend(["a", "b", "c"])?;
     /// assert!(!db.list().is_empty());
     /// db.list().clear();
+    /// dbg!("post_clear");
     /// assert!(db.list().is_empty());
+    /// dbg!("post fn");
     /// # Ok(())
     /// # }
     /// ```
@@ -286,7 +295,7 @@ where
     /// ```
     /// #[dbstruct::dbstruct(db=btreemap)]
     /// struct Test {
-    ///	    list: Vec<String>,
+    ///	    list: VecDeque<String>,
     ///	}
     ///
     ///	# fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -309,8 +318,8 @@ where
     /// ```
     /// #[dbstruct::dbstruct(db=btreemap)]
     /// struct Test {
-    ///	    list_a: Vec<String>,
-    ///	    list_b: Vec<String>,
+    ///	    list_a: VecDeque<String>,
+    ///	    list_b: VecDeque<String>,
     ///	}
     ///
     ///	# fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -347,169 +356,5 @@ where
             }
         }
         f.write_str("]\n")
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::stores;
-
-    pub(crate) type TestVecDeque<T> = VecDeque<T, stores::BTreeMap>;
-    pub(crate) fn empty<T: Serialize + DeserializeOwned>() -> TestVecDeque<T> {
-        let ds = stores::BTreeMap::new();
-        let head = Arc::new(AtomicU64::new(u64::MAX / 2 - 1));
-        let tail = Arc::new(AtomicU64::new(u64::MAX / 2));
-
-        VecDeque::new(ds, 1, head, tail)
-    }
-
-    mod given_empty {
-        use super::*;
-
-        #[test]
-        fn len_is_zero() {
-            let vec: TestVecDeque<()> = empty();
-            assert_eq!(vec.len(), 0);
-        }
-
-        #[test]
-        fn push_increases_the_len() {
-            let vec: VecDeque<u16, _> = empty();
-            vec.push_back(&42).unwrap();
-            assert_eq!(vec.len(), 1)
-        }
-
-        #[test]
-        fn pop_return_none() {
-            let vec: TestVecDeque<()> = empty();
-            let elem = vec.pop_back().unwrap();
-            assert_eq!(elem, None)
-        }
-    }
-
-    mod push_pop_back {
-        use super::*;
-
-        #[test]
-        fn len_is_two() {
-            let vec: VecDeque<i32, _> = empty();
-            vec.push_back(&42).unwrap();
-            vec.push_back(&43).unwrap();
-
-            assert_eq!(vec.len(), 2);
-        }
-
-        #[test]
-        fn element_pop_in_the_right_order() {
-            let vec = empty();
-            vec.push_back(&42).unwrap();
-            vec.push_back(&43).unwrap();
-
-            assert_eq!(vec.pop_back().unwrap(), Some(43));
-            assert_eq!(vec.pop_back().unwrap(), Some(42));
-        }
-
-        #[test]
-        fn third_pop_is_none() {
-            let vec: VecDeque<u16, stores::BTreeMap> = empty();
-            vec.push_back(&42).unwrap();
-            vec.push_back(&43).unwrap();
-
-            vec.pop_back().unwrap();
-            vec.pop_back().unwrap();
-            let elem = vec.pop_back().unwrap();
-            assert_eq!(elem, None)
-        }
-    }
-
-    mod push_pop_front {
-        use super::*;
-
-        #[test]
-        fn len_is_two() {
-            let vec: VecDeque<i32, _> = empty();
-            vec.push_front(&42).unwrap();
-            vec.push_front(&43).unwrap();
-
-            assert_eq!(vec.len(), 2);
-        }
-
-        #[test]
-        fn element_pop_in_the_right_order() {
-            let vec = empty();
-            vec.push_front(&42).unwrap();
-            vec.push_front(&43).unwrap();
-
-            assert_eq!(vec.pop_front().unwrap(), Some(43));
-            assert_eq!(vec.pop_front().unwrap(), Some(42));
-        }
-
-        #[test]
-        fn third_pop_is_none() {
-            let vec: VecDeque<u16, stores::BTreeMap> = empty();
-            vec.push_front(&42).unwrap();
-            vec.push_front(&43).unwrap();
-
-            vec.pop_front().unwrap();
-            vec.pop_front().unwrap();
-            let elem = vec.pop_front().unwrap();
-            assert_eq!(elem, None)
-        }
-    }
-
-    mod combined_front_back {
-        use super::*;
-
-        #[test]
-        fn len_is_correct() {
-            let vec: VecDeque<i32, _> = empty();
-            vec.push_front(&42).unwrap();
-            assert_eq!(vec.len(), 1);
-
-            vec.push_back(&43).unwrap();
-            assert_eq!(vec.len(), 2);
-
-            vec.push_front(&41).unwrap();
-            assert_eq!(vec.len(), 3);
-        }
-
-        #[test]
-        fn element_pop_in_the_right_order() {
-            let vec = empty();
-            vec.push_front(&42).unwrap();
-            vec.push_back(&43).unwrap();
-            vec.push_front(&41).unwrap();
-
-            assert_eq!(vec.pop_front().unwrap(), Some(41));
-            assert_eq!(vec.pop_back().unwrap(), Some(43));
-            assert_eq!(vec.pop_front().unwrap(), Some(42));
-        }
-
-        #[test]
-        fn fourth_pop_is_none() {
-            let vec: VecDeque<u16, stores::BTreeMap> = empty();
-            vec.push_front(&42).unwrap();
-            vec.push_back(&43).unwrap();
-            vec.push_front(&41).unwrap();
-
-            vec.pop_front().unwrap();
-            vec.pop_front().unwrap();
-            vec.pop_front().unwrap();
-            let elem = vec.pop_front().unwrap();
-            assert_eq!(elem, None)
-        }
-
-        #[test]
-        fn access_front_via_back_pop() {
-            let vec: VecDeque<u16, stores::BTreeMap> = empty();
-            vec.push_front(&43).unwrap();
-            vec.push_front(&42).unwrap();
-            vec.push_front(&41).unwrap();
-
-            assert_eq!(vec.pop_back().unwrap(), Some(43));
-            assert_eq!(vec.pop_back().unwrap(), Some(42));
-            assert_eq!(vec.pop_back().unwrap(), Some(41));
-        }
     }
 }

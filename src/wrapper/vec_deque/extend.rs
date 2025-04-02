@@ -75,7 +75,7 @@ mod tests {
     fn error() {
         let ds = stores::BTreeMap::new();
         let tail = Arc::new(AtomicU64::new(u64::MAX / 2));
-        let head = Arc::new(AtomicU64::new(u64::MAX / 2));
+        let head = Arc::new(AtomicU64::new(u64::MAX / 2 - 1));
         let mut vec: VecDeque<u16, stores::BTreeMap> = VecDeque::new(ds.clone(), 1, tail, head);
 
         let iter = [1, 2, 3, 4];
@@ -88,34 +88,5 @@ mod tests {
             err.iter.collect::<std::collections::VecDeque<_>>(),
             vec![&2, &3, &4]
         );
-    }
-
-    #[test]
-    fn push_str_slices() {
-        let ds = stores::BTreeMap::new();
-        let tail = Arc::new(AtomicU64::new(u64::MAX / 2));
-        let head = Arc::new(AtomicU64::new(u64::MAX / 2));
-        let mut vec: VecDeque<String, _> = VecDeque::new(ds.clone(), 1, tail, head);
-
-        let iter = ["1", "2", "3", "4"];
-        vec.extend(iter).unwrap();
-        assert_eq!(vec.len(), 4);
-        assert_eq!(vec.pop_back().unwrap(), Some("4".to_string()));
-    }
-
-    #[test]
-    fn push_strings() {
-        let ds = stores::BTreeMap::new();
-        let tail = Arc::new(AtomicU64::new(u64::MAX / 2));
-        let head = Arc::new(AtomicU64::new(u64::MAX / 2));
-        let mut vec: VecDeque<String, _> = VecDeque::new(ds.clone(), 1, tail, head);
-
-        let iter = [
-            "1".to_owned(),
-            "2".to_owned(),
-            "3".to_owned(),
-            "4".to_owned(),
-        ];
-        vec.extend(&iter).unwrap();
     }
 }

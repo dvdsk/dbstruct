@@ -52,6 +52,7 @@ impl byte_store::Ordered for BTreeMap {
         let Some((k, v)) = map.range(range).next_back() else {
             return Ok(None);
         };
+        dbg!(k);
         Ok(Some((k.to_vec(), v.to_vec())))
     }
     fn get_gt(&self, key: &[u8]) -> Result<Option<(Self::Bytes, Self::Bytes)>, Self::DbError> {
@@ -114,6 +115,8 @@ impl BTreeMap {
 
 #[cfg(test)]
 mod tests {
+    use tracing_subscriber::EnvFilter;
+
     use super::BTreeMap;
     use crate::traits::data_store::Ordered;
     use crate::traits::DataStore;
@@ -123,17 +126,22 @@ mod tests {
         let ds = BTreeMap::new();
         let existing: Option<u16> = ds.insert(&1, &2).unwrap();
         assert_eq!(existing, None);
-        let val: u8 = ds.remove(&1).unwrap().unwrap();
+        let val: u16 = ds.remove(&1).unwrap().unwrap();
         assert_eq!(val, 2);
     }
 
     #[test]
     fn get_lt() {
+        tracing_subscriber::fmt()
+            .with_env_filter(EnvFilter::from_default_env())
+            .init();
+
         let ds = BTreeMap::new();
-        ds.insert::<_, u16, u16>(&1, &2).unwrap();
-        ds.insert::<_, u16, u16>(&10, &4).unwrap();
-        ds.insert::<_, u16, u16>(&20, &8).unwrap();
-        let (key, val): (u8, u8) = ds.get_lt(&11).unwrap().unwrap();
+        ds.insert::<u16, u16, u16>(&1, &2).unwrap();
+        ds.insert::<u16, u16, u16>(&10, &4).unwrap();
+        ds.insert::<u16, u16, u16>(&20, &8).unwrap();
+
+        let (key, val): (u16, u16) = ds.get_lt::<u16, u16, u16>(&11).unwrap().unwrap();
         assert_eq!(key, 10);
         assert_eq!(val, 4);
     }
@@ -141,10 +149,10 @@ mod tests {
     #[test]
     fn get_gt() {
         let ds = BTreeMap::new();
-        ds.insert::<_, u16, u16>(&1, &2).unwrap();
-        ds.insert::<_, u16, u16>(&10, &4).unwrap();
-        ds.insert::<_, u16, u16>(&20, &8).unwrap();
-        let (key, val): (u8, u8) = ds.get_gt(&10).unwrap().unwrap();
+        ds.insert::<u16, u16, u16>(&1, &2).unwrap();
+        ds.insert::<u16, u16, u16>(&10, &4).unwrap();
+        ds.insert::<u16, u16, u16>(&20, &8).unwrap();
+        let (key, val): (u16, u16) = ds.get_gt::<u16, u16, u16>(&10).unwrap().unwrap();
         assert_eq!(key, 20);
         assert_eq!(val, 8);
     }

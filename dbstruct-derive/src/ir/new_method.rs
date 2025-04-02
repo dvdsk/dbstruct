@@ -49,12 +49,9 @@ fn tail_expr(ty: &syn::Type, prefix: u8) -> Box<syn::Expr> {
             std::sync::atomic::AtomicU64::new(
                 ::dbstruct::traits::data_store::Ordered::get_lt(
                         &ds,
-                        dbg!(&::dbstruct::wrapper::DequePrefixed::max(#prefix)),
+                        &::dbstruct::wrapper::DequePrefixed::max(#prefix),
                     )?
-                    .map(|(key, _): (::dbstruct::wrapper::DequePrefixed, #ty)| {
-                        eprintln!("tail key: {key:?}");
-                        key
-                    })
+                    .map(|(key, _): (::dbstruct::wrapper::DequePrefixed, #ty)| key)
                     .map(|key| key.index() + 1)
                     .unwrap_or(u64::MAX / 2)
             ) // atomic new
@@ -69,9 +66,9 @@ fn head_expr(ty: &syn::Type, prefix: u8) -> Box<syn::Expr> {
             std::sync::atomic::AtomicU64::new(
                 ::dbstruct::traits::data_store::Ordered::get_gt(
                         &ds,
-                        dbg!(&::dbstruct::wrapper::DequePrefixed::min(#prefix)),
+                        &::dbstruct::wrapper::DequePrefixed::min(#prefix),
                     )?
-                    .map(|(key, _): (::dbstruct::wrapper::DequePrefixed, #ty)| dbg!(key))
+                    .map(|(key, _): (::dbstruct::wrapper::DequePrefixed, #ty)| key)
                     .map(|key| key.index() - 1)
                     .unwrap_or(u64::MAX / 2 - 1)
             ) // atomic new
@@ -123,10 +120,7 @@ fn deque_head_init(field: &Field) -> syn::Local {
         _ => unreachable!("checked by caller"),
     };
 
-    local_init(
-        head_expr(ty, field.key),
-        deque_head_ident(&field.ident),
-    )
+    local_init(head_expr(ty, field.key), deque_head_ident(&field.ident))
 }
 
 fn deque_tail_init(field: &Field) -> syn::Local {

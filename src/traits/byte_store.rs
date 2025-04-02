@@ -216,14 +216,14 @@ where
     B: AsRef<[u8]>,
     BS: byte_store::Ordered<DbError = E, Bytes = B>,
 {
-    fn get_lt<InKey, OutKey, Value>(
+    fn get_lt<InKey, OutKey, OutVal>(
         &self,
         key: &InKey,
-    ) -> Result<Option<(OutKey, Value)>, Error<Self::DbError>>
+    ) -> Result<Option<(OutKey, OutVal)>, Error<Self::DbError>>
     where
         InKey: Serialize,
         OutKey: Serialize + DeserializeOwned,
-        Value: Serialize + DeserializeOwned,
+        OutVal: Serialize + DeserializeOwned,
     {
         let key = bincode::serde::encode_to_vec(key, key_config()).map_err(Error::SerializingKey)?;
         trace!("getting less then key: {key:?}");
@@ -235,7 +235,7 @@ where
                         "key ({}): {:?}, val ({}): {:?}",
                         std::any::type_name::<OutKey>(),
                         key.as_ref(),
-                        std::any::type_name::<dyn Value>(),
+                        std::any::type_name::<OutVal>(),
                         val.as_ref()
                     );
                     let (key, _) = bincode::serde::decode_from_slice(key.as_ref(), key_config())

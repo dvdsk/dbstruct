@@ -10,6 +10,8 @@ use tracing::debug;
 use crate::traits::DataStore;
 use crate::Error;
 
+use super::PhantomUnsync;
+
 mod extend;
 mod iterator;
 
@@ -19,6 +21,7 @@ where
     DS: DataStore,
 {
     phantom: PhantomData<T>,
+    phantom2: PhantomUnsync,
     ds: DS,
     prefix: u8,
     len: Arc<AtomicUsize>,
@@ -53,6 +56,7 @@ where
     pub fn new(ds: DS, prefix: u8, len: Arc<AtomicUsize>) -> Self {
         Self {
             phantom: PhantomData,
+            phantom2: PhantomData,
             ds,
             prefix,
             len,

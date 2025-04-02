@@ -8,6 +8,8 @@ use tracing::{instrument, trace};
 use crate::traits::{byte_store, DataStore};
 use crate::Error;
 
+use super::PhantomUnsync;
+
 mod extend;
 mod iterator;
 
@@ -20,6 +22,7 @@ where
 {
     phantom_key: PhantomData<&'a Key>,
     phantom_val: PhantomData<Value>,
+    phantom2: PhantomUnsync,
     tree: DS,
     prefix: u8,
 }
@@ -43,6 +46,7 @@ where
         Self {
             phantom_key: PhantomData,
             phantom_val: PhantomData,
+            phantom2: PhantomData,
             tree,
             prefix,
         }
