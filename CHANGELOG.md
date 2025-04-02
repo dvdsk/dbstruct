@@ -7,22 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2025-04-02
+
 ### Added
  - Wrappers can now be debug printed
  - Collection wrappers now have an `iter()` method
- - Adds VecDeque collection
+ - Adds `VecDeque` collection
 
 ## Changed
  - **Breaking:** Encoding format has changed, any data created with older
    versions cannot be loaded by this version of `dbstruct`!
-
+ - **Breaking:** The generated struct is no longer `Sync`.
 
 ## [0.5.0] - 2025-02-01
 
 ### Added
- - examples added to the documentation of all wrapper member functions
- - the map wrapper (`HashMap` like structure) now supports `remove`
- - the vec wrapper now supports `clear`
+ - Examples added to the documentation of all wrapper member functions
+ - The map wrapper (`HashMap` like structure) now supports `remove`
+ - The `vec` wrapper now supports `clear`
 
 ### Changed
  - **Breaking:** `TryExtend` trait removed in favor of member functions `try_extend`
