@@ -6,7 +6,6 @@
 [![Crates.io](https://img.shields.io/crates/d/dbstruct?style=flat-square)](https://crates.io/crates/dbstruct)
 [![API](https://docs.rs/dbstruct/badge.svg)](https://docs.rs/dbstruct)
 [![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](LICENSE-MIT)
-**This is an early release, the API is mostly stable but might still change**
 
 Create a typed embedded database by defining a struct. Interact with the database through getters and setters. Choose how values missing in the database are represented. Standard library types `Vec`, `HashMap` and `Option` have special getters and setters to mimic their standard library functionality. You can push and pop from vecs. 
 
