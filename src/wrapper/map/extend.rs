@@ -10,7 +10,7 @@ use super::Map;
 
 /// Inserts all new key-values from the iterator and replaces values with
 /// existing keys with new values returned from the iterator.
-impl<'a, Key, Value, DS> Map<'_, Key, Value, DS>
+impl<Key, Value, DS> Map<Key, Value, DS>
 where
     DS: DataStore,
     Key: Serialize + DeserializeOwned,
@@ -40,7 +40,7 @@ where
     /// # Ok(())
     /// # }
     /// ```
-    pub fn extend<I, K, V>(
+    pub fn extend<'a, I, K, V>(
         &mut self,
         iter: I,
     ) -> Result<(), ExtendError<I::Item, I::IntoIter, crate::Error<DS::DbError>>>
@@ -79,7 +79,7 @@ mod tests {
         #[test]
         fn while_db_errors() {
             let ds = stores::BTreeMap::new();
-            let mut map: Map<'_, String, u16, _> = Map::new(ds.clone(), 1);
+            let mut map: Map<String, u16, _> = Map::new(ds.clone(), 1);
 
             let iter = [("a", &1)];
             ds.force_error();

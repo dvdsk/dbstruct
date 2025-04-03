@@ -1,26 +1,26 @@
 use core::fmt;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
-use std::borrow::Borrow;
 use std::marker::PhantomData;
-use tracing::{instrument, trace};
+use tracing::instrument;
 
 use crate::traits::{byte_store, DataStore};
 use crate::Error;
 
 use super::PhantomUnsync;
 
+mod entry;
 mod extend;
 mod iterator;
 
 /// mimics the API of [`HashMap`][std::collections::HashMap]
-pub struct Map<'a, Key, Value, DS>
+pub struct Map<Key, Value, DS>
 where
     Key: Serialize,
     Value: Serialize + DeserializeOwned,
     DS: DataStore,
 {
-    phantom_key: PhantomData<&'a Key>,
+    phantom_key: PhantomData<Key>,
     phantom_val: PhantomData<Value>,
     phantom2: PhantomUnsync,
     tree: DS,
@@ -33,7 +33,7 @@ pub struct Prefixed<'a, K: ?Sized> {
     key: &'a K,
 }
 
-impl<'a, Key, Value, E, DS> Map<'a, Key, Value, DS>
+impl<Key, Value, E, DS> Map<Key, Value, DS>
 where
     E: fmt::Debug,
     Key: Serialize + DeserializeOwned,
@@ -49,18 +49,6 @@ where
             phantom2: PhantomData,
             tree,
             prefix,
-        }
-    }
-
-    fn prefix<Q>(&self, key: &'a Q) -> Prefixed<'a, Q>
-    where
-        Key: Borrow<Q>,
-        Q: Serialize + ?Sized,
-    {
-        trace!("prefixing key with: {}", self.prefix);
-        Prefixed {
-            prefix: self.prefix,
-            key,
         }
     }
 
@@ -98,14 +86,17 @@ where
     /// # }
     /// ```
     #[instrument(skip_all, level = "debug")]
-    pub fn insert<K, V>(&self, key: &'a K, value: &'a V) -> Result<Option<Value>, Error<E>>
+    pub fn insert<K, V>(&self, key: &K, value: &V) -> Result<Option<Value>, Error<E>>
     where
         Key: std::borrow::Borrow<K>,
         K: Serialize + ?Sized,
         Value: std::borrow::Borrow<V>,
         V: Serialize + ?Sized,
     {
-        let key = self.prefix(key);
+        let key = Prefixed {
+            prefix: self.prefix,
+            key,
+        };
         let existing = self.tree.insert(&key, value)?;
         Ok(existing)
     }
@@ -113,7 +104,7 @@ where
     /// Returns a copy of the value corresponding to the key.
     ///
     /// The key may be any borrowed form of the map’s key type, but the
-    /// serialized form must match those for the key type.
+    /// serialized form must match that of the owned key type.
     ///
     /// # Errors
     /// This can fail if the underlying database ran into a problem
@@ -128,19 +119,22 @@ where
     ///
     ///	# fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// let db = Test::new()?;
-    /// db.map().insert(&1, &"a".to_owned())?;
+    /// db.map().insert(&1, "a")?;
     /// assert_eq!(db.map().get(&1)?, Some("a".to_owned()));
     /// assert_eq!(db.map().get(&2)?, None);
     /// # Ok(())
     /// # }
     /// ```
     #[instrument(skip_all, level = "debug")]
-    pub fn get<K>(&self, key: &'a K) -> Result<Option<Value>, Error<E>>
+    pub fn get<K>(&self, key: &K) -> Result<Option<Value>, Error<E>>
     where
         Key: std::borrow::Borrow<K>,
         K: Serialize + ?Sized,
     {
-        let key = self.prefix(key);
+        let key = Prefixed {
+            prefix: self.prefix,
+            key,
+        };
         let value = self.tree.get(&key)?;
         Ok(value)
     }
@@ -149,7 +143,7 @@ where
     /// was previously in the map.
     ///
     /// The key may be any borrowed form of the map’s key type, but the
-    /// serialized form must match those for the key type.
+    /// serialized form must match that of the owned key type.
     ///
     /// # Errors
     /// This can fail if the underlying database ran into a problem
@@ -165,25 +159,66 @@ where
     ///
     ///	# fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// let db = Test::new()?;
-    /// db.map().insert(&1, &"a".to_owned())?;
+    /// db.map().insert(&1, "a")?;
     /// assert_eq!(db.map().remove(&1)?, Some("a".to_owned()));
     /// assert_eq!(db.map().remove(&2)?, None);
     /// # Ok(())
     /// # }
     /// ```
     #[instrument(skip_all, level = "debug")]
-    pub fn remove<K>(&self, key: &'a K) -> Result<Option<Value>, Error<E>>
+    pub fn remove<K>(&self, key: &K) -> Result<Option<Value>, Error<E>>
     where
         Key: std::borrow::Borrow<K>,
         K: Serialize + ?Sized,
     {
-        let key = self.prefix(key);
+        let key = Prefixed {
+            prefix: self.prefix,
+            key,
+        };
         let value = self.tree.remove(&key)?;
         Ok(value)
     }
+
+    /// Returns `true` if the map contains a value for the specific key.
+    ///
+    /// The key may be any borrowed form of the map’s key type, but the
+    /// serialized form must match that of the owned key type.
+    ///
+    /// # Errors
+    /// This can fail if the underlying database ran into a problem
+    /// or if serialization failed.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// #[dbstruct::dbstruct(db=btreemap)]
+    /// struct Test {
+    ///	    map: HashMap<u16, String>,
+    ///	}
+    ///
+    ///	# fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// let db = Test::new()?;
+    /// db.map().insert(&1, "a")?;
+    /// assert_eq!(db.map().contains_key(&1)?, true);
+    /// assert_eq!(db.map().contains_key(&2)?, false);
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn contains_key<K>(&self, key: &K) -> Result<bool, Error<E>>
+    where
+        Key: std::borrow::Borrow<K>,
+        K: Serialize + ?Sized,
+    {
+        let key = Prefixed {
+            prefix: self.prefix,
+            key,
+        };
+        let value: Option<Value> = self.tree.get(&key)?;
+        Ok(value.is_some())
+    }
 }
 
-impl<Key, Value, E, DS> Map<'_, Key, Value, DS>
+impl<Key, Value, E, DS> Map<Key, Value, DS>
 where
     E: fmt::Debug,
     Key: Serialize + DeserializeOwned,
@@ -249,7 +284,7 @@ where
     }
 }
 
-impl<Key, Value, E, DS> fmt::Debug for Map<'_, Key, Value, DS>
+impl<Key, Value, E, DS> fmt::Debug for Map<Key, Value, DS>
 where
     E: fmt::Debug,
     Key: Serialize + DeserializeOwned + fmt::Debug,
@@ -280,7 +315,7 @@ mod tests {
     use super::*;
     use crate::stores;
 
-    pub(crate) type TestMap<'a, K, V> = Map<'a, K, V, stores::BTreeMap>;
+    pub(crate) type TestMap<'a, K, V> = Map<K, V, stores::BTreeMap>;
     pub(crate) fn empty<'a, K, V>() -> TestMap<'a, K, V>
     where
         K: Clone + Serialize + DeserializeOwned,
