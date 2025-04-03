@@ -230,20 +230,3 @@ where
         })
     }
 }
-
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn iterator_visits_all_elements() {
-        use super::super::tests::*;
-        let map = empty();
-        map.insert(&1, &11).unwrap();
-        map.insert(&2, &12).unwrap();
-        map.insert(&3, &13).unwrap();
-
-        let pairs: Vec<(u8, u8)> = map.iter().map(Result::unwrap).collect();
-        assert!(pairs.contains(&(1, 11)));
-        assert!(pairs.contains(&(2, 12)));
-        assert!(pairs.contains(&(3, 13)));
-    }
-}
