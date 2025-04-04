@@ -19,7 +19,7 @@ error[E0277]: the trait bound `CustomKeyType: serde::ser::Serialize` is not sati
 note: required by a bound in `dbstruct::wrapper::Map`
   --> src/wrapper/map.rs
    |
-   | pub struct Map<'a, Key, Value, DS>
+   | pub struct Map<Key, Value, DS>
    |            --- required by a bound in this struct
    | where
    |     Key: Serialize,
@@ -47,7 +47,7 @@ error[E0277]: the trait bound `CustomValType: serde::ser::Serialize` is not sati
 note: required by a bound in `dbstruct::wrapper::Map`
   --> src/wrapper/map.rs
    |
-   | pub struct Map<'a, Key, Value, DS>
+   | pub struct Map<Key, Value, DS>
    |            --- required by a bound in this struct
 ...
    |     Value: Serialize + DeserializeOwned,
@@ -76,7 +76,7 @@ error[E0277]: the trait bound `for<'de> CustomValType: serde::de::Deserialize<'d
 note: required by a bound in `dbstruct::wrapper::Map`
   --> src/wrapper/map.rs
    |
-   | pub struct Map<'a, Key, Value, DS>
+   | pub struct Map<Key, Value, DS>
    |            --- required by a bound in this struct
 ...
    |     Value: Serialize + DeserializeOwned,
@@ -101,11 +101,11 @@ error[E0277]: the trait bound `CustomKeyType: serde::ser::Serialize` is not sati
              (T0, T1, T2, T3)
              (T0, T1, T2, T3, T4)
            and $N others
-note: required by a bound in `dbstruct::wrapper::Map::<'a, Key, Value, DS>::new`
+note: required by a bound in `dbstruct::wrapper::Map::<Key, Value, DS>::new`
   --> src/wrapper/map.rs
    |
    |     Key: Serialize + DeserializeOwned,
-   |          ^^^^^^^^^ required by this bound in `Map::<'a, Key, Value, DS>::new`
+   |          ^^^^^^^^^ required by this bound in `Map::<Key, Value, DS>::new`
 ...
    |     pub fn new(tree: DS, prefix: u8) -> Self {
    |            --- required by a bound in this associated function
@@ -129,11 +129,11 @@ error[E0277]: the trait bound `CustomValType: serde::ser::Serialize` is not sati
              (T0, T1, T2, T3)
              (T0, T1, T2, T3, T4)
            and $N others
-note: required by a bound in `dbstruct::wrapper::Map::<'a, Key, Value, DS>::new`
+note: required by a bound in `dbstruct::wrapper::Map::<Key, Value, DS>::new`
   --> src/wrapper/map.rs
    |
    |     Value: Serialize + DeserializeOwned,
-   |            ^^^^^^^^^ required by this bound in `Map::<'a, Key, Value, DS>::new`
+   |            ^^^^^^^^^ required by this bound in `Map::<Key, Value, DS>::new`
 ...
    |     pub fn new(tree: DS, prefix: u8) -> Self {
    |            --- required by a bound in this associated function
@@ -156,11 +156,11 @@ error[E0277]: the trait bound `CustomKeyType: serde::de::DeserializeOwned` is no
              (T0, T1, T2, T3)
            and $N others
    = note: required for `CustomKeyType` to implement `serde::de::DeserializeOwned`
-note: required by a bound in `dbstruct::wrapper::Map::<'a, Key, Value, DS>::new`
+note: required by a bound in `dbstruct::wrapper::Map::<Key, Value, DS>::new`
   --> src/wrapper/map.rs
    |
    |     Key: Serialize + DeserializeOwned,
-   |                      ^^^^^^^^^^^^^^^^ required by this bound in `Map::<'a, Key, Value, DS>::new`
+   |                      ^^^^^^^^^^^^^^^^ required by this bound in `Map::<Key, Value, DS>::new`
 ...
    |     pub fn new(tree: DS, prefix: u8) -> Self {
    |            --- required by a bound in this associated function
@@ -183,11 +183,11 @@ error[E0277]: the trait bound `CustomValType: serde::de::DeserializeOwned` is no
              (T0, T1, T2, T3)
            and $N others
    = note: required for `CustomValType` to implement `serde::de::DeserializeOwned`
-note: required by a bound in `dbstruct::wrapper::Map::<'a, Key, Value, DS>::new`
+note: required by a bound in `dbstruct::wrapper::Map::<Key, Value, DS>::new`
   --> src/wrapper/map.rs
    |
    |     Value: Serialize + DeserializeOwned,
-   |                        ^^^^^^^^^^^^^^^^ required by this bound in `Map::<'a, Key, Value, DS>::new`
+   |                        ^^^^^^^^^^^^^^^^ required by this bound in `Map::<Key, Value, DS>::new`
 ...
    |     pub fn new(tree: DS, prefix: u8) -> Self {
    |            --- required by a bound in this associated function
