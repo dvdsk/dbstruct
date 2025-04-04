@@ -73,10 +73,10 @@ where
     /// ```
     /// #[dbstruct::dbstruct(db=btreemap)]
     /// struct Test {
-    ///	    list: Vec<String>,
-    ///	}
+    ///     list: Vec<String>,
+    /// }
     ///
-    ///	# fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// let db = Test::new()?;
     /// assert_eq!(db.list().get(0)?, None);
     /// db.list().push("a")?;
@@ -111,10 +111,10 @@ where
     /// ```
     /// #[dbstruct::dbstruct(db=btreemap)]
     /// struct Test {
-    ///	    list: Vec<String>,
-    ///	}
+    ///     list: Vec<String>,
+    /// }
     ///
-    ///	# fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// let db = Test::new()?;
     /// db.list().push("a")?;
     /// db.list().push("b")?;
@@ -147,10 +147,10 @@ where
     /// ```
     /// #[dbstruct::dbstruct(db=btreemap)]
     /// struct Test {
-    ///	    list: Vec<String>,
-    ///	}
+    ///     list: Vec<String>,
+    /// }
     ///
-    ///	# fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// let db = Test::new()?;
     /// db.list().extend(["a", "b", "c"])?;
     /// assert_eq!(db.list().pop()?, Some("c".to_owned()));
@@ -188,10 +188,10 @@ where
     /// ```
     /// #[dbstruct::dbstruct(db=btreemap)]
     /// struct Test {
-    ///	    list: Vec<String>,
-    ///	}
+    ///     list: Vec<String>,
+    /// }
     ///
-    ///	# fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// let db = Test::new()?;
     /// db.list().extend(["a", "b", "c"])?;
     /// assert!(!db.list().is_empty());
@@ -213,10 +213,10 @@ where
     /// ```
     /// #[dbstruct::dbstruct(db=btreemap)]
     /// struct Test {
-    ///	    list: Vec<String>,
-    ///	}
+    ///     list: Vec<String>,
+    /// }
     ///
-    ///	# fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// let db = Test::new()?;
     /// db.list().extend(["a", "b", "c"])?;
     /// assert_eq!(db.list().len(), 3);
@@ -233,11 +233,11 @@ where
     /// ```
     /// #[dbstruct::dbstruct(db=btreemap)]
     /// struct Test {
-    ///	    list_a: Vec<String>,
-    ///	    list_b: Vec<String>,
-    ///	}
+    ///     list_a: Vec<String>,
+    ///     list_b: Vec<String>,
+    /// }
     ///
-    ///	# fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// let db = Test::new()?;
     /// db.list_a().extend(["a", "b", "c"])?;
     /// assert!(!db.list_a().is_empty());

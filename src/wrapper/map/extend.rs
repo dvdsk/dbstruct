@@ -29,10 +29,10 @@ where
     /// ```
     /// #[dbstruct::dbstruct(db=btreemap)]
     /// struct Test {
-    ///	    map: HashMap<u16, String>,
-    ///	}
+    ///     map: HashMap<u16, String>,
+    /// }
     ///
-    ///	# fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// let db = Test::new()?;
     /// db.map().extend([(&1, "one"), (&2, "two"), (&3, "three")])?;
     /// assert_eq!(db.map().get(&1)?, Some("one".to_owned()));
@@ -40,6 +40,7 @@ where
     /// # Ok(())
     /// # }
     /// ```
+    #[allow(clippy::type_complexity)]
     pub fn extend<'a, I, K, V>(
         &mut self,
         iter: I,

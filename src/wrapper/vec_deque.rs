@@ -2,7 +2,6 @@ use core::fmt;
 use std::marker::PhantomData;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
-use std::u64;
 
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
@@ -86,10 +85,10 @@ where
     /// ```
     /// #[dbstruct::dbstruct(db=btreemap)]
     /// struct Test {
-    ///	    list: VecDeque<String>,
-    ///	}
+    ///     list: VecDeque<String>,
+    /// }
     ///
-    ///	# fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// let db = Test::new()?;
     /// assert_eq!(db.list().get(0)?, None);
     /// db.list().push_back("a")?;
@@ -126,10 +125,10 @@ where
     /// ```
     /// #[dbstruct::dbstruct(db=btreemap)]
     /// struct Test {
-    ///	    list: VecDeque<String>,
-    ///	}
+    ///     list: VecDeque<String>,
+    /// }
     ///
-    ///	# fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// let db = Test::new()?;
     /// db.list().push_back("a")?;
     /// db.list().push_back("b")?;
@@ -164,10 +163,10 @@ where
     /// ```
     /// #[dbstruct::dbstruct(db=btreemap)]
     /// struct Test {
-    ///	    list: VecDeque<String>,
-    ///	}
+    ///     list: VecDeque<String>,
+    /// }
     ///
-    ///	# fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// let db = Test::new()?;
     /// db.list().push_front("b")?;
     /// db.list().push_front("a")?;
@@ -200,10 +199,10 @@ where
     /// ```
     /// #[dbstruct::dbstruct(db=btreemap)]
     /// struct Test {
-    ///	    list: VecDeque<String>,
-    ///	}
+    ///     list: VecDeque<String>,
+    /// }
     ///
-    ///	# fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// let db = Test::new()?;
     /// db.list().extend(["a", "b", "c"])?;
     /// assert_eq!(db.list().pop_back()?, Some("c".to_owned()));
@@ -238,10 +237,10 @@ where
     /// ```
     /// #[dbstruct::dbstruct(db=btreemap)]
     /// struct Test {
-    ///	    list: VecDeque<String>,
-    ///	}
+    ///     list: VecDeque<String>,
+    /// }
     ///
-    ///	# fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// let db = Test::new()?;
     /// db.list().extend(["a", "b", "c"])?;
     /// assert_eq!(db.list().pop_front()?, Some("a".to_owned()));
@@ -268,10 +267,10 @@ where
     /// ```
     /// #[dbstruct::dbstruct(db=btreemap)]
     /// struct Test {
-    ///	    list: VecDeque<String>,
-    ///	}
+    ///     list: VecDeque<String>,
+    /// }
     ///
-    ///	# fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// let db = Test::new()?;
     /// db.list().extend(["a", "b", "c"])?;
     /// assert!(!db.list().is_empty());
@@ -295,10 +294,10 @@ where
     /// ```
     /// #[dbstruct::dbstruct(db=btreemap)]
     /// struct Test {
-    ///	    list: VecDeque<String>,
-    ///	}
+    ///     list: VecDeque<String>,
+    /// }
     ///
-    ///	# fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// let db = Test::new()?;
     /// db.list().extend(["a", "b", "c"])?;
     /// assert_eq!(db.list().len(), 3);
@@ -318,11 +317,11 @@ where
     /// ```
     /// #[dbstruct::dbstruct(db=btreemap)]
     /// struct Test {
-    ///	    list_a: VecDeque<String>,
-    ///	    list_b: VecDeque<String>,
-    ///	}
+    ///     list_a: VecDeque<String>,
+    ///     list_b: VecDeque<String>,
+    /// }
     ///
-    ///	# fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// let db = Test::new()?;
     /// db.list_a().extend(["a", "b", "c"])?;
     /// assert!(!db.list_a().is_empty());

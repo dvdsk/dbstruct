@@ -26,10 +26,10 @@ where
     /// ```
     /// #[dbstruct::dbstruct(db=btreemap)]
     /// struct Test {
-    ///	    list: Vec<String>,
-    ///	}
+    ///     list: Vec<String>,
+    /// }
     ///
-    ///	# fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// let db = Test::new()?;
     /// db.list().extend(["one", "two", "three"])?;
     /// assert_eq!(db.list().get(0)?, Some("one".to_owned()));
@@ -37,6 +37,7 @@ where
     /// # Ok(())
     /// # }
     /// ```
+    #[allow(clippy::type_complexity)]
     pub fn extend<I, Q>(
         &mut self,
         iter: I,

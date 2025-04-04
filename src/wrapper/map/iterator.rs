@@ -126,10 +126,10 @@ where
     /// ```
     /// #[dbstruct::dbstruct(db=btreemap)]
     /// struct Test {
-    ///	    map: HashMap<u16, String>,
-    ///	}
+    ///     map: HashMap<u16, String>,
+    /// }
     ///
-    ///	# fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// let db = Test::new()?;
     /// db.map().insert(&1, &"a".to_owned())?;
     /// db.map().insert(&2, &"b".to_owned())?;
@@ -165,10 +165,10 @@ where
     /// ```
     /// #[dbstruct::dbstruct(db=btreemap)]
     /// struct Test {
-    ///	    map: HashMap<u16, String>,
-    ///	}
+    ///     map: HashMap<u16, String>,
+    /// }
     ///
-    ///	# fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// let db = Test::new()?;
     /// db.map().insert(&1, &"a".to_owned())?;
     /// db.map().insert(&2, &"b".to_owned())?;
@@ -204,10 +204,10 @@ where
     /// ```
     /// #[dbstruct::dbstruct(db=btreemap)]
     /// struct Test {
-    ///	    map: HashMap<u16, String>,
-    ///	}
+    ///     map: HashMap<u16, String>,
+    /// }
     ///
-    ///	# fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// let db = Test::new()?;
     /// db.map().insert(&1, &"a".to_owned())?;
     /// db.map().insert(&2, &"b".to_owned())?;

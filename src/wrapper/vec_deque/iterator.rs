@@ -55,7 +55,7 @@ where
 /// This can be quite slow as it gets each element from
 /// the db individually. Consider using the Default wrapper
 /// instead of this if the `VecDeque` is "small" enough.
-impl<'a, T, E, DS> VecDeque<T, DS>
+impl<T, E, DS> VecDeque<T, DS>
 where
     E: fmt::Debug,
     T: Serialize + DeserializeOwned,

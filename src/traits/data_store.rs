@@ -64,7 +64,7 @@ pub trait Ordered: DataStore {
     ///
     /// ### Note
     /// The order follows the `Ord` implementation for `Vec<u8>`:
-    /// [] < [0] < [255] < [255, 0] < [255, 255] ...
+    /// `[] < [0] < [255] < [255, 0] < [255, 255] ...`
     /// To retain the ordering of numerical types use big endian representation
     fn get_lt<InKey, OutKey, Value>(
         &self,
@@ -79,7 +79,7 @@ pub trait Ordered: DataStore {
     ///
     /// ### Note
     /// The order follows the `Ord` implementation for `Vec<u8>`:
-    /// [] < [0] < [255] < [255, 0] < [255, 255] ...
+    /// `[] < [0] < [255] < [255, 0] < [255, 255] ...`
     /// To retain the ordering of numerical types use big endian representation
     fn get_gt<InKey, OutKey, Value>(
         &self,

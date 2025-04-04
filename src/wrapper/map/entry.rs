@@ -40,10 +40,10 @@ where
     /// ```
     /// #[dbstruct::dbstruct(db=btreemap)]
     /// struct Test {
-    ///	    map: HashMap<String, u16>,
-    ///	}
+    ///     map: HashMap<String, u16>,
+    /// }
     ///
-    ///	# fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// let db = Test::new()?;
     /// db.map().entry("poneyland".to_string())?.or_insert(3)?;
     /// assert_eq!(db.map().get("poneyland")?, Some(3));
@@ -75,10 +75,10 @@ where
     /// ```
     /// #[dbstruct::dbstruct(db=btreemap)]
     /// struct Test {
-    ///	    map: HashMap<String, String>,
-    ///	}
+    ///     map: HashMap<String, String>,
+    /// }
     ///
-    ///	# fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// let db = Test::new()?;
     ///
     /// let value = "hoho".to_string();
@@ -116,10 +116,10 @@ where
     /// ```
     /// #[dbstruct::dbstruct(db=btreemap)]
     /// struct Test {
-    ///	    map: HashMap<String, usize>,
-    ///	}
+    ///     map: HashMap<String, usize>,
+    /// }
     ///
-    ///	# fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// let db = Test::new()?;
     /// db.map().entry("poneyland".to_string())?
     ///     .or_insert_with_key(|key| key.chars().count())?;
@@ -153,10 +153,10 @@ where
     /// ```
     /// #[dbstruct::dbstruct(db=btreemap)]
     /// struct Test {
-    ///	    map: HashMap<String, u32>,
-    ///	}
+    ///     map: HashMap<String, u32>,
+    /// }
     ///
-    ///	# fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// let db = Test::new()?;
     /// assert_eq!(db.map().entry("poneyland".to_string())?.key(), &"poneyland".to_string());
     /// # Ok(())
@@ -180,10 +180,10 @@ where
     /// ```
     /// #[dbstruct::dbstruct(db=btreemap)]
     /// struct Test {
-    ///	    map: HashMap<String, u32>,
-    ///	}
+    ///     map: HashMap<String, u32>,
+    /// }
     ///
-    ///	# fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// let db = Test::new()?;
     ///
     /// db.map().entry("poneyland".to_string())?
@@ -224,10 +224,10 @@ where
     /// ```
     /// #[dbstruct::dbstruct(db=btreemap)]
     /// struct Test {
-    ///	    map: HashMap<String, String>,
-    ///	}
+    ///     map: HashMap<String, String>,
+    /// }
     ///
-    ///	# fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// let db = Test::new()?;
     /// let map = db.map();
     /// let entry = map.entry("poneyland".to_string())?
@@ -266,10 +266,10 @@ where
     /// ```
     /// #[dbstruct::dbstruct(db=btreemap)]
     /// struct Test {
-    ///	    map: HashMap<String, u32>,
-    ///	}
+    ///     map: HashMap<String, u32>,
+    /// }
     ///
-    ///	# fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// let db = Test::new()?;
     /// db.map().entry("poneyland".to_string())?.or_default()?;
     ///
@@ -313,10 +313,10 @@ where
     /// ```
     /// #[dbstruct::dbstruct(db=btreemap)]
     /// struct Test {
-    ///	    map: HashMap<String, u32>,
-    ///	}
+    ///     map: HashMap<String, u32>,
+    /// }
     ///
-    ///	# fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// let db = Test::new()?;
     /// db.map().entry("poneyland".to_string())?.or_insert(12)?;
     /// assert_eq!(db.map().entry("poneyland".to_string())?.key(), &"poneyland".to_string());
@@ -340,10 +340,10 @@ where
     ///
     /// #[dbstruct::dbstruct(db=btreemap)]
     /// struct Test {
-    ///	    map: HashMap<String, u32>,
-    ///	}
+    ///     map: HashMap<String, u32>,
+    /// }
     ///
-    ///	# fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// let db = Test::new()?;
     ///
     /// db.map().entry("poneyland".to_string())?.or_insert(12)?;
@@ -370,10 +370,10 @@ where
     ///
     /// #[dbstruct::dbstruct(db=btreemap)]
     /// struct Test {
-    ///	    map: HashMap<String, u32>,
-    ///	}
+    ///     map: HashMap<String, u32>,
+    /// }
     ///
-    ///	# fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// let db = Test::new()?;
     ///
     /// db.map().entry("poneyland".to_string())?.or_insert(12)?;
@@ -403,10 +403,10 @@ where
     ///
     /// #[dbstruct::dbstruct(db=btreemap)]
     /// struct Test {
-    ///	    map: HashMap<String, u32>,
-    ///	}
+    ///     map: HashMap<String, u32>,
+    /// }
     ///
-    ///	# fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// let db = Test::new()?;
     /// db.map().entry("poneyland".to_string())?.or_insert(12)?;
     ///
@@ -435,10 +435,10 @@ where
     ///
     /// #[dbstruct::dbstruct(db=btreemap)]
     /// struct Test {
-    ///	    map: HashMap<String, u32>,
-    ///	}
+    ///     map: HashMap<String, u32>,
+    /// }
     ///
-    ///	# fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// let db = Test::new()?;
     /// db.map().entry("poneyland".to_string())?.or_insert(12)?;
     ///
@@ -488,10 +488,10 @@ where
     ///
     /// #[dbstruct::dbstruct(db=btreemap)]
     /// struct Test {
-    ///	    map: HashMap<String, u32>,
-    ///	}
+    ///     map: HashMap<String, u32>,
+    /// }
     ///
-    ///	# fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// let db = Test::new()?;
     ///
     /// if let Entry::Vacant(o) = db.map().entry("poneyland".to_string())? {
@@ -519,10 +519,10 @@ where
     ///
     /// #[dbstruct::dbstruct(db=btreemap)]
     /// struct Test {
-    ///	    map: HashMap<String, u32>,
-    ///	}
+    ///     map: HashMap<String, u32>,
+    /// }
     ///
-    ///	# fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// let db = Test::new()?;
     ///
     /// if let Entry::Vacant(o) = db.map().entry("poneyland".to_string())? {
@@ -548,10 +548,10 @@ where
     ///
     /// #[dbstruct::dbstruct(db=btreemap)]
     /// struct Test {
-    ///	    map: HashMap<String, u32>,
-    ///	}
+    ///     map: HashMap<String, u32>,
+    /// }
     ///
-    ///	# fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// let db = Test::new()?;
     ///
     /// if let Entry::Vacant(v) = db.map().entry("poneyland".to_string())? {
@@ -571,10 +571,10 @@ where
     /// ```
     /// #[dbstruct::dbstruct(db=btreemap)]
     /// struct Test {
-    ///	    map: HashMap<String, u32>,
-    ///	}
+    ///     map: HashMap<String, u32>,
+    /// }
     ///
-    ///	# fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// let db = Test::new()?;
     /// assert_eq!(
     ///     db.map().entry("poneyland".to_string())?.key(),
@@ -606,10 +606,10 @@ where
     /// ```
     /// #[dbstruct::dbstruct(db=btreemap)]
     /// struct Test {
-    ///	    letters: HashMap<char, u16>,
-    ///	}
+    ///     letters: HashMap<char, u16>,
+    /// }
     ///
-    ///	# fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// let db = Test::new()?;
     /// for ch in "a short treatise on fungi".chars() {
     ///     db.letters().entry(ch)?.and_modify(|counter| *counter += 1)?.or_insert(1)?;

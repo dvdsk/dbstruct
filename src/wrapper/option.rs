@@ -46,10 +46,10 @@ where
     /// ```
     /// #[dbstruct::dbstruct(db=btreemap)]
     /// struct Test {
-    ///	    name: Option<String>,
-    ///	}
+    ///     name: Option<String>,
+    /// }
     ///
-    ///	# fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// let db = Test::new()?;
     /// db.name().set("Artemis")?;
     /// assert_eq!(db.name().get()?, Some("Artemis".to_owned()));
@@ -75,10 +75,10 @@ where
     /// ```
     /// #[dbstruct::dbstruct(db=btreemap)]
     /// struct Test {
-    ///	    name: Option<String>,
-    ///	}
+    ///     name: Option<String>,
+    /// }
     ///
-    ///	# fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// let db = Test::new()?;
     /// assert_eq!(db.name().get()?, None);
     /// db.name().set("Artemis")?;
@@ -107,16 +107,16 @@ where
     /// ```
     /// #[dbstruct::dbstruct(db=btreemap)]
     /// struct Test {
-    ///	    name: Option<String>,
-    ///	}
+    ///     name: Option<String>,
+    /// }
     ///
-    ///	fn first_name(s: String) -> String {
+    /// fn first_name(s: String) -> String {
     ///     s.split_once(" ")
     ///         .map(|(first, last)| first.to_owned())
     ///         .unwrap_or(s)
-    ///	}
+    /// }
     ///
-    ///	# fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// let db = Test::new()?;
     /// db.name().set("Elijah Baley")?;
     /// db.name().update(first_name);
@@ -142,10 +142,10 @@ where
     /// ```
     /// #[dbstruct::dbstruct(db=btreemap)]
     /// struct Test {
-    ///	    name: Option<String>,
-    ///	}
+    ///     name: Option<String>,
+    /// }
     ///
-    ///	# fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// let db = Test::new()?;
     /// db.name().set("Artemis")?;
     /// db.name().conditional_update("Artemis", "Helios");
