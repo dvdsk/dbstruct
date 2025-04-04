@@ -323,7 +323,7 @@ mod tests {
         V: Clone + Serialize + DeserializeOwned,
     {
         let ds = stores::BTreeMap::new();
-        let map = Map::new(ds, 1);
-        map
+        
+        Map::new(ds, 1)
     }
 }

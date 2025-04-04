@@ -160,7 +160,7 @@ where
         T: Borrow<Q>,
         Q: Serialize + ?Sized,
     {
-        Ok(self.ds.conditional_update(&self.key, &new, &old)?)
+        self.ds.conditional_update(&self.key, &new, &old)
     }
 }
 

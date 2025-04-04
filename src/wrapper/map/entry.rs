@@ -58,7 +58,7 @@ where
             Entry::Occupied(occupied_entry) => occupied_entry.get(),
             Entry::Vacant(vacent_entry) => {
                 let key = vacent_entry.key();
-                vacent_entry.map.insert(&key, &default)?;
+                vacent_entry.map.insert(key, &default)?;
                 Ok(default)
             }
         }
@@ -94,7 +94,7 @@ where
             Entry::Vacant(vacent_entry) => {
                 let key = vacent_entry.key();
                 let value = default();
-                vacent_entry.map.insert(&key, &value)?;
+                vacent_entry.map.insert(key, &value)?;
                 Ok(value)
             }
         }
@@ -137,7 +137,7 @@ where
             Entry::Vacant(vacent_entry) => {
                 let key = vacent_entry.key();
                 let value = default(key);
-                vacent_entry.map.insert(&key, &value)?;
+                vacent_entry.map.insert(key, &value)?;
                 Ok(value)
             }
         }
@@ -248,7 +248,7 @@ where
     }
 }
 
-impl<'a, Key, Value, E, DS> Entry<'a, Key, Value, DS>
+impl<Key, Value, E, DS> Entry<'_, Key, Value, DS>
 where
     E: fmt::Debug,
     Key: Serialize + DeserializeOwned,
@@ -299,7 +299,7 @@ where
     map: &'a Map<Key, Value, DS>,
 }
 
-impl<'a, Key, Value, E, DS> OccupiedEntry<'a, Key, Value, DS>
+impl<Key, Value, E, DS> OccupiedEntry<'_, Key, Value, DS>
 where
     E: fmt::Debug,
     Key: Serialize + DeserializeOwned,
@@ -624,9 +624,9 @@ where
     /// ```
     pub fn entry(&self, key: Key) -> Result<Entry<'_, Key, Value, DS>, Error<E>> {
         if self.contains_key(&key)? {
-            Ok(Entry::Occupied(OccupiedEntry { key, map: &self }))
+            Ok(Entry::Occupied(OccupiedEntry { key, map: self }))
         } else {
-            Ok(Entry::Vacant(VacantEntry { map: &self, key }))
+            Ok(Entry::Vacant(VacantEntry { map: self, key }))
         }
     }
 }

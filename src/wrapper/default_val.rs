@@ -56,6 +56,6 @@ where
         Ok(())
     }
     pub fn conditional_update(&self, old: T, new: T) -> Result<(), Error<E>> {
-        Ok(self.ds.conditional_update(&self.key, &new, &old)?)
+        self.ds.conditional_update(&self.key, &new, &old)
     }
 }

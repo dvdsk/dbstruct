@@ -99,7 +99,7 @@ where
     /// # }
     /// ```
     pub fn get(&self, index: usize) -> Result<Option<T>, Error<E>> {
-        if index >= self.len() as usize {
+        if index >= self.len() {
             return Ok(None);
         }
 
@@ -309,7 +309,7 @@ where
         let head = self.head.load(Ordering::Acquire);
         let tail = self.tail.load(Ordering::Acquire);
 
-        return ((tail - head) - 1) as usize;
+        ((tail - head) - 1) as usize
     }
 
     /// Returns `true` if the list has a length of 0.
