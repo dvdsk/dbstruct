@@ -10,6 +10,7 @@ use crate::Error;
 use super::PhantomUnsync;
 
 mod entry;
+pub use entry::{Entry, VacantEntry, OccupiedEntry};
 mod extend;
 mod iterator;
 

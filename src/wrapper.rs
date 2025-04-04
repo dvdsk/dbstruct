@@ -11,7 +11,7 @@
 
 mod default_trait;
 mod default_val;
-mod map;
+pub mod map;
 mod option;
 mod vec;
 mod vec_deque;
