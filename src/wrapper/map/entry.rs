@@ -7,6 +7,10 @@ use crate::{DataStore, Error};
 
 use super::Map;
 
+/// A view into a single entry in a map, which may either be vacant or occupied.
+///
+/// This `enum` is constructed from the [`entry`](Map::entry) method on the
+/// [`Map`] wrapper.
 pub enum Entry<'a, Key, Value, DS>
 where
     Key: Serialize + DeserializeOwned,
@@ -24,8 +28,8 @@ where
     Value: Serialize + DeserializeOwned,
     DS: DataStore<DbError = E>,
 {
-    /// Ensures a value is in the entry by inserting the default if empty,
-    /// and returns a mutable reference to the value in the entry.
+    /// Ensures a value is in the entry by inserting the provided default if empty.
+    /// Returns a copy of the value in the entry.
     ///
     /// # Errors
     /// This can fail if the underlying database ran into a problem
@@ -59,8 +63,8 @@ where
             }
         }
     }
-    /// Ensures a value is in the entry by inserting the result of the default function if empty,
-    /// and returns a mutable reference to the value in the entry.
+    /// Ensures a value is in the entry by inserting the result of the default
+    /// function if empty. Returns a copy of the value in the entry.
     ///
     /// # Errors
     /// This can fail if the underlying database ran into a problem
@@ -95,12 +99,17 @@ where
             }
         }
     }
-    /// Ensures a value is in the entry by inserting, if empty, the result of the default function.
-    /// This method allows for generating key-derived values for insertion by providing the default
-    /// function a reference to the key that was moved during the `.entry(key)` method call.
+    /// Ensures a value is in the entry by inserting, if empty, the result of
+    /// the default function. This method allows for generating key-derived
+    /// values for insertion by providing the default function a reference to
+    /// the key that was moved during the `.entry(key)` method call.
     ///
-    /// The reference to the moved key is provided so that cloning or copying the key is
-    /// unnecessary, unlike with `.or_insert_with(|| ... )`.
+    /// The reference to the moved key is provided so that cloning or copying
+    /// the key is unnecessary, unlike with `.or_insert_with(|| ... )`.
+    ///
+    /// # Errors
+    /// This can fail if the underlying database ran into a problem
+    /// or if serialization failed.
     ///
     /// # Examples
     ///
@@ -135,6 +144,10 @@ where
     }
     /// Returns a reference to this entry's key.
     ///
+    /// # Errors
+    /// This can fail if the underlying database ran into a problem
+    /// or if serialization failed.
+    ///
     /// # Examples
     ///
     /// ```
@@ -157,6 +170,10 @@ where
     }
     /// Provides in-place mutable access to an occupied entry before any
     /// potential inserts into the map.
+    ///
+    /// # Errors
+    /// This can fail if the underlying database ran into a problem
+    /// or if serialization failed.
     ///
     /// # Examples
     ///
@@ -198,6 +215,10 @@ where
 
     /// Sets the value of the entry, and returns an `OccupiedEntry`.
     ///
+    /// # Errors
+    /// This can fail if the underlying database ran into a problem
+    /// or if serialization failed.
+    ///
     /// # Examples
     ///
     /// ```
@@ -234,8 +255,11 @@ where
     Value: Serialize + DeserializeOwned + Default,
     DS: DataStore<DbError = E>,
 {
-    /// Ensures a value is in the entry by inserting the default value if empty,
-    /// and returns a mutable reference to the value in the entry.
+    /// Ensures a value is in the entry by inserting the default value if empty.
+    ///
+    /// # Errors
+    /// This can fail if the underlying database ran into a problem
+    /// or if serialization failed.
     ///
     /// # Examples
     ///
@@ -264,6 +288,7 @@ where
     }
 }
 
+/// A view into an occupied entry in a [`Map`]. It is part of the [`Entry`] `enum`.
 pub struct OccupiedEntry<'a, Key, Value, DS>
 where
     Key: Serialize,
@@ -302,7 +327,11 @@ where
         &self.key
     }
 
-    /// Gets a reference to the value in the entry.
+    /// Gets the value in the entry.
+    ///
+    /// # Errors
+    /// This can fail if the underlying database ran into a problem
+    /// or if serialization failed.
     ///
     /// # Examples
     ///
@@ -329,6 +358,10 @@ where
         Ok(self.map.get(&self.key)?.expect("occupied entry"))
     }
     /// Sets the value of the entry, and returns the entry's old value.
+    ///
+    /// # Errors
+    /// This can fail if the underlying database ran into a problem
+    /// or if serialization failed.
     ///
     /// # Examples
     ///
@@ -359,6 +392,10 @@ where
     }
     /// Takes the value out of the entry, and returns it.
     ///
+    /// # Errors
+    /// This can fail if the underlying database ran into a problem
+    /// or if serialization failed.
+    ///
     /// # Examples
     ///
     /// ```
@@ -385,7 +422,11 @@ where
         Ok(self.map.remove(&self.key)?.expect("occupied_entry"))
     }
 
-    /// Take the ownership of the key and value from the map.
+    /// Take the key value pair out of the map.
+    ///
+    /// # Errors
+    /// This can fail if the underlying database ran into a problem
+    /// or if serialization failed.
     ///
     /// # Examples
     ///
@@ -416,6 +457,7 @@ where
     }
 }
 
+/// A view into a vacant entry in a [`Map`]. It is part of the [`Entry`] `enum`.
 pub struct VacantEntry<'a, Key, Value, DS>
 where
     Key: Serialize,
@@ -433,8 +475,11 @@ where
     Value: Serialize + DeserializeOwned,
     DS: crate::DataStore<DbError = E>,
 {
-    /// Sets the value of the entry with the `VacantEntry`'s key,
-    /// and returns a mutable reference to it.
+    /// Sets the value of the entry with the `VacantEntry`'s key.
+    ///
+    /// # Errors
+    /// This can fail if the underlying database ran into a problem
+    /// or if serialization failed.
     ///
     /// # Examples
     ///
@@ -462,6 +507,10 @@ where
     }
     /// Sets the value of the entry with the `VacantEntry`'s key,
     /// and returns an `OccupiedEntry`.
+    ///
+    /// # Errors
+    /// This can fail if the underlying database ran into a problem
+    /// or if serialization failed.
     ///
     /// # Examples
     ///
@@ -528,7 +577,7 @@ where
     ///	# fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// let db = Test::new()?;
     /// assert_eq!(
-    ///     db.map().entry("poneyland".to_string())?.key(), 
+    ///     db.map().entry("poneyland".to_string())?.key(),
     ///     &"poneyland".to_string()
     /// );
     /// # Ok(())
