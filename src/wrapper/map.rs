@@ -10,7 +10,7 @@ use crate::Error;
 use super::PhantomUnsync;
 
 mod entry;
-pub use entry::{Entry, VacantEntry, OccupiedEntry};
+pub use entry::{Entry, OccupiedEntry, VacantEntry};
 mod extend;
 mod iterator;
 
@@ -323,7 +323,7 @@ mod tests {
         V: Clone + Serialize + DeserializeOwned,
     {
         let ds = stores::BTreeMap::new();
-        
+
         Map::new(ds, 1)
     }
 }

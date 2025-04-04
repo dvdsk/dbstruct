@@ -1,17 +1,17 @@
 use core::fmt;
 use std::marker::PhantomData;
 
-use serde::Serialize;
 use serde::de::DeserializeOwned;
+use serde::Serialize;
 
-use crate::Error;
 use crate::traits::DataStore;
+use crate::Error;
 
 /// handles missing values by generating a replacement using the types [`Default`] implementation
-pub struct DefaultTrait<T, DS> 
-where 
+pub struct DefaultTrait<T, DS>
+where
     T: Serialize + DeserializeOwned + Default,
-    DS: DataStore
+    DS: DataStore,
 {
     phantom: PhantomData<T>,
     ds: DS,
@@ -23,7 +23,6 @@ where
     E: fmt::Debug,
     T: Serialize + DeserializeOwned + Default,
     DS: DataStore<DbError = E>,
-
 {
     #[doc(hidden)]
     pub fn new(ds: DS, key: u8) -> Self {

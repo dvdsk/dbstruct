@@ -61,7 +61,9 @@ pub trait Ranged: Ordered {
 /// Bincode config used to encode and decode keys. This uses big endian fixed
 /// integer encoding to ensure the order follows that of the struct
 pub(crate) fn key_config() -> impl bincode::config::Config {
-    bincode::config::standard().with_big_endian().with_fixed_int_encoding()
+    bincode::config::standard()
+        .with_big_endian()
+        .with_fixed_int_encoding()
 }
 
 /// Bincode config used to encode and decode values.
@@ -162,7 +164,8 @@ where
         K: Serialize,
         V: Serialize + DeserializeOwned,
     {
-        let key = bincode::serde::encode_to_vec(key, key_config()).map_err(Error::SerializingKey)?;
+        let key =
+            bincode::serde::encode_to_vec(key, key_config()).map_err(Error::SerializingKey)?;
         let mut res = Ok(());
         let bytes_op = |old: Option<&[u8]>| -> Option<Vec<u8>> {
             if let Some(old) = old {
@@ -201,10 +204,12 @@ where
         K: Serialize + ?Sized,
         V: Serialize + ?Sized,
     {
-        let key = bincode::serde::encode_to_vec(key, key_config()).map_err(Error::SerializingKey)?;
-        let new = bincode::serde::encode_to_vec(new, val_config()).map_err(Error::SerializingValue)?;
-        let expected =
-            bincode::serde::encode_to_vec(expected, val_config()).map_err(Error::SerializingValue)?;
+        let key =
+            bincode::serde::encode_to_vec(key, key_config()).map_err(Error::SerializingKey)?;
+        let new =
+            bincode::serde::encode_to_vec(new, val_config()).map_err(Error::SerializingValue)?;
+        let expected = bincode::serde::encode_to_vec(expected, val_config())
+            .map_err(Error::SerializingValue)?;
         BS::conditional_update(self, &key, &new, &expected).map_err(Error::Database)?;
         Ok(())
     }
@@ -225,7 +230,8 @@ where
         OutKey: Serialize + DeserializeOwned,
         OutVal: Serialize + DeserializeOwned,
     {
-        let key = bincode::serde::encode_to_vec(key, key_config()).map_err(Error::SerializingKey)?;
+        let key =
+            bincode::serde::encode_to_vec(key, key_config()).map_err(Error::SerializingKey)?;
         trace!("getting less then key: {key:?}");
         Ok(
             match byte_store::Ordered::get_lt(self, &key).map_err(Error::Database)? {
@@ -257,7 +263,8 @@ where
         OutKey: Serialize + DeserializeOwned,
         Value: Serialize + DeserializeOwned,
     {
-        let key = bincode::serde::encode_to_vec(key, key_config()).map_err(Error::SerializingKey)?;
+        let key =
+            bincode::serde::encode_to_vec(key, key_config()).map_err(Error::SerializingKey)?;
         trace!("getting greater then key: {key:?}");
         Ok(
             match byte_store::Ordered::get_gt(self, &key).map_err(Error::Database)? {

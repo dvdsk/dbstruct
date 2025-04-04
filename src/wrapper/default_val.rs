@@ -6,7 +6,7 @@ use serde::Serialize;
 use crate::traits::{data_store, DataStore};
 use crate::Error;
 
-/// handles missing values by generating a replacement from an expression. 
+/// handles missing values by generating a replacement from an expression.
 pub struct DefaultValue<T, DS>
 where
     T: Serialize + DeserializeOwned + Clone,

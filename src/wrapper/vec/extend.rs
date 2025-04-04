@@ -15,7 +15,7 @@ where
 {
     /// Extends the list with the contents of an iterator.
     ///
-    /// The iterator item may be any borrowed form of the lists item type, 
+    /// The iterator item may be any borrowed form of the lists item type,
     /// as long as the serialized form matches between borrowed and not borrowed.
     ///
     /// # Errors

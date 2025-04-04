@@ -7,7 +7,7 @@ pub use byte_store::ByteStore;
 pub use data_store::DataStore;
 
 /// Error returned by [`Vec::extend`](crate::wrapper::Vec::extend) or
-/// [`Map::extend`](crate::wrapper::Map::extend). when extending the 
+/// [`Map::extend`](crate::wrapper::Map::extend). when extending the
 /// collection fails.
 #[derive(Debug, thiserror::Error)]
 #[error("Could not extend collection")]

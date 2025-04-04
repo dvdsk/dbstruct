@@ -319,4 +319,3 @@ mod extend {
         db.letters().extend(&iter).unwrap();
     }
 }
-
