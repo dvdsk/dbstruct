@@ -310,20 +310,3 @@ where
         f.write_str("]\n")
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::stores;
-
-    pub(crate) type TestMap<'a, K, V> = Map<K, V, stores::BTreeMap>;
-    pub(crate) fn empty<'a, K, V>() -> TestMap<'a, K, V>
-    where
-        K: Clone + Serialize + DeserializeOwned,
-        V: Clone + Serialize + DeserializeOwned,
-    {
-        let ds = stores::BTreeMap::new();
-
-        Map::new(ds, 1)
-    }
-}
