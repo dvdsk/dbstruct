@@ -8,8 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ## Added
  - `open_db` and `open_tree` for structs backed by `sled`
+ 
 ## Changed
  - **Breaking:** structs backed by `sled` must now be opened using `open_path`
+ 
+## Fixed
+ - Generated structs are is `Send` again
+ 
 
 ## [0.6.0] - 2025-04-02
 

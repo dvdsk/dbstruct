@@ -70,7 +70,7 @@ fn no_sync_phantom() -> syn::Field {
         vis: syn::Visibility::Inherited,
         ident: Some(no_syn_phantom_ident()),
         colon_token: None,
-        ty: parse_quote!(::std::marker::PhantomData<::std::cell::Cell<()>>),
+        ty: parse_quote!(::std::marker::PhantomData<::std::sync::MutexGuard<'static, ()>>),
         mutability: syn::FieldMutability::None,
     }
 }

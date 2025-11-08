@@ -1,4 +1,3 @@
-use std::cell::Cell;
 use std::error::Error;
 use std::marker::PhantomData;
 use std::sync::atomic::AtomicUsize;
@@ -40,7 +39,7 @@ struct MacroInput {
 pub struct MacroOutput<DS: DataStore> {
     ds: DS,
     queue_len: Arc<AtomicUsize>,
-    phantom: PhantomData<Cell<()>>,
+    phantom: PhantomData<::std::sync::MutexGuard<'static, ()>>,
 }
 
 impl<DS> MacroOutput<DS>
