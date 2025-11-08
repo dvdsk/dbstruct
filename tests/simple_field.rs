@@ -9,7 +9,7 @@ fn sled_backend() {
     let dir = tempdir::TempDir::new("dbstruct_tests").unwrap();
     let path = dir.path().join("simple_field_db");
 
-    let db = SledTest::new(path).unwrap();
+    let db = SledTest::open_path(path).unwrap();
 
     db.the_field().set(&8).unwrap();
     assert_eq!(8u8, db.the_field().get().unwrap());

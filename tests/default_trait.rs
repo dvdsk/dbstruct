@@ -13,7 +13,7 @@ pub struct Test {
 #[test]
 fn main() {
     let ds = dbstruct::stores::HashMap::default();
-    let db = Test::new(ds).unwrap();
+    let db = Test::open(ds).unwrap();
 
     assert!(db.small_list().get().unwrap().is_empty());
     assert!(db.small_map().get().unwrap().is_empty());

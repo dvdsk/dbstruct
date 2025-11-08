@@ -7,9 +7,9 @@
 [![API](https://docs.rs/dbstruct/badge.svg)](https://docs.rs/dbstruct)
 [![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](LICENSE-MIT)
 
-Create a typed embedded database by defining a struct. Interact with the database through getters and setters. Choose how values missing in the database are represented. Standard library types `Vec`, `HashMap` and `Option` have special getters and setters to mimic their standard library functionality. You can push and pop from vecs. 
+Create a typed embedded database by defining a struct. Interact with the database through getters and setters. Choose how values missing in the database are represented. Standard library types `Vec`, `HashMap` and `Option` have special getters and setters to mimic their standard library functionality. You can push and pop from vecs.
 
-Choose out of various popular key-value databases then instantiate the struct providing only the db path. Alternatively pass any object that implements `dbstruct::DataStore`. 
+Choose out of various popular key-value databases then instantiate the struct providing only the db path. Alternatively pass any object that implements `dbstruct::DataStore`.
 
 
 ## Use case
@@ -32,10 +32,10 @@ pub struct Test {
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-	// a wrapper around a HashMap that implements the 
+	// a wrapper around a HashMap that implements the
 	// `DataStore` trait
     let path_to_dir = tempdir::TempDir::new("readme_example")?;
-	let db = Test::new(path_to_dir)?;
+	let db = Test::open_path(path_to_dir)?;
 
 	db.the_awnser().set(&42)?;
 	assert_eq!(42u8, db.the_awnser().get()?);

@@ -7,7 +7,7 @@ struct Test {
 
 // SHOULD NOT COMPILE
 fn main() {
-    let test = Test::new("").unwrap();
+    let test = Test::open_path("").unwrap();
     std::thread::scope(|s| {
         s.spawn(|| {
             test.list().push(&5).unwrap();

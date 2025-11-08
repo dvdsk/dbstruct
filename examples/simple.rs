@@ -19,7 +19,7 @@ pub struct Test {
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let dir = tempdir::TempDir::new("dbstruct_examples")?;
     let path = dir.path().join("advanced");
-    let db = Test::new(path)?;
+    let db = Test::open_path(path)?;
 
     // we can store simple fields
     assert_eq!(None, db.the_awnser().get()?);

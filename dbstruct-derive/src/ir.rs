@@ -12,7 +12,7 @@ use crate::model::Model;
 
 pub struct Ir {
     pub definition: Struct,
-    pub new: NewMethod,
+    pub new: Vec<NewMethod>,
     pub accessors: Vec<Accessor>,
     pub bounds: Option<syn::WhereClause>,
 }
@@ -48,7 +48,7 @@ fn backend_type(backend: &Backend) -> syn::Type {
 impl Ir {
     pub fn from(model: Model) -> Self {
         let definition = Struct::from(&model);
-        let new = NewMethod::from(&model, &definition);
+        let new = NewMethod::list(&model, &definition);
         let bounds = bounds_from(&model);
         let backend_ty = backend_type(&model.backend);
         let accessors = model

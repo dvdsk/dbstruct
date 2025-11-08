@@ -5,7 +5,7 @@ pub struct Test {
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let dir = tempdir::TempDir::new("vecdeque_example")?;
-    let db = Test::new(&dir)?;
+    let db = Test::open_path(&dir)?;
 
     db.list().push_front(&2)?;
     db.list().push_front(&1)?;
@@ -14,7 +14,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Dropping the db here simulates the program
     // stopping and restarting
     std::mem::drop(db);
-    let db = Test::new(&dir)?;
+    let db = Test::open_path(&dir)?;
 
     let res: Vec<_> = db.list().into_iter().collect::<Result<_, _>>()?;
     assert_eq!(res, vec![1, 2, 3]);

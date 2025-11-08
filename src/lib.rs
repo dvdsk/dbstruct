@@ -21,7 +21,7 @@
 //!// a wrapper around a HashMap that implements the
 //!// `DataStore` trait
 //! # let path_to_dir = tempdir::TempDir::new("lib_docs").unwrap();
-//!let db = Test::new(path_to_dir).unwrap();
+//!let db = Test::open_path(path_to_dir).unwrap();
 //!
 //!db.the_awnser().set(&42).unwrap();
 //!assert_eq!(42u8, db.the_awnser().get().unwrap());

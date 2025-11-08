@@ -5,14 +5,14 @@ pub struct Test {
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let db = Test::new("trivial_example")?;
+    let db = Test::open_path("trivial_example")?;
     db.the_awnser().set(&42)?;
     db.the_question().set("The Ultimate Question")?;
 
     // dropping the db here simulates the program
     // stopping and restarting
     std::mem::drop(db);
-    let db = Test::new("trivial_example")?;
+    let db = Test::open_path("trivial_example")?;
 
     let the_awnser = db.the_awnser().get()?;
     assert_eq!(the_awnser, Some(42));

@@ -24,7 +24,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let dir = tempdir::TempDir::new("dbstruct_examples")?;
     let path = dir.path().join("advanced");
 
-    let db = Test::new(&path)?;
+    let db = Test::open_path(&path)?;
 
     // we get the `Default` value for u8
     assert_eq!(0, db.the_awnser().get()?);
@@ -60,7 +60,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // dropping the db here simulates the program
     // stopping and restarting
     std::mem::drop(db); // this closes the db
-    let db = Test::new(&path)?;
+    let db = Test::open_path(&path)?;
 
     assert_eq!(42u8, db.the_awnser().get()?);
 

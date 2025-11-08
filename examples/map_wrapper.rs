@@ -8,7 +8,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let dir = tempdir::TempDir::new("dbstruct_examples")?;
     let path = dir.path().join("map_wrapper");
 
-    let db = Test::new(&path)?;
+    let db = Test::open_path(&path)?;
     db.computers().insert("Deep Thought", &42)?;
     db.computers().insert("Colossus", &1944)?;
     db.computers().insert("ENIAC", &1946)?;
