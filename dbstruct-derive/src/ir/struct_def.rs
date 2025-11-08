@@ -101,8 +101,8 @@ impl From<&Model> for Struct {
             .fields
             .iter()
             .flat_map(|field| match &field.wrapper {
-                W::Vec { .. } => [vec_len_field(&field)].to_vec(),
-                W::VecDeque { .. } => [deque_head_field(&field), deque_tail_field(&field)].to_vec(),
+                W::Vec { .. } => [vec_len_field(field)].to_vec(),
+                W::VecDeque { .. } => [deque_head_field(field), deque_tail_field(field)].to_vec(),
                 _ => Vec::new(),
             })
             .collect();

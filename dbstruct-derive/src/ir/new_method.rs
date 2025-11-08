@@ -300,8 +300,8 @@ fn db_setup_to_new_method(db: DbSetup, model: &Model, struct_def: &Struct) -> Ne
 
     let mut locals = local.into_iter().collect_vec();
     let inits = model.fields.iter().flat_map(|field| match &field.wrapper {
-        Wrapper::Vec { .. } => [vec_len_init(&field)].to_vec(),
-        Wrapper::VecDeque { .. } => [deque_head_init(&field), deque_tail_init(&field)].to_vec(),
+        Wrapper::Vec { .. } => [vec_len_init(field)].to_vec(),
+        Wrapper::VecDeque { .. } => [deque_head_init(field), deque_tail_init(field)].to_vec(),
         _ => Vec::new(),
     });
     locals.extend(inits);
@@ -312,7 +312,7 @@ fn db_setup_to_new_method(db: DbSetup, model: &Model, struct_def: &Struct) -> Ne
         members: struct_def
             .member_vars
             .iter()
-            .map(|f| as_member(f))
+            .map(as_member)
             .collect(),
         vis: model.vis.clone(),
         arg,

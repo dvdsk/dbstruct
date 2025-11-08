@@ -54,16 +54,16 @@ fn parse_db(
     match tokens.peek() {
         None => {
             tokens.next();
-            return Err(MissingDb.with_span(span));
+            Err(MissingDb.with_span(span))
         }
         Some(TokenTree::Punct(punct)) if punct.as_char() == ',' => {
             tokens.next();
-            return Err(MissingDb.with_span(span));
+            Err(MissingDb.with_span(span))
         }
         Some(TokenTree::Punct(punct)) if punct.as_char() == '=' => {
             let punct = punct.span();
             match tokens.nth(1) {
-                None => return Err(MissingBackendValue.with_span(punct)),
+                None => Err(MissingBackendValue.with_span(punct)),
                 Some(TokenTree::Ident(ident)) => {
                     let backend = match ident.to_string().as_str() {
                         "sled" => Sled,
@@ -74,15 +74,15 @@ fn parse_db(
                         "test" => Test,
                         _ => return Err(NotABackend(ident).has_span()),
                     };
-                    return Ok(BackendOption {
+                    Ok(BackendOption {
                         backend,
                         span: ident.span(),
-                    });
+                    })
                 }
-                Some(other) => return Err(InvalidBackendSyntax.with_span(other)),
+                Some(other) => Err(InvalidBackendSyntax.with_span(other)),
             }
         }
-        Some(other) => return Err(InvalidBackendSyntax.with_span(other)),
+        Some(other) => Err(InvalidBackendSyntax.with_span(other)),
     }
 }
 
@@ -92,13 +92,13 @@ fn parse_item(tokens: &mut Peekable<impl Iterator<Item = TokenTree>>) -> Result<
         .next()
         .expect("should only get here if peek returned Some");
     match first_token {
-        TokenTree::Ident(ident) if ident.to_string() == "db" => {
+        TokenTree::Ident(ident) if ident == "db" => {
             let backend = parse_db(ident.span(), tokens)?;
             Ok(Options::Backend(backend))
         }
-        TokenTree::Ident(ident) if ident.to_string() == "async" => Ok(Options::Async),
-        TokenTree::Ident(ident) => return Err(NotAnOption(ident).has_span()),
-        _ => return Err(InvalidSyntax(first_token).has_span()),
+        TokenTree::Ident(ident) if ident == "async" => Ok(Options::Async),
+        TokenTree::Ident(ident) => Err(NotAnOption(ident).has_span()),
+        _ => Err(InvalidSyntax(first_token).has_span()),
     }
 }
 

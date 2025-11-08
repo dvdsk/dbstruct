@@ -53,8 +53,8 @@ fn is_relevant(att: &syn::Attribute) -> bool {
  * * <01-08-22, dvdsk noreply@davidsk.dev> */
 fn unescape_literal(s: &str) -> String {
     let s = s.trim_matches('"');
-    let s = s.replace(r#"\"#, r#""#);
-    s
+    
+    s.replace(r#"\"#, r#""#)
 }
 
 fn parse_default(
@@ -65,27 +65,27 @@ fn parse_default(
     match tokens.peek() {
         None => {
             tokens.next();
-            return Ok(Attribute::DefaultTrait { span });
+            Ok(Attribute::DefaultTrait { span })
         }
         Some(TokenTree::Punct(punct)) if punct.as_char() == ',' => {
             tokens.next();
-            return Ok(Attribute::DefaultTrait { span });
+            Ok(Attribute::DefaultTrait { span })
         }
         Some(TokenTree::Punct(punct)) if punct.as_char() == '=' => {
             let punct = punct.span();
             match tokens.nth(1) {
-                None => return Err(MissingDefaultValue.with_span(punct)),
+                None => Err(MissingDefaultValue.with_span(punct)),
                 Some(TokenTree::Literal(lit)) => {
                     let expr = lit.to_string();
                     let expr = unescape_literal(&expr);
                     let expr: syn::Expr = syn::parse_str(&expr)
                         .map_err(|err| ValueNotExpression(err).with_span(lit))?;
-                    return Ok(Attribute::DefaultValue { expr });
+                    Ok(Attribute::DefaultValue { expr })
                 }
-                Some(other) => return Err(InvalidDefaultArg.with_span(other)),
+                Some(other) => Err(InvalidDefaultArg.with_span(other)),
             }
         }
-        Some(_other) => return Err(InvalidDefaultArg.with_span(_other)),
+        Some(_other) => Err(InvalidDefaultArg.with_span(_other)),
     }
 }
 
@@ -95,11 +95,11 @@ fn parse(tokens: &mut Peekable<impl Iterator<Item = TokenTree>>) -> Result<Attri
         .next()
         .expect("should only get here if peek returned Some");
     match first_token {
-        TokenTree::Ident(ident) if ident.to_string() == "Default" => {
+        TokenTree::Ident(ident) if ident == "Default" => {
             parse_default(ident.span(), tokens)
         }
-        TokenTree::Ident(ident) => return Err(NotAWrapper(ident).has_span()),
-        _ => return Err(InvalidSyntax(first_token).has_span()),
+        TokenTree::Ident(ident) => Err(NotAWrapper(ident).has_span()),
+        _ => Err(InvalidSyntax(first_token).has_span()),
     }
 }
 

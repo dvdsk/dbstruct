@@ -97,7 +97,6 @@ fn definition(definition: Struct, bounds: &Option<syn::WhereClause>) -> TokenStr
             #(#member_vars),*
         }),
     }
-    .into()
 }
 
 #[cfg(test)]

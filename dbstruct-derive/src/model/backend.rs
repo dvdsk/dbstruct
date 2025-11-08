@@ -125,8 +125,7 @@ impl Backend {
                 return Ok(Backend::Trait {
                     bounds: fields
                         .iter()
-                        .map(|f| f.wrapper.needed_traits().into_iter())
-                        .flatten()
+                        .flat_map(|f| f.wrapper.needed_traits().into_iter())
                         .collect(),
                 })
             }
