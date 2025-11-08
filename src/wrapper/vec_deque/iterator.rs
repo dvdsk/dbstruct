@@ -61,7 +61,7 @@ where
     T: Serialize + DeserializeOwned,
     DS: DataStore<DbError = E>,
 {
-    pub fn iter(&self) -> Iter<T, E, DS> {
+    pub fn iter(&self) -> Iter<'_, T, E, DS> {
         Iter {
             current: 0,
             deque: self,

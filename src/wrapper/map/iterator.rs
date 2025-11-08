@@ -142,7 +142,7 @@ where
     /// # Ok(())
     /// # }
     /// ```
-    pub fn iter(&self) -> Iter<Key, Value, E, DS> {
+    pub fn iter(&self) -> Iter<'_, Key, Value, E, DS> {
         Iter {
             prefix: self.prefix,
             prev_key_bytes: vec![self.prefix],
@@ -181,7 +181,7 @@ where
     /// # Ok(())
     /// # }
     /// ```
-    pub fn values(&self) -> Values<Key, Value, E, DS> {
+    pub fn values(&self) -> Values<'_, Key, Value, E, DS> {
         Values(Iter {
             prefix: self.prefix,
             prev_key_bytes: vec![self.prefix],
@@ -220,7 +220,7 @@ where
     /// # Ok(())
     /// # }
     /// ```
-    pub fn keys(&self) -> Keys<Key, Value, E, DS> {
+    pub fn keys(&self) -> Keys<'_, Key, Value, E, DS> {
         Keys(Iter {
             prefix: self.prefix,
             prev_key_bytes: vec![self.prefix],
