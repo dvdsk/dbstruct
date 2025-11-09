@@ -18,6 +18,12 @@ pub trait DataStore {
     where
         K: Serialize,
         V: DeserializeOwned;
+    fn clear<K>(&self, key: &K) -> Result<(), crate::Error<Self::DbError>>
+    where
+        K: Serialize;
+    fn contains<K>(&self, key: &K) -> Result<bool, crate::Error<Self::DbError>>
+    where
+        K: Serialize;
     fn insert<'a, K, V, OwnedV>(
         &self,
         key: &'a K,

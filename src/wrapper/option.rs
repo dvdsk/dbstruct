@@ -56,12 +56,16 @@ where
     /// # Ok(())
     /// # }
     /// ```
-    pub fn set<Q>(&mut self, value: &Q) -> Result<(), Error<E>>
+    pub fn set<Q>(&mut self, value: Option<&Q>) -> Result<(), Error<E>>
     where
         T: Borrow<Q>,
         Q: Serialize + ?Sized,
     {
-        self.ds.insert::<_, Q, T>(&self.key, value)?;
+        if let Some(v) = value {
+            self.ds.insert::<_, Q, T>(&self.key, v)?;
+        } else {
+            self.ds.clear::<_>(&self.key)?;
+        }
         Ok(())
     }
 
@@ -88,6 +92,56 @@ where
     /// ```
     pub fn get(&self) -> Result<Option<T>, Error<E>> {
         self.ds.get(&self.key)
+    }
+
+    /// Returns `true` if the option is a `None` value.
+    ///
+    /// # Errors
+    /// This can fail if the underlying database ran into a problem
+    /// or if serialization failed.
+    ///
+    /// # Examples
+    /// ```
+    /// #[dbstruct::dbstruct(db=btreemap)]
+    /// struct Test {
+    ///     name: Option<String>,
+    /// }
+    ///
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// let db = Test::new()?;
+    /// assert!(db.name().is_none()?);
+    /// db.name().set("Artemis")?;
+    /// assert!(!db.name().is_none()?);
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn is_none(&self) -> Result<bool, Error<E>> {
+        self.ds.contains(&self.key)
+    }
+
+    /// Returns `true` if the option is a `Some` value.
+    ///
+    /// # Errors
+    /// This can fail if the underlying database ran into a problem
+    /// or if serialization failed.
+    ///
+    /// # Examples
+    /// ```
+    /// #[dbstruct::dbstruct(db=btreemap)]
+    /// struct Test {
+    ///     name: Option<String>,
+    /// }
+    ///
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// let db = Test::new()?;
+    /// assert!(!db.name().is_some()?);
+    /// db.name().set("Artemis")?;
+    /// assert!(db.name().is_some()?);
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn is_some(&self) -> Result<bool, Error<E>> {
+        self.is_none().map(|b| !b)
     }
 }
 

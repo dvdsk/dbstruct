@@ -5,7 +5,7 @@ pub struct Test {
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let db = Test::open_path("trivial_example")?;
-    if let Err(e) = db.the_awnser().set(&42) {
+    if let Err(e) = db.the_awnser().set(Some(&42)) {
         match e {
             dbstruct::Error::Database(sled::Error::Io(e)) => eprintln!("io error in sled: {e}"),
             dbstruct::Error::Database(other_sled_issue) => {

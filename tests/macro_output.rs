@@ -39,7 +39,7 @@ struct MacroInput {
 pub struct MacroOutput<DS: DataStore> {
     ds: DS,
     queue_len: Arc<AtomicUsize>,
-    phantom: PhantomData<::std::sync::MutexGuard<'static, ()>>,
+    phantom: PhantomData<::std::cell::Cell<()>>,
 }
 
 impl<DS> MacroOutput<DS>
@@ -101,7 +101,7 @@ pub fn main() -> Result<(), Box<dyn Error>> {
     let preferences = db.preferences().get()?;
     assert_eq!(preferences, Default::default());
 
-    db.account().set(&Account {})?;
+    db.account().set(Some(&Account {}))?;
     let account = db.account().get()?;
     assert_eq!(account, Some(Account {}));
 

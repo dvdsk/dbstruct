@@ -23,7 +23,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // we can store simple fields
     assert_eq!(None, db.the_awnser().get()?);
-    db.the_awnser().set(&42)?;
+    db.the_awnser().set(Some(&42))?;
     assert_eq!(Some(42u8), db.the_awnser().get()?);
 
     // the vector is still empty

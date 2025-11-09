@@ -122,6 +122,30 @@ where
     }
 
     #[instrument(skip_all, level = "trace", err)]
+    fn clear<K>(&self, key: &K) -> Result<(), crate::Error<Self::DbError>>
+    where
+        K: Serialize,
+    {
+        let key = bincode::serde::encode_to_vec(key, key_config())
+            .map_err(Error::<Self::DbError>::SerializingKey)?;
+        trace!("removing at key: {key:?}");
+        let _ = BS::remove(self, &key).map_err(Error::Database)?;
+        Ok(())
+    }
+
+    #[instrument(skip_all, level = "trace", err)]
+    fn contains<K>(&self, key: &K) -> Result<bool, crate::Error<Self::DbError>>
+    where
+        K: Serialize,
+    {
+        let key = bincode::serde::encode_to_vec(key, key_config())
+            .map_err(Error::<Self::DbError>::SerializingKey)?;
+        trace!("removing at key: {key:?}");
+        let val = BS::get(self, &key).map_err(Error::Database)?;
+        Ok(val.is_some())
+    }
+
+    #[instrument(skip_all, level = "trace", err)]
     fn insert<K, V, OwnedV>(&self, key: &K, val: &V) -> Result<Option<OwnedV>, Error<Self::DbError>>
     where
         K: Serialize,

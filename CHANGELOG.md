@@ -8,9 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ## Added
  - `open_db` and `open_tree` for structs backed by `sled`
+ - `Option` fields without default expr can now be set to `None`
+ - `Option::is_some` and `Option::is_none`
  
 ## Changed
  - **Breaking:** structs backed by `sled` must now be opened using `open_path`
+ - **Breaking:** `Option` fields without default expr now take Some in `.set()`
  
 ## Fixed
  - Generated structs are is `Send` again

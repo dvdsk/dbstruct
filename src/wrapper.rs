@@ -32,4 +32,4 @@ pub use vec_deque::Prefixed as DequePrefixed;
 
 /// Not all wrappers should be sync, negative marker traits are unstable
 /// instead we use this.
-pub(crate) type PhantomUnsync = std::marker::PhantomData<::std::sync::MutexGuard<'static, ()>>;
+pub(crate) type PhantomUnsync = std::marker::PhantomData<::std::cell::Cell<()>>;
